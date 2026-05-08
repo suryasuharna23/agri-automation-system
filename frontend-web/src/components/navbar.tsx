@@ -1,14 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Home, LayoutDashboard, LogIn, LogOut, Menu, ShoppingBasket, Sprout, UserPlus, X } from "lucide-react";
 import { useAuthStore } from "@/lib/auth-store";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
+
+  const dashboardRoutes = [
+    "/dashboard",
+    "/marketplace",
+    "/kelola-produk",
+    "/katalog-dagangan",
+    "/katalog-detail",
+    "/keranjang",
+    "/status-pesanan",
+    "/keuangan",
+  ];
+
+  if (dashboardRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
+    return null;
+  }
 
   const closeMenu = () => setOpen(false);
 
@@ -87,7 +104,7 @@ export function Navbar() {
 type NavLinkProps = {
   href: string;
   label: string;
-  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  icon: React.ComponentType<{ className?: string }>;
   onClick?: () => void;
 };
 

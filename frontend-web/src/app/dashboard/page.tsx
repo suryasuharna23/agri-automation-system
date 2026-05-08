@@ -1,110 +1,53 @@
-"use client";
-import { useEffect, useState } from "react";
-import { sensorApi, marketplaceApi, transactionApi } from "@/lib/api";
-import type { SensorNode, SensorReading, Transaction } from "@/types";
+import { ArrowDownRight, ArrowUpRight, PackageCheck, ShoppingBag, Truck } from "lucide-react";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { MoneyCard, PageHeader, ProductCard, SectionTitle, StatCard } from "@/components/dashboard/ui";
+import { products } from "@/lib/dashboard-data";
 
 export default function DashboardPage() {
-  const [nodes, setNodes] = useState<SensorNode[]>([]);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [readings, setReadings] = useState<SensorReading[]>([]);
-  const [orders, setOrders] = useState<Transaction[]>([]);
-
-  useEffect(() => {
-    sensorApi.listNodes().then(setNodes).catch(console.error);
-    transactionApi.listOrders().then(setOrders).catch(console.error);
-  }, []);
-
-  useEffect(() => {
-    if (selectedNode) {
-      sensorApi.getReadings(selectedNode, 20).then(setReadings).catch(console.error);
-    }
-  }, [selectedNode]);
-
-  const latestReading = readings[0];
-
   return (
-    <main className="min-h-screen bg-agri-bg p-6">
-      <h1 className="text-2xl font-bold text-agri-green mb-6">Dashboard Lahan</h1>
+    <DashboardShell>
+      <PageHeader title="Halo, Petani!" subtitle="Pantau penjualan, pesanan, dan stok produk pertanian hari ini." />
 
-      {/* Sensor Nodes */}
-      <section className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-700 mb-3">Node Sensor</h2>
-        <div className="flex gap-3 flex-wrap">
-          {nodes.map((node) => (
-            <button
-              key={node.id}
-              onClick={() => setSelectedNode(node.id)}
-              className={`px-4 py-2 rounded-lg border transition-colors ${
-                selectedNode === node.id
-                  ? "bg-agri-green text-white border-agri-green"
-                  : "bg-white text-gray-700 border-gray-200 hover:border-agri-green"
-              }`}
-            >
-              {node.name}
-              <span className={`ml-2 w-2 h-2 inline-block rounded-full ${node.is_active ? "bg-green-400" : "bg-red-400"}`} />
-            </button>
-          ))}
-          {nodes.length === 0 && <p className="text-gray-500 text-sm">Belum ada node sensor terdaftar.</p>}
-        </div>
+      <section className="grid gap-5 md:grid-cols-3">
+        <StatCard icon={ShoppingBag} value="39" label="Terjual" />
+        <StatCard icon={PackageCheck} value="240" label="Pesanan Masuk" />
+        <StatCard icon={Truck} value="225" label="Barang Dikirim" />
       </section>
 
-      {/* Latest Reading */}
-      {latestReading && (
-        <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Suhu", value: `${latestReading.temperature ?? "-"}°C`, warn: latestReading.is_anomaly },
-            { label: "Kelembapan", value: `${latestReading.humidity ?? "-"}%`, warn: false },
-            { label: "Kelembapan Tanah", value: `${latestReading.soil_moisture ?? "-"}%`, warn: false },
-            { label: "pH", value: `${latestReading.ph ?? "-"}`, warn: false },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className={`bg-white rounded-xl p-4 shadow-sm border-l-4 ${item.warn ? "border-red-400" : "border-agri-light"}`}
-            >
-              <p className="text-sm text-gray-500">{item.label}</p>
-              <p className="text-2xl font-bold text-agri-green">{item.value}</p>
+      <section className="mt-7 grid gap-5 md:grid-cols-2">
+        <MoneyCard title="Pemasukan" value="Rp20.000.000" tone="income" />
+        <MoneyCard title="Pengeluaran" value="Rp5.000.000" tone="expense" />
+      </section>
+
+      <section className="mt-10">
+        <SectionTitle title="Produk" href="/katalog-dagangan" actionLabel="Lihat semua" />
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <ProductCard {...products[0]} />
+          <div className="rounded-[22px] bg-white p-6 shadow-[0_16px_40px_rgba(14,71,25,0.08)]">
+            <h3 className="text-[22px] font-bold text-[#0e4719]">Ringkasan Keuangan</h3>
+            <div className="mt-7 space-y-5">
+              <div className="flex items-center justify-between rounded-[18px] bg-[#f7fbf3] p-5">
+                <div className="flex items-center gap-4">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf4ec] text-[#2d6a4f]">
+                    <ArrowUpRight className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="font-semibold text-[#65725e]">Hari ini</span>
+                </div>
+                <span className="font-bold text-[#0e4719]">Rp2.400.000</span>
+              </div>
+              <div className="flex items-center justify-between rounded-[18px] bg-[#fff8eb] p-5">
+                <div className="flex items-center gap-4">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#fff0d8] text-[#c7772b]">
+                    <ArrowDownRight className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                  <span className="font-semibold text-[#65725e]">Biaya</span>
+                </div>
+                <span className="font-bold text-[#0e4719]">Rp650.000</span>
+              </div>
             </div>
-          ))}
-        </section>
-      )}
-
-      {/* Recent Orders */}
-      <section>
-        <h2 className="text-lg font-semibold text-gray-700 mb-3">Pesanan Terbaru</h2>
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-gray-600">
-              <tr>
-                <th className="px-4 py-3 text-left">ID</th>
-                <th className="px-4 py-3 text-left">Jumlah (kg)</th>
-                <th className="px-4 py-3 text-left">Total</th>
-                <th className="px-4 py-3 text-left">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.id} className="border-t">
-                  <td className="px-4 py-3 font-mono text-xs">{order.id.slice(0, 8)}...</td>
-                  <td className="px-4 py-3">{order.quantity_kg} kg</td>
-                  <td className="px-4 py-3">Rp {order.total_amount.toLocaleString("id-ID")}</td>
-                  <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      order.status === "completed" ? "bg-green-100 text-green-700" :
-                      order.status === "cancelled" ? "bg-red-100 text-red-700" :
-                      "bg-yellow-100 text-yellow-700"
-                    }`}>
-                      {order.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {orders.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400">Belum ada pesanan.</td></tr>
-              )}
-            </tbody>
-          </table>
+          </div>
         </div>
       </section>
-    </main>
+    </DashboardShell>
   );
 }
