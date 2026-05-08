@@ -1,123 +1,142 @@
-import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { useRoute, useNavigation } from "@react-navigation/native";
-import { aiApi } from "../services/api";
-import type { GradingResult, DiagnosisResult } from "../types";
+import React, { useRef, useState, useEffect } from 'react';
+import {
+  View, Text, TouchableOpacity, StyleSheet, Alert,
+} from 'react-native';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Theme } from '../theme';
 
-type Mode = "grading" | "diagnosis";
+export type CameraMode = 'grading' | 'diagnosis';
 
 export default function CameraScreen() {
-  const route = useRoute<any>();
   const navigation = useNavigation<any>();
-  const mode: Mode = route.params?.mode ?? "diagnosis";
+  const route      = useRoute<any>();
+  const insets     = useSafeAreaInsets();
+
+  const mode: CameraMode = route.params?.mode ?? 'diagnosis';
   const cropId: string | undefined = route.params?.cropId;
 
-  const [imageUri, setImageUri] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<GradingResult | DiagnosisResult | null>(null);
+  const [permission, requestPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<CameraType>('back');
+  const cameraRef = useRef<any>(null);
 
-  const pickImage = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") return Alert.alert("Izin Diperlukan", "Izinkan akses kamera untuk melanjutkan.");
-    const res = await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] });
-    if (!res.canceled) setImageUri(res.assets[0].uri);
-  };
+  useEffect(() => {
+    if (permission && !permission.granted) requestPermission();
+  }, [permission]);
 
-  const analyze = async () => {
-    if (!imageUri) return;
-    setLoading(true);
+  if (!permission) return <View style={styles.container} />;
+
+  if (!permission.granted) {
+    return (
+      <View style={[styles.container, styles.permCenter]}>
+        <Text style={styles.permIcon}>📷</Text>
+        <Text style={styles.permTitle}>Izin Kamera Diperlukan</Text>
+        <Text style={styles.permBody}>Aktifkan izin kamera untuk menggunakan fitur ini.</Text>
+        <TouchableOpacity style={styles.permBtn} onPress={requestPermission}>
+          <Text style={styles.permBtnText}>Berikan Izin</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const takePicture = async () => {
+    if (!cameraRef.current) return;
     try {
-      if (mode === "grading") {
-        const id = cropId ?? "00000000-0000-0000-0000-000000000000";
-        const r = await aiApi.gradeCrop(id, imageUri);
-        setResult(r);
-      } else {
-        const r = await aiApi.diagnose(imageUri);
-        setResult(r);
-      }
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, base64: false });
+      navigation.navigate('CameraPreview', { uri: photo.uri, mode, cropId });
     } catch {
-      Alert.alert("Error", "Analisis gagal. Coba lagi.");
-    } finally {
-      setLoading(false);
+      Alert.alert('Gagal', 'Tidak dapat mengambil foto. Coba lagi.');
     }
   };
 
+  const title    = mode === 'grading' ? 'Grading Kualitas Panen' : 'Diagnosis Penyakit Tanaman';
+  const tipText  = mode === 'grading'
+    ? 'Foto sayuran dari jarak dekat, pencahayaan merata'
+    : 'Foto bagian tanaman yang bergejala (daun/batang)';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{mode === "grading" ? "Grading Kualitas Panen" : "Diagnosis Penyakit Tanaman"}</Text>
+      <CameraView ref={cameraRef} style={StyleSheet.absoluteFillObject} facing={facing} />
 
-      <TouchableOpacity style={styles.imageBox} onPress={pickImage}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
-        ) : (
-          <Text style={styles.imagePlaceholder}>Ketuk untuk mengambil foto</Text>
-        )}
-      </TouchableOpacity>
-
-      {imageUri && !result && (
-        <TouchableOpacity style={styles.analyzeBtn} onPress={analyze} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.analyzeBtnText}>Analisis Sekarang</Text>}
+      {/* Top bar */}
+      <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.iconBtnText}>✕</Text>
         </TouchableOpacity>
-      )}
+        <Text style={styles.topTitle}>{title}</Text>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => setFacing((f) => f === 'back' ? 'front' : 'back')}>
+          <Text style={styles.iconBtnText}>🔄</Text>
+        </TouchableOpacity>
+      </View>
 
-      {result && mode === "grading" && (
-        <GradingResultCard result={result as GradingResult} />
-      )}
-      {result && mode === "diagnosis" && (
-        <DiagnosisResultCard result={result as DiagnosisResult} />
-      )}
-    </View>
-  );
-}
+      {/* Viewfinder overlay */}
+      <View style={styles.viewfinderWrap} pointerEvents="none">
+        <View style={styles.viewfinder}>
+          <View style={[styles.corner, styles.cornerTL]} />
+          <View style={[styles.corner, styles.cornerTR]} />
+          <View style={[styles.corner, styles.cornerBL]} />
+          <View style={[styles.corner, styles.cornerBR]} />
+        </View>
+      </View>
 
-function GradingResultCard({ result }: { result: GradingResult }) {
-  const gradeColor = { A: "#16a34a", B: "#ca8a04", C: "#ea580c" }[result.grade] ?? "#6b7280";
-  return (
-    <View style={styles.resultCard}>
-      <Text style={[styles.grade, { color: gradeColor }]}>Grade {result.grade}</Text>
-      <Text style={styles.confidence}>Keyakinan: {(result.confidence * 100).toFixed(1)}%</Text>
-      <View style={styles.probRow}>
-        <ProbBar label="A" value={result.grade_a_prob} />
-        <ProbBar label="B" value={result.grade_b_prob} />
-        <ProbBar label="C" value={result.grade_c_prob} />
+      {/* Bottom controls */}
+      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 16 }]}>
+        <Text style={styles.tip}>{tipText}</Text>
+        <View style={styles.shutterRow}>
+          <TouchableOpacity style={styles.galleryBtn} onPress={() => {}}>
+            <Text style={styles.galleryIcon}>🖼️</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.shutter} onPress={takePicture}>
+            <View style={styles.shutterInner} />
+          </TouchableOpacity>
+          <View style={{ width: 52 }} />
+        </View>
       </View>
     </View>
   );
 }
 
-function DiagnosisResultCard({ result }: { result: DiagnosisResult }) {
-  return (
-    <View style={styles.resultCard}>
-      <Text style={[styles.grade, { color: result.is_healthy ? "#16a34a" : "#ef4444" }]}>
-        {result.disease_name}
-      </Text>
-      <Text style={styles.confidence}>Keyakinan: {(result.confidence * 100).toFixed(1)}%</Text>
-      <Text style={styles.recommendation}>{result.recommendation}</Text>
-    </View>
-  );
-}
-
-function ProbBar({ label, value }: { label: string; value: number }) {
-  return (
-    <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontSize: 12, color: "#6b7280" }}>Grade {label}</Text>
-      <Text style={{ fontWeight: "bold", color: "#2d6a4f" }}>{(value * 100).toFixed(0)}%</Text>
-    </View>
-  );
-}
+const CORNER_SIZE = 24;
+const CORNER_THICK = 3;
+const corner: object = { position: 'absolute', width: CORNER_SIZE, height: CORNER_SIZE, borderColor: Theme.colors.white, borderWidth: CORNER_THICK };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8faf8", padding: 16 },
-  title: { fontSize: 18, fontWeight: "bold", color: "#2d6a4f", marginBottom: 16 },
-  imageBox: { height: 280, backgroundColor: "#e5e7eb", borderRadius: 12, justifyContent: "center", alignItems: "center", marginBottom: 16, overflow: "hidden" },
-  image: { width: "100%", height: "100%", resizeMode: "cover" },
-  imagePlaceholder: { color: "#9ca3af", fontSize: 14 },
-  analyzeBtn: { backgroundColor: "#2d6a4f", borderRadius: 12, padding: 16, alignItems: "center", marginBottom: 16 },
-  analyzeBtnText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-  resultCard: { backgroundColor: "#fff", borderRadius: 12, padding: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  grade: { fontSize: 32, fontWeight: "bold", textAlign: "center", marginBottom: 4 },
-  confidence: { fontSize: 14, color: "#6b7280", textAlign: "center", marginBottom: 12 },
-  probRow: { flexDirection: "row", justifyContent: "space-around" },
-  recommendation: { fontSize: 14, color: "#374151", lineHeight: 20, marginTop: 8 },
+  container: { flex: 1, backgroundColor: '#000' },
+  permCenter: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
+  permIcon:  { fontSize: 64, marginBottom: 16 },
+  permTitle: { fontSize: Theme.font.sizeXl, fontWeight: Theme.font.weightBold, color: Theme.colors.textPrimary, textAlign: 'center' },
+  permBody:  { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, textAlign: 'center', marginTop: 8, marginBottom: 24 },
+  permBtn:   { backgroundColor: Theme.colors.grass[600], paddingHorizontal: 32, paddingVertical: 14, borderRadius: Theme.radius.md },
+  permBtnText: { color: Theme.colors.white, fontWeight: Theme.font.weightSemibold },
+
+  topBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: Theme.spacing.lg, paddingBottom: 8,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+  },
+  topTitle:    { color: Theme.colors.white, fontSize: Theme.font.sizeMd, fontWeight: Theme.font.weightSemibold },
+  iconBtn:     { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  iconBtnText: { fontSize: 20 },
+
+  viewfinderWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  viewfinder: { width: 260, height: 260, position: 'relative' },
+  corner:   corner as any,
+  cornerTL: { top: 0, left: 0,    borderRightWidth: 0, borderBottomWidth: 0 },
+  cornerTR: { top: 0, right: 0,   borderLeftWidth: 0,  borderBottomWidth: 0 },
+  cornerBL: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
+  cornerBR: { bottom: 0, right: 0,borderLeftWidth: 0,  borderTopWidth: 0 },
+
+  bottomBar: { backgroundColor: 'rgba(0,0,0,0.6)', paddingTop: 16, paddingHorizontal: Theme.spacing.lg },
+  tip: { color: 'rgba(255,255,255,0.7)', fontSize: Theme.font.sizeXs, textAlign: 'center', marginBottom: 20 },
+  shutterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 40 },
+  galleryBtn: { width: 52, height: 52, borderRadius: Theme.radius.md, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  galleryIcon: { fontSize: 26 },
+  shutter: {
+    width: 72, height: 72, borderRadius: 36,
+    backgroundColor: Theme.colors.transparent,
+    borderWidth: 4, borderColor: Theme.colors.white,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  shutterInner: { width: 56, height: 56, borderRadius: 28, backgroundColor: Theme.colors.white },
 });
