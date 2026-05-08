@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { TokenResponse, Crop, SensorNode, SensorReading, Transaction } from "@/types";
+import type { TokenResponse, Crop, SensorNode, SensorReading, Transaction, User } from "@/types";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
@@ -29,7 +29,7 @@ export const authApi = {
     api.post<TokenResponse>("/auth/login", { email, password }).then((r) => r.data),
   register: (data: { email: string; password: string; full_name: string; role: string }) =>
     api.post<TokenResponse>("/auth/register", data).then((r) => r.data),
-  me: () => api.get("/auth/me").then((r) => r.data),
+  me: () => api.get<User>("/auth/me").then((r) => r.data),
 };
 
 export const marketplaceApi = {

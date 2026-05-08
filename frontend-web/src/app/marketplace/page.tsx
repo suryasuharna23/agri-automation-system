@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { marketplaceApi, transactionApi } from "@/lib/api";
 import type { Crop } from "@/types";
-import { v4 as uuidv4 } from "uuid";
 
 const gradeColors: Record<string, string> = {
   A: "bg-green-100 text-green-700",
@@ -25,7 +24,7 @@ export default function MarketplacePage() {
     const quantity = parseFloat(qty);
     if (isNaN(quantity) || quantity <= 0) return alert("Jumlah tidak valid");
     try {
-      await transactionApi.createOrder(crop.id, quantity, uuidv4());
+      await transactionApi.createOrder(crop.id, quantity, crypto.randomUUID());
       alert("Pesanan berhasil dibuat!");
     } catch {
       alert("Gagal membuat pesanan. Pastikan sudah login sebagai pembeli.");
