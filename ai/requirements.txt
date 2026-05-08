@@ -1,0 +1,15 @@
+torch==2.4.1
+torchvision==0.19.1
+torchaudio==2.4.1
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+pillow==11.0.0
+numpy==2.1.2
+scikit-learn==1.5.2
+albumentations==1.4.21
+opencv-python-headless==4.10.0.84
+python-multipart==0.0.12
+pydantic==2.9.2
+python-dotenv==1.0.1
+tqdm==4.66.5
+matplotlib==3.9.2
