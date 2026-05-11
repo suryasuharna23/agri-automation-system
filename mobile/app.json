@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Agri Automation",
+    "slug": "agri-automation",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.agriautomation.app"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store"
+    ]
+  }
+}

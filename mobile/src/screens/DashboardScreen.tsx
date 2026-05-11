@@ -1,209 +1,651 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import * as SecureStore from 'expo-secure-store';
-import Card from '../components/Card';
-import Badge from '../components/Badge';
-import { Theme } from '../theme';
-import { sensorApi, marketplaceApi } from '../services/api';
-import type { SensorReading, User } from '../types';
-
-interface QuickAction { icon: string; label: string; onPress: () => void; color: string }
+import * as React from "react";
+import { StyleSheet, View, Text, Image } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function DashboardScreen() {
-  const navigation  = useNavigation<any>();
-  const insets      = useSafeAreaInsets();
-
-  const [user, setUser]               = useState<User | null>(null);
-  const [latest, setLatest]           = useState<SensorReading | null>(null);
-  const [anomalies, setAnomalies]     = useState<SensorReading[]>([]);
-  const [prices, setPrices]           = useState<Record<string, number>>({});
-  const [refreshing, setRefreshing]   = useState(false);
-
-  const load = useCallback(async () => {
-    try {
-      const raw = await SecureStore.getItemAsync('user');
-      if (raw) setUser(JSON.parse(raw));
-
-      const nodes = await sensorApi.listNodes();
-      if (nodes.length > 0) {
-        const readings = await sensorApi.getReadings(nodes[0].id, 10);
-        setLatest(readings[0] ?? null);
-        setAnomalies(readings.filter((r: SensorReading) => r.is_anomaly));
-      }
-      const p = await marketplaceApi.getPrices();
-      setPrices(p ?? {});
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
-
-  const quickActions: QuickAction[] = [
-    { icon: '📷', label: 'Grading Panen', onPress: () => navigation.navigate('Camera', { mode: 'grading' }), color: Theme.colors.grass[600] },
-    { icon: '🔬', label: 'Diagnosis', onPress: () => navigation.navigate('Camera', { mode: 'diagnosis' }), color: Theme.colors.green[500] },
-    { icon: '📊', label: 'Monitor Lahan', onPress: () => navigation.navigate('Monitor'), color: Theme.colors.grass[700] },
-    { icon: '🛒', label: 'Marketplace', onPress: () => navigation.navigate('Market'), color: Theme.colors.cream[600] },
-  ];
-
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.grass[600]} />}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Greeting header */}
-      <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
-        <View>
-          <Text style={styles.greeting}>Selamat datang,</Text>
-          <Text style={styles.userName}>{user?.full_name ?? 'Petani'} 👋</Text>
-        </View>
-        <TouchableOpacity style={styles.notifBtn} onPress={() => navigation.navigate('Notifications')}>
-          <Text style={styles.notifIcon}>🔔</Text>
-          {anomalies.length > 0 && <View style={styles.notifDot} />}
-        </TouchableOpacity>
+    <View style={styles.dashboard}>
+      <LinearGradient
+        style={styles.dashboardChild}
+        locations={[0, 1]}
+        colors={["rgba(217, 217, 217, 0)", "#fbf2d4"]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
+      <Text style={[styles.siang, styles.siangPosition]}>Siang!</Text>
+      <Text style={[styles.sobatPetani, styles.siangPosition]}>Sobat Petani</Text>
+
+      {/* Sensor row 1 */}
+      <View style={styles.frameParent}>
+        <LinearGradient
+          style={[styles.frameWrapper, styles.wrapperLayout]}
+          locations={[0, 1]}
+          colors={["#d3e6d7", "#9fc0a6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={[styles.frameGroup, styles.frameLayout1]}>
+            <View style={styles.icontempParent}>
+              <Image style={styles.icontemp} resizeMode="cover" />
+              <Text style={[styles.text, styles.textTypo]}>21°</Text>
+            </View>
+            <Text style={[styles.suhu, styles.phTypo]}>Suhu</Text>
+          </View>
+        </LinearGradient>
+        <LinearGradient
+          style={[styles.frameWrapper, styles.wrapperLayout]}
+          locations={[0, 1]}
+          colors={["#d3e6d7", "#9fc0a6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={[styles.frameGroup, styles.frameLayout1]}>
+            <View style={styles.icontempParent}>
+              <Image style={styles.iconph} resizeMode="cover" />
+              <Text style={[styles.text, styles.textTypo]}>7</Text>
+            </View>
+            <Text style={[styles.ph, styles.phTypo]}>pH</Text>
+          </View>
+        </LinearGradient>
+        <LinearGradient
+          style={[styles.frameWrapper, styles.wrapperLayout]}
+          locations={[0, 1]}
+          colors={["#d3e6d7", "#9fc0a6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={[styles.frameGroup, styles.frameLayout1]}>
+            <View style={styles.iconhumidParent}>
+              <Image style={styles.iconhumid} resizeMode="cover" />
+              <Text style={[styles.text3, styles.text3Typo]}>50%</Text>
+            </View>
+            <Text style={[styles.ph, styles.phTypo]}>Humidity</Text>
+          </View>
+        </LinearGradient>
       </View>
 
-      {/* Anomaly alert banner */}
-      {anomalies.length > 0 && (
-        <Card style={styles.alertCard}>
-          <View style={styles.alertRow}>
-            <Text style={styles.alertIcon}>⚠️</Text>
-            <View style={styles.alertText}>
-              <Text style={styles.alertTitle}>Ada {anomalies.length} anomali terdeteksi</Text>
-              <Text style={styles.alertBody} numberOfLines={2}>
-                {anomalies[0].anomaly_description}
-              </Text>
+      {/* Sensor row 2 */}
+      <View style={[styles.frameParent, styles.frameParentRow2]}>
+        <LinearGradient
+          style={[styles.frameWrapper, styles.wrapperLayout]}
+          locations={[0, 1]}
+          colors={["#d3e6d7", "#9fc0a6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={[styles.frameGroup, styles.frameLayout1]}>
+            <View style={styles.icontempParent}>
+              <Image style={styles.icontemp} resizeMode="cover" />
+              <Text style={[styles.text, styles.textTypo]}>21°</Text>
+            </View>
+            <Text style={[styles.suhu, styles.phTypo]}>Suhu</Text>
+          </View>
+        </LinearGradient>
+        <LinearGradient
+          style={[styles.frameWrapper, styles.wrapperLayout]}
+          locations={[0, 1]}
+          colors={["#d3e6d7", "#9fc0a6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={[styles.frameGroup, styles.frameLayout1]}>
+            <View style={styles.icontempParent}>
+              <Image style={styles.iconph} resizeMode="cover" />
+              <Text style={[styles.text, styles.textTypo]}>7</Text>
+            </View>
+            <Text style={[styles.ph, styles.phTypo]}>pH</Text>
+          </View>
+        </LinearGradient>
+        <LinearGradient
+          style={[styles.frameWrapper, styles.wrapperLayout]}
+          locations={[0, 1]}
+          colors={["#d3e6d7", "#9fc0a6"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <View style={[styles.frameGroup, styles.frameLayout1]}>
+            <View style={styles.iconhumidParent}>
+              <Image style={styles.iconhumid} resizeMode="cover" />
+              <Text style={[styles.text3, styles.text3Typo]}>50%</Text>
+            </View>
+            <Text style={[styles.ph, styles.phTypo]}>Humidity</Text>
+          </View>
+        </LinearGradient>
+      </View>
+
+      <View style={[styles.hargaTerkiniParent, styles.parentLayout]}>
+        <Text style={[styles.hargaTerkini, styles.text3Typo]}>Harga Terkini</Text>
+        <Text style={[styles.terakhirDiperbarui4, styles.saldoAndaTypo]}>
+          Terakhir diperbarui 4 menit lalu
+        </Text>
+      </View>
+
+      <View style={[styles.monitorTanamanParent, styles.parentFlexBox1]}>
+        <Text style={[styles.hargaTerkini, styles.text3Typo]}>Monitor Tanaman</Text>
+        <Text style={[styles.kangkung, styles.text3Typo]}>Kangkung</Text>
+      </View>
+
+      {/* Balance card */}
+      <View style={styles.frameParent7}>
+        <View style={styles.rp20140340Parent}>
+          <Text style={styles.rp20140340}>Rp20.140.340</Text>
+          <Text style={[styles.saldoAnda, styles.kgTypo]}>Saldo Anda</Text>
+        </View>
+        <View style={styles.frameParent8}>
+          <View style={[styles.frameParent9, styles.frameParentLayout]}>
+            <View style={[styles.iconbanknoteWrapper, styles.wrapperFlexBox]}>
+              <Image style={styles.iconbanknote} resizeMode="cover" />
+            </View>
+            <Text style={[styles.keuangan, styles.phTypo]}>Keuangan</Text>
+          </View>
+          <View style={styles.frameParentLayout}>
+            <View style={[styles.iconbanknoteWrapper, styles.wrapperFlexBox]}>
+              <Image style={styles.iconbanknote} resizeMode="cover" />
+            </View>
+            <Text style={[styles.tarikTunai, styles.tarikTunaiTypo]}>Tarik Tunai</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Navbar */}
+      <View style={styles.navbar}>
+        <View style={styles.navbarInner}>
+          <View style={[styles.frameParent11, styles.frameLayout1]}>
+            <View style={styles.frameParent12}>
+              <View style={[styles.icondashboardParent, styles.parentFlexBox1]}>
+                <Image style={styles.iconbanknote} resizeMode="cover" />
+                <Text style={[styles.dashboard2, styles.phTypo]}>Dashboard</Text>
+              </View>
+              <View style={styles.parentFlexBox1}>
+                <Image style={styles.iconbanknote} resizeMode="cover" />
+                <Text style={[styles.dashboard2, styles.phTypo]}>Notification</Text>
+              </View>
+            </View>
+            <View style={styles.frameParent12}>
+              <View style={[styles.icondashboardParent, styles.parentFlexBox1]}>
+                <Image style={styles.iconbanknote} resizeMode="cover" />
+                <Text style={[styles.dashboard2, styles.phTypo]}>Diagnosis</Text>
+              </View>
+              <View style={styles.parentFlexBox1}>
+                <Image style={styles.iconbanknote} resizeMode="cover" />
+                <Text style={[styles.dashboard2, styles.phTypo]}>Notification</Text>
+              </View>
             </View>
           </View>
-        </Card>
-      )}
-
-      {/* Sensor overview */}
-      <Text style={styles.sectionTitle}>Kondisi Lahan Terkini</Text>
-      {latest ? (
-        <View style={styles.sensorGrid}>
-          <SensorTile label="Suhu" value={`${latest.temperature ?? '—'}°C`} icon="🌡️" warn={false} />
-          <SensorTile label="Kelembapan" value={`${latest.humidity ?? '—'}%`} icon="💧" warn={false} />
-          <SensorTile label="Tanah" value={`${latest.soil_moisture ?? '—'}%`} icon="🌱" warn={false} />
-          <SensorTile label="pH" value={`${latest.ph ?? '—'}`} icon="⚗️" warn={latest.is_anomaly} />
         </View>
-      ) : (
-        <Card variant="muted" style={styles.emptyCard}>
-          <Text style={styles.emptyText}>Belum ada data sensor. Tambahkan node IoT terlebih dahulu.</Text>
-        </Card>
-      )}
-
-      {/* Quick Actions */}
-      <Text style={styles.sectionTitle}>Aksi Cepat</Text>
-      <View style={styles.actionGrid}>
-        {quickActions.map((a) => (
-          <TouchableOpacity key={a.label} style={[styles.actionBtn, { backgroundColor: a.color }]} onPress={a.onPress} activeOpacity={0.85}>
-            <Text style={styles.actionIcon}>{a.icon}</Text>
-            <Text style={styles.actionLabel}>{a.label}</Text>
-          </TouchableOpacity>
-        ))}
+        <LinearGradient
+          style={[styles.navbarChild, styles.wrapperLayout]}
+          locations={[0, 1]}
+          colors={["#0e4719", "#062f0e"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <LinearGradient
+            style={[styles.iconcameraWrapper, styles.wrapperFlexBox]}
+            locations={[0, 0.42]}
+            colors={["#a69e84", "#fbf2d4"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          >
+            <Image style={styles.iconcamera} resizeMode="cover" />
+          </LinearGradient>
+        </LinearGradient>
       </View>
 
-      {/* Commodity prices */}
-      {Object.keys(prices).length > 0 && (
-        <>
-          <Text style={styles.sectionTitle}>Harga Komoditas Hari Ini</Text>
-          <Card>
-            {Object.entries(prices).slice(0, 4).map(([name, price], i) => (
-              <View key={name} style={[styles.priceRow, i > 0 && styles.priceBorder]}>
-                <Text style={styles.priceName}>{name}</Text>
-                <Text style={styles.priceValue}>Rp {Number(price).toLocaleString('id-ID')}/kg</Text>
-              </View>
-            ))}
-          </Card>
-        </>
-      )}
-    </ScrollView>
-  );
-}
+      {/* Price card */}
+      <View style={[styles.groupView, styles.parentLayout]}>
+        <LinearGradient
+          style={[styles.wrapper, styles.iconLayout]}
+          locations={[0, 1]}
+          colors={["rgba(231, 237, 232, 0)", "#e7ede8"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+        >
+          <Image style={styles.iconLayout} resizeMode="cover" />
+        </LinearGradient>
+        <View style={styles.frameParent14}>
+          <View style={styles.rp3540Parent}>
+            <Text style={[styles.rp3540, styles.textTypo1]}>Rp3.540</Text>
+            <Text style={[styles.kg, styles.kgTypo]}>/kg</Text>
+          </View>
+          <View style={styles.parent}>
+            <Text style={[styles.text7, styles.kgTypo]}>10%</Text>
+            <Image style={styles.iconincrease} resizeMode="cover" />
+          </View>
+        </View>
+      </View>
 
-function SensorTile({ label, value, icon, warn }: { label: string; value: string; icon: string; warn: boolean }) {
-  return (
-    <Card style={[styles.sensorTile, warn && styles.sensorTileWarn]}>
-      <Text style={styles.tileIcon}>{icon}</Text>
-      <Text style={[styles.tileValue, warn && styles.tileValueWarn]}>{value}</Text>
-      <Text style={styles.tileLabel}>{label}</Text>
-    </Card>
+      <View style={[styles.komoditasParent, styles.parentFlexBox]}>
+        <Text style={[styles.kg, styles.kgTypo]}>Komoditas</Text>
+        <Image style={styles.iconbanknote} resizeMode="cover" />
+      </View>
+
+      <Image style={styles.dashboardItem} resizeMode="cover" />
+
+      <LinearGradient
+        style={[styles.container, styles.iconLayout]}
+        locations={[0, 1]}
+        colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <Image style={styles.iconLayout} resizeMode="cover" />
+      </LinearGradient>
+
+      <LinearGradient
+        style={[styles.frame, styles.frameLayout]}
+        locations={[0, 1]}
+        colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <Image style={styles.frameLayout} resizeMode="cover" />
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Theme.colors.bgBase },
-
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-    paddingHorizontal: Theme.spacing.lg, marginBottom: Theme.spacing.lg,
+  siangPosition: {
+    left: 23,
+    textAlign: "left",
+    color: "#0e4719",
+    position: "absolute",
   },
-  greeting:  { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted },
-  userName:  { fontSize: Theme.font.size2xl, fontWeight: Theme.font.weightBold, color: Theme.colors.textPrimary },
-  notifBtn: {
-    width: 44, height: 44, borderRadius: Theme.radius.full,
-    backgroundColor: Theme.colors.bgCard, alignItems: 'center', justifyContent: 'center',
-    ...Theme.shadow.sm,
+  wrapperLayout: {
+    borderRadius: 12,
+    backgroundColor: "transparent",
   },
-  notifIcon: { fontSize: 22 },
-  notifDot: {
-    position: 'absolute', top: 8, right: 8,
-    width: 8, height: 8, borderRadius: 4,
-    backgroundColor: Theme.colors.danger,
+  frameLayout1: {
+    maxWidth: "100%",
+    alignItems: "center",
+    width: "100%",
   },
-
-  alertCard: {
-    marginHorizontal: Theme.spacing.lg, marginBottom: Theme.spacing.md,
-    backgroundColor: '#fef3c7', borderLeftWidth: 4, borderLeftColor: Theme.colors.warning,
-    borderRadius: Theme.radius.lg, padding: Theme.spacing.md,
+  textTypo: {
+    fontWeight: "500",
+    color: "#0e4719",
   },
-  alertRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
-  alertIcon: { fontSize: 22, marginTop: 2 },
-  alertText: { flex: 1 },
-  alertTitle: { fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightSemibold, color: '#92400e' },
-  alertBody:  { fontSize: Theme.font.sizeXs, color: '#a16207', marginTop: 2 },
-
-  sectionTitle: {
-    fontSize: Theme.font.sizeLg, fontWeight: Theme.font.weightSemibold,
-    color: Theme.colors.textPrimary,
-    marginHorizontal: Theme.spacing.lg, marginBottom: Theme.spacing.sm, marginTop: Theme.spacing.md,
+  phTypo: {
+    textAlign: "center",
+    fontSize: 12,
   },
-
-  sensorGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.lg, marginBottom: Theme.spacing.sm,
+  text3Typo: {
+    fontSize: 20,
+    textAlign: "left",
   },
-  sensorTile:     { width: '47%', alignItems: 'center', paddingVertical: Theme.spacing.md },
-  sensorTileWarn: { borderWidth: 1.5, borderColor: Theme.colors.warning },
-  tileIcon:      { fontSize: 26, marginBottom: 6 },
-  tileValue:     { fontSize: Theme.font.size2xl, fontWeight: Theme.font.weightBold, color: Theme.colors.grass[700] },
-  tileValueWarn: { color: Theme.colors.warning },
-  tileLabel:     { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted, marginTop: 2 },
-
-  emptyCard: { marginHorizontal: Theme.spacing.lg },
-  emptyText: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, textAlign: 'center' },
-
-  actionGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.lg,
+  parentLayout: {
+    width: 345,
+    left: 24,
   },
-  actionBtn: {
-    width: '47%', borderRadius: Theme.radius.lg, padding: Theme.spacing.md,
-    alignItems: 'center', gap: 8,
-    ...Theme.shadow.sm,
+  saldoAndaTypo: {
+    fontStyle: "italic",
   },
-  actionIcon:  { fontSize: 32 },
-  actionLabel: { fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightSemibold, color: Theme.colors.white },
-
-  priceRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
-  priceBorder: { borderTopWidth: 1, borderTopColor: Theme.colors.border },
-  priceName:  { fontSize: Theme.font.sizeSm, color: Theme.colors.textPrimary, fontWeight: Theme.font.weightMedium },
-  priceValue: { fontSize: Theme.font.sizeSm, color: Theme.colors.grass[600], fontWeight: Theme.font.weightSemibold },
+  parentFlexBox1: {
+    gap: 6,
+    alignItems: "center",
+  },
+  parentFlexBox: {
+    borderStyle: "solid",
+    alignItems: "center",
+    flexDirection: "row",
+    position: "absolute",
+  },
+  kgTypo: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "left",
+  },
+  frameParentLayout: {
+    width: 57,
+    gap: 4,
+  },
+  wrapperFlexBox: {
+    borderColor: "transparent",
+    borderStyle: "solid",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  tarikTunaiTypo: {
+    fontSize: 12,
+    fontWeight: "600",
+    textAlign: "left",
+  },
+  iconLayout: {
+    height: "100%",
+    backgroundColor: "transparent",
+    width: "100%",
+  },
+  textTypo1: {
+    fontSize: 24,
+    textAlign: "left",
+  },
+  frameLayout: {
+    height: "100%",
+    backgroundColor: "transparent",
+    width: "100%",
+  },
+  dashboard: {
+    height: 852,
+    backgroundColor: "#fefdf9",
+    overflow: "hidden",
+    width: "100%",
+  },
+  dashboardChild: {
+    height: 216,
+    backgroundColor: "transparent",
+    width: 393,
+    left: 0,
+    top: 0,
+    position: "absolute",
+  },
+  siang: {
+    top: 73,
+    fontSize: 32,
+    textAlign: "left",
+    color: "#0e4719",
+  },
+  sobatPetani: {
+    top: 115,
+    fontSize: 40,
+    textAlign: "left",
+    color: "#0e4719",
+  },
+  frameParent: {
+    marginLeft: -173,
+    top: 347,
+    width: 346,
+    gap: 19,
+    alignItems: "center",
+    flexDirection: "row",
+    left: "50%",
+    position: "absolute",
+  },
+  frameParentRow2: {
+    top: 450,
+  },
+  frameWrapper: {
+    height: 90,
+    flex: 1,
+    paddingLeft: 21,
+    paddingTop: 14,
+    paddingRight: 22,
+    paddingBottom: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  frameGroup: {
+    gap: 10,
+  },
+  icontempParent: {
+    gap: 12,
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  icontemp: {
+    width: 9,
+    height: 22,
+  },
+  text: {
+    fontSize: 24,
+    textAlign: "left",
+  },
+  suhu: {
+    textAlign: "center",
+    color: "#0e4719",
+  },
+  iconph: {
+    height: 23,
+    width: 23,
+  },
+  ph: {
+    alignSelf: "stretch",
+    textAlign: "center",
+    color: "#0e4719",
+  },
+  iconhumidParent: {
+    gap: 8,
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  iconhumid: {
+    width: 22,
+    height: 22,
+  },
+  text3: {
+    fontWeight: "500",
+    color: "#0e4719",
+  },
+  hargaTerkiniParent: {
+    top: 447,
+    gap: 20,
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    flexDirection: "row",
+    position: "absolute",
+  },
+  hargaTerkini: {
+    color: "#0e4719",
+  },
+  terakhirDiperbarui4: {
+    fontWeight: "600",
+    fontSize: 12,
+    textAlign: "left",
+    color: "#0e4719",
+  },
+  monitorTanamanParent: {
+    top: 312,
+    left: 24,
+    gap: 6,
+    flexDirection: "row",
+    position: "absolute",
+  },
+  kangkung: {},
+  frameParent7: {
+    marginLeft: -202,
+    top: 198,
+    borderRadius: 14,
+    backgroundColor: "#44694b",
+    borderColor: "#669e71",
+    borderWidth: 2,
+    width: 405,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    gap: 36,
+    justifyContent: "center",
+    left: "50%",
+    overflow: "hidden",
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  rp20140340Parent: {
+    gap: 4,
+    justifyContent: "center",
+  },
+  rp20140340: {
+    fontSize: 28,
+    fontWeight: "600",
+    textAlign: "left",
+    color: "#fbf2d4",
+  },
+  saldoAnda: {
+    color: "#fbf2d4",
+    fontStyle: "italic",
+  },
+  frameParent8: {
+    gap: 16,
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  frameParent9: {
+    alignItems: "center",
+  },
+  iconbanknoteWrapper: {
+    height: 49,
+    backgroundColor: "#fbf2d4",
+    borderWidth: 1,
+    paddingLeft: 11,
+    paddingTop: 12,
+    paddingRight: 12,
+    paddingBottom: 11,
+    borderRadius: 8,
+    alignSelf: "stretch",
+  },
+  iconbanknote: {
+    height: 24,
+    width: 24,
+  },
+  keuangan: {
+    color: "#fbf2d4",
+    fontWeight: "600",
+    alignSelf: "stretch",
+  },
+  tarikTunai: {
+    color: "#fbf2d4",
+    fontWeight: "600",
+    alignSelf: "stretch",
+  },
+  navbar: {
+    top: 734,
+    height: 118,
+    width: 393,
+    left: 0,
+    position: "absolute",
+  },
+  navbarInner: {
+    height: "67.8%",
+    top: "32.2%",
+    right: "0%",
+    bottom: "0%",
+    left: "0%",
+    backgroundColor: "#0e4719",
+    paddingHorizontal: 13,
+    paddingTop: 16,
+    paddingBottom: 20,
+    justifyContent: "space-between",
+    alignItems: "center",
+    position: "absolute",
+    width: "100%",
+  },
+  frameParent11: {
+    gap: 20,
+    justifyContent: "space-between",
+    flexDirection: "row",
+  },
+  frameParent12: {
+    gap: 20,
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  icondashboardParent: {
+    width: 63,
+  },
+  dashboard2: {
+    color: "#fbf2d4",
+    textAlign: "center",
+  },
+  navbarChild: {
+    height: "55.51%",
+    width: "21.5%",
+    top: "0%",
+    right: "40.33%",
+    bottom: "44.49%",
+    left: "38.17%",
+    paddingLeft: 9,
+    paddingTop: 6,
+    paddingRight: 10,
+    paddingBottom: 7,
+    position: "absolute",
+  },
+  iconcameraWrapper: {
+    width: 66,
+    height: 53,
+    borderWidth: 3,
+    paddingHorizontal: 9,
+    paddingBottom: 5,
+    borderRadius: 12,
+    backgroundColor: "transparent",
+  },
+  iconcamera: {
+    height: 40,
+    width: 40,
+  },
+  groupView: {
+    top: 534,
+    height: 195,
+    position: "absolute",
+  },
+  wrapper: {
+    left: 0,
+    top: 0,
+    height: "100%",
+    position: "absolute",
+  },
+  frameParent14: {
+    top: 9,
+    left: 220,
+    width: 117,
+    gap: 4,
+    alignItems: "flex-end",
+    position: "absolute",
+  },
+  rp3540Parent: {
+    gap: 2,
+    alignItems: "flex-end",
+    alignSelf: "stretch",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  rp3540: {
+    fontWeight: "600",
+    color: "#0e4719",
+  },
+  kg: {
+    fontWeight: "600",
+    color: "#0e4719",
+  },
+  parent: {
+    gap: 4,
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  text7: {
+    color: "#d94e4e",
+    fontWeight: "600",
+  },
+  iconincrease: {
+    height: 20,
+    width: 20,
+  },
+  komoditasParent: {
+    top: 482,
+    backgroundColor: "#dbe3dd",
+    borderColor: "#0e4719",
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 20,
+    justifyContent: "space-between",
+    width: 345,
+    left: 24,
+  },
+  dashboardItem: {
+    top: -69,
+    left: 246,
+    width: 203,
+    height: 247,
+    position: "absolute",
+  },
+  container: {
+    left: 225,
+    top: -92,
+    position: "absolute",
+  },
+  frame: {
+    left: 152,
+    top: -150,
+    position: "absolute",
+  },
 });

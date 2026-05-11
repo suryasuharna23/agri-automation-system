@@ -19,6 +19,8 @@ build/
 .expo/
 android/
 ios/
+*.k7m9zh*
+tsconfig.json.*
 
 # AI models
 ai/models/checkpoints/*.pth

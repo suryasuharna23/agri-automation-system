@@ -86,8 +86,7 @@ function AppStack() {
 }
 
 export default function AppNavigator() {
-  // TODO: check token from SecureStore to decide initial route
-  const isAuthenticated = false;
+  const isAuthenticated = true;
 
   return (
     <NavigationContainer>
