@@ -4,8 +4,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../services/api';
 
 interface SensorReading {
@@ -49,6 +49,12 @@ const MOCK_ITEMS: DiagnosisHistoryItem[] = [
     status: 'Selesai',
     description: 'Terdeteksi Downy Mildew pada daun. Disarankan untuk mengurangi kelembapan dan menyemprotkan fungisida berbasis tembaga.',
     sensors: { suhuUdara: '25°', kelembapan: '78%', phTanah: '5.8' },
+    result: {
+      disease_name: 'Downy Mildew',
+      confidence: 0.87,
+      is_healthy: false,
+      recommendation: 'Kurangi kelembapan, perbaiki sirkulasi udara, dan semprotkan fungisida berbasis tembaga setiap 7 hari.',
+    },
   },
   {
     id: '4',
@@ -57,6 +63,12 @@ const MOCK_ITEMS: DiagnosisHistoryItem[] = [
     status: 'Selesai',
     description: 'Tanaman sehat. Tidak ditemukan gejala penyakit. Pertahankan kondisi lingkungan saat ini dan jadwal pemupukan rutin.',
     sensors: { suhuUdara: '28°', kelembapan: '55%', phTanah: '6.5' },
+    result: {
+      disease_name: 'Healthy',
+      confidence: 0.94,
+      is_healthy: true,
+      recommendation: 'Tanaman sehat. Pertahankan kondisi lingkungan dan jadwal pemupukan rutin.',
+    },
   },
 ];
 
@@ -113,9 +125,9 @@ export default function DiagnosisScreen() {
             key={item.id}
             item={item}
             onPress={() => {
-              if (item.status === 'Selesai' && item.result) {
+              if (item.status === 'Selesai') {
                 navigation.navigate('DiagnosisDetail', {
-                  result: item.result,
+                  result: item.result ?? { disease_name: 'Healthy', confidence: 1, is_healthy: true, recommendation: '' },
                   imageUri: item.imageUri ?? '',
                 });
               }
@@ -156,6 +168,14 @@ function DiagnosisCard({
       <View style={styles.cardTopLeft}>
         <Text style={styles.cardCrop}>{item.cropName}</Text>
         <Text style={styles.cardDate}>{item.date}</Text>
+        {isSelesai && (
+          <Ionicons
+            name="chevron-forward-outline"
+            size={16}
+            color="#0e4719"
+            style={styles.cardArrow}
+          />
+        )}
       </View>
 
       {/* Bottom section: description + sensors */}
@@ -301,6 +321,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'FacultyGlyphic_400Regular',
     color: '#0e4719',
+  },
+  cardArrow: {
+    marginTop: 2,
   },
 
   /* Bottom section */

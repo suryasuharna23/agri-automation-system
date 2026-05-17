@@ -1,225 +1,577 @@
 import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import Card from '../components/Card';
-import Header from '../components/Header';
-import { Theme } from '../theme';
 import type { DiagnosisResult } from '../types';
 
-interface TreatmentStep {
-  step: number;
+const DISEASE_TREATMENT: Record<string, {
+  tempNote: string;
+  humidNote: string;
+  pestNote: string;
+  healthNote: string;
+  actionCategories: ('suhu' | 'kelembapan' | 'hama')[];
+  steps: Record<'suhu' | 'kelembapan' | 'hama', string[]>;
+}> = {
+  Healthy: {
+    tempNote: 'Suhu lingkungan dalam rentang optimal. Tidak ada dampak negatif terhadap tanaman.',
+    humidNote: 'Kelembapan udara dan tanah dalam batas normal. Pertahankan kondisi ini.',
+    pestNote: 'Tidak ditemukan tanda-tanda serangan hama maupun penyakit.',
+    healthNote: 'Tanaman sehat dan tumbuh optimal. Lanjutkan perawatan rutin.',
+    actionCategories: [],
+    steps: { suhu: [], kelembapan: [], hama: [] },
+  },
+  'Bacterial Blight': {
+    tempNote: 'Suhu hangat di atas 25°C mempercepat reproduksi bakteri Xanthomonas. Jaga suhu di bawah 28°C dan hindari perubahan mendadak.',
+    humidNote: 'Kelembapan di atas 85% menjadi faktor utama perkembangan penyakit ini. Kurangi frekuensi penyiraman dan perbaiki drainase.',
+    pestNote: 'Disebabkan oleh bakteri Xanthomonas spp. Penyebaran melalui air irigasi, percik hujan, dan alat pertanian tidak steril.',
+    healthNote: 'Urgensi tinggi. Segera pisahkan tanaman terinfeksi dan semprotkan bakterisida berbasis tembaga.',
+    actionCategories: ['suhu', 'kelembapan', 'hama'],
+    steps: {
+      suhu: [
+        'Pasang ventilasi tambahan atau net shade 40–50% untuk meredam panas siang hari.',
+        'Hindari penyiraman saat suhu puncak (pukul 10.00–14.00).',
+        'Monitor suhu minimal dua kali sehari dan catat tren kenaikan.',
+      ],
+      kelembapan: [
+        'Pemberian Kapur Pertanian (Dolomit) untuk menetralkan keasaman tanah yang memperburuk kondisi.',
+        'Evaluasi jadwal irigasi — kurangi frekuensi jika tanah sudah cukup lembap.',
+        'Cek drainase bedengan; pastikan air tidak menggenang lebih dari 30 menit.',
+        'Pastikan sirkulasi udara antar tanaman cukup dengan mengatur jarak tanam.',
+      ],
+      hama: [
+        'Semprotkan bakterisida berbasis tembaga (copper hydroxide) setiap 7 hari.',
+        'Sterilkan alat pertanian sebelum dan sesudah digunakan di lahan.',
+        'Pisahkan dan musnahkan bagian tanaman yang terinfeksi parah.',
+        'Hindari menggunakan air irigasi dari sumber yang sama dengan lahan terinfeksi.',
+      ],
+    },
+  },
+  'Downy Mildew': {
+    tempNote: 'Suhu optimal perkembangan jamur ini 15–20°C. Meningkatkan suhu lingkungan sedikit dapat menghambat perkembangan spora.',
+    humidNote: 'Kelembapan sangat tinggi menjadi syarat utama sporulasi. Tingkatkan sirkulasi udara dan hindari penyiraman malam hari.',
+    pestNote: 'Disebabkan oomycete Peronospora spp. Spora menyebar melalui angin dan air. Semprotkan fungisida sistemik.',
+    healthNote: 'Urgensi sedang. Buang daun terinfeksi dan aplikasikan fungisida. Pantau perkembangan 3–5 hari ke depan.',
+    actionCategories: ['kelembapan', 'hama'],
+    steps: {
+      suhu: [],
+      kelembapan: [
+        'Hindari penyiraman di atas pukul 16.00 agar daun dapat mengering sebelum malam.',
+        'Atur jarak tanam agar ada aliran udara yang baik antar tanaman.',
+        'Cek drainase dan pastikan tidak ada genangan di sekitar bedengan.',
+      ],
+      hama: [
+        'Semprotkan fungisida sistemik berbasis metalaxyl atau mancozeb.',
+        'Buang dan musnahkan daun yang menunjukkan gejala bercak kuning kecoklatan.',
+        'Ulangi aplikasi fungisida setiap 7–10 hari hingga gejala mereda.',
+        'Pantau lahan setiap hari selama 5 hari ke depan.',
+      ],
+    },
+  },
+  'Powdery Mildew': {
+    tempNote: 'Suhu 20–25°C dengan kondisi kering di siang hari dan lembap di malam hari ideal bagi jamur ini. Pertahankan ventilasi yang baik.',
+    humidNote: 'Kelembapan sedang (50–70%) justru mendukung perkembangan jamur ini. Pastikan sirkulasi udara memadai.',
+    pestNote: 'Disebabkan jamur Erysiphales. Sangat mudah menyebar melalui angin. Gunakan fungisida sulfur atau kalium bikarbonat.',
+    healthNote: 'Urgensi sedang. Potong bagian yang terinfeksi parah dan aplikasikan fungisida. Hindari pemupukan nitrogen berlebihan.',
+    actionCategories: ['hama'],
+    steps: {
+      suhu: [],
+      kelembapan: [],
+      hama: [
+        'Semprotkan larutan kalium bikarbonat (1 sdt per liter air) ke seluruh permukaan daun.',
+        'Potong dan musnahkan bagian tanaman yang tertutup serbuk putih.',
+        'Hindari pemupukan nitrogen berlebihan yang mendorong pertumbuhan jaringan lunak.',
+        'Ulangi aplikasi setiap 5–7 hari selama 3 siklus.',
+      ],
+    },
+  },
+  'Early Blight': {
+    tempNote: 'Suhu 24–29°C mempercepat perkembangan jamur Alternaria solani. Fluktuasi suhu memperbesar risiko infeksi.',
+    humidNote: 'Kelembapan tinggi terutama pada malam hari mendorong sporulasi. Penyiraman pagi hari membantu daun mengering sebelum malam.',
+    pestNote: 'Disebabkan jamur Alternaria solani. Spora terbawa angin dan tanah terinfeksi. Gunakan fungisida berbasis mancozeb atau klorotalonil.',
+    healthNote: 'Urgensi sedang. Angkat daun terinfeksi, aplikasikan fungisida, dan rotasi tanaman musim berikutnya.',
+    actionCategories: ['suhu', 'hama'],
+    steps: {
+      suhu: [
+        'Pasang mulsa di sekitar tanaman untuk menstabilkan suhu tanah.',
+        'Tambahkan naungan ringan (30%) saat cuaca terik untuk mengurangi stres suhu.',
+        'Siram di pagi hari untuk menjaga suhu tanah lebih stabil sepanjang hari.',
+      ],
+      kelembapan: [],
+      hama: [
+        'Angkat dan musnahkan daun yang menunjukkan bercak cokelat berpola cincin konsentris.',
+        'Semprotkan fungisida berbasis mancozeb atau klorotalonil setiap 7 hari.',
+        'Pastikan tidak ada sisa tanaman terinfeksi di sekitar bedengan.',
+        'Rencanakan rotasi tanaman untuk musim tanam berikutnya.',
+      ],
+    },
+  },
+  'Late Blight': {
+    tempNote: 'Suhu 10–24°C dengan kondisi lembap sangat mendukung Phytophthora infestans. Suhu di atas 30°C menghambat perkembangannya.',
+    humidNote: 'Diperlukan kondisi sangat lembap untuk perkecambahan spora. Sistem drainase yang baik sangat krusial untuk mencegah penyakit ini.',
+    pestNote: 'Disebabkan Phytophthora infestans. Penyebaran sangat cepat melalui angin dan air. Gunakan fungisida sistemik segera.',
+    healthNote: 'URGENSI TINGGI. Tanaman terinfeksi harus dipisahkan secepatnya. Semprotkan fungisida sistemik dan hubungi ahli pertanian.',
+    actionCategories: ['suhu', 'kelembapan', 'hama'],
+    steps: {
+      suhu: [
+        'Pantau suhu setiap 2 jam; catat jika turun di bawah 20°C karena ini zona berbahaya.',
+        'Gunakan terowongan plastik (row cover) untuk menaikkan suhu mikro lahan jika diperlukan.',
+        'Hindari irigasi malam hari yang dapat menurunkan suhu tanah.',
+      ],
+      kelembapan: [
+        'Perbaiki sistem drainase secara mendesak — buat saluran pembuangan air di sisi bedengan.',
+        'Hentikan penyiraman selama 3–5 hari dan biarkan tanah mengering sebagian.',
+        'Kurangi kerapatan tanaman untuk meningkatkan sirkulasi udara.',
+        'Tutup tanah dengan mulsa plastik hitam untuk mencegah percikan tanah ke daun.',
+      ],
+      hama: [
+        'Semprotkan fungisida sistemik (metalaxyl + mancozeb) SEGERA, selambatnya 24 jam.',
+        'Pisahkan tanaman yang menunjukkan gejala dari tanaman sehat.',
+        'Musnahkan seluruh bagian tanaman terinfeksi — jangan dikompos.',
+        'Hubungi penyuluh pertanian setempat untuk asistensi teknis lebih lanjut.',
+        'Ulangi aplikasi fungisida setiap 5 hari selama minimum 3 kali.',
+      ],
+    },
+  },
+  'Leaf Spot': {
+    tempNote: 'Kondisi suhu saat ini tidak menjadi faktor risiko utama. Tetap pantau jika terjadi perubahan cuaca ekstrem.',
+    humidNote: 'Kelembapan tinggi mempercepat penyebaran. Hindari percikan air ke daun saat penyiraman.',
+    pestNote: 'Infeksi jamur/bakteri oportunistik. Aplikasikan fungisida/bakterisida spektrum luas. Buang daun terinfeksi.',
+    healthNote: 'Urgensi rendah. Tanaman masih dapat pulih dengan perawatan tepat. Pantau perkembangan bercak selama seminggu.',
+    actionCategories: ['kelembapan'],
+    steps: {
+      suhu: [],
+      kelembapan: [
+        'Siram tanaman di pangkal, bukan di atas daun, untuk mengurangi kelembapan daun.',
+        'Buat jarak antar tanaman lebih lebar agar udara dapat mengalir bebas.',
+        'Hindari penyiraman setelah pukul 15.00.',
+      ],
+      hama: [],
+    },
+  },
+  'Root Rot': {
+    tempNote: 'Suhu tanah yang tinggi dikombinasikan dengan kelembapan berlebih menciptakan kondisi ideal bagi jamur akar.',
+    humidNote: 'Drainase buruk dan genangan air adalah penyebab utama. Perbaiki drainase media tanam segera.',
+    pestNote: 'Disebabkan Fusarium/Pythium/Rhizoctonia. Sulit diobati, lebih mudah dicegah. Gunakan fungisida drench ke tanah.',
+    healthNote: 'Urgensi tinggi. Cabut tanaman terinfeksi parah. Sterilkan media tanam sebelum menanam kembali.',
+    actionCategories: ['kelembapan', 'hama'],
+    steps: {
+      suhu: [],
+      kelembapan: [
+        'Hentikan penyiraman segera dan biarkan media tanam mengering hingga 50% kapasitas lapang.',
+        'Perbaiki atau buat ulang sistem drainase bedengan.',
+        'Ganti media tanam yang tergenang dengan campuran tanah + sekam bakar (1:1).',
+        'Pastikan pot/bedengan memiliki lubang drainase yang tidak tersumbat.',
+      ],
+      hama: [
+        'Siramkan fungisida drench (metalaxyl atau fosetyl-Al) langsung ke zona akar.',
+        'Cabut dan musnahkan tanaman yang akarnya sudah membusuk lebih dari 60%.',
+        'Sterilkan media tanam bekas dengan solarisasi (tutup plastik transparan 2 minggu).',
+        'Jangan menanam kembali di tempat yang sama sebelum masa pemulihan tanah selesai.',
+      ],
+    },
+  },
+};
+
+interface Category {
+  key: 'suhu' | 'kelembapan' | 'hama' | 'kesehatan';
   title: string;
-  detail: string;
-  icon: string;
-  timing: string;
-  category: 'immediate' | 'chemical' | 'cultural' | 'prevention';
+  description: string;
+  needsAction: boolean;
+  steps: string[];
 }
 
-const TREATMENTS: Record<string, TreatmentStep[]> = {
-  'Bacterial Blight': [
-    { step: 1, title: 'Isolasi Tanaman Terinfeksi', detail: 'Segera pisahkan dan tandai tanaman yang menunjukkan gejala agar bakteri tidak menyebar ke tanaman sehat di sekitarnya.', icon: '🚧', timing: 'Segera (hari ini)', category: 'immediate' },
-    { step: 2, title: 'Pangkas Bagian Terinfeksi', detail: 'Gunakan gunting bersih yang sudah dicelup alkohol 70%. Potong 5–10 cm di bawah bercak. Bakar atau kubur hasil pangkasan, jangan dijadikan kompos.', icon: '✂️', timing: 'Hari 1–2', category: 'immediate' },
-    { step: 3, title: 'Semprot Bakterisida Tembaga', detail: 'Gunakan Copper Hydroxide atau Copper Oxychloride sesuai dosis label. Semprot merata ke seluruh bagian tanaman, utamakan area yang sudah dipotong.', icon: '🧪', timing: 'Hari 2–3', category: 'chemical' },
-    { step: 4, title: 'Hindari Penyiraman dari Atas', detail: 'Beralih ke irigasi tetes/drip irrigation. Hindari penyiraman dengan percik karena air yang memercik menyebarkan bakteri ke daun yang sehat.', icon: '💧', timing: 'Mulai sekarang', category: 'cultural' },
-    { step: 5, title: 'Sterilkan Alat Pertanian', detail: 'Cuci semua alat dengan air sabun, lalu rendam 10 menit dalam larutan pemutih 10% sebelum digunakan di tanaman berikutnya.', icon: '🔧', timing: 'Setiap kali pakai', category: 'prevention' },
-    { step: 6, title: 'Tingkatkan Sirkulasi Udara', detail: 'Pangkas daun lebat yang menghalangi aliran udara. Jarak tanam minimal 40–60 cm membantu mengurangi kelembapan di kanopi.', icon: '🌬️', timing: 'Minggu 1', category: 'cultural' },
-  ],
-  'Downy Mildew': [
-    { step: 1, title: 'Kurangi Kelembapan', detail: 'Pastikan ventilasi baik di sekitar tanaman. Hindari penyiraman malam hari. Buat bedengan yang memungkinkan drainase cepat.', icon: '🌬️', timing: 'Segera', category: 'immediate' },
-    { step: 2, title: 'Semprotkan Fungisida Sistemik', detail: 'Gunakan Metalaxyl atau Fosetyl-Al yang efektif terhadap Oomycete. Ikuti rotasi fungisida untuk mencegah resistansi.', icon: '🧴', timing: 'Hari 1', category: 'chemical' },
-    { step: 3, title: 'Pangkas Daun Terinfeksi', detail: 'Buang daun bergejala dan musnahkan. Jangan dibiarkan di lahan karena spora dapat bertahan lama.', icon: '✂️', timing: 'Hari 1–2', category: 'immediate' },
-    { step: 4, title: 'Aplikasi Fungisida Preventif', detail: 'Semprot Mancozeb atau Chlorothalonil setiap 7–14 hari sebagai lapisan pelindung. Semprot pada pagi hari agar daun kering sebelum malam.', icon: '🛡️', timing: 'Mingguan', category: 'prevention' },
-  ],
-  'Powdery Mildew': [
-    { step: 1, title: 'Semprot Larutan Baking Soda', detail: 'Campurkan 1 sdm baking soda + 1 sdm sabun cuci piring cair + 1 liter air. Semprot ke seluruh permukaan daun. Efektif untuk infeksi awal.', icon: '🧂', timing: 'Segera', category: 'immediate' },
-    { step: 2, title: 'Aplikasi Fungisida Sulfur', detail: 'Fungisida berbahan aktif sulfur atau myclobutanil efektif menghambat pertumbuhan spora. Jangan aplikasikan saat suhu >32°C untuk menghindari fitotoksik.', icon: '🧪', timing: 'Hari 1–3', category: 'chemical' },
-    { step: 3, title: 'Tingkatkan Sirkulasi Udara', detail: 'Rapikan kanopi tanaman. Kelembapan sedang dengan sirkulasi udara buruk adalah kondisi ideal pertumbuhan embun tepung.', icon: '🌬️', timing: 'Minggu 1', category: 'cultural' },
-    { step: 4, title: 'Hindari Pemupukan Nitrogen Berlebih', detail: 'Nitrogen berlebih memacu pertumbuhan daun muda yang rentan terhadap infeksi. Kurangi pupuk N sementara.', icon: '🌿', timing: 'Mulai sekarang', category: 'cultural' },
-  ],
-  'Early Blight': [
-    { step: 1, title: 'Buang Daun Terinfeksi', detail: 'Pangkas semua daun dengan bercak cokelat cincin. Terutama daun tua di bagian bawah yang paling pertama terinfeksi.', icon: '🍂', timing: 'Segera', category: 'immediate' },
-    { step: 2, title: 'Semprotkan Fungisida Mankozeb', detail: 'Mankozeb atau Chlorothalonil efektif melindungi daun baru dari infeksi. Semprotkan setiap 7–10 hari.', icon: '🧪', timing: 'Hari 1', category: 'chemical' },
-    { step: 3, title: 'Mulching Permukaan Tanah', detail: 'Tutup tanah di sekitar tanaman dengan mulsa jerami/plastik untuk mencegah percikan tanah (sumber spora) ke bagian bawah tanaman.', icon: '🌾', timing: 'Minggu 1', category: 'cultural' },
-    { step: 4, title: 'Rotasi Tanaman', detail: 'Jangan menanam tanaman dari keluarga solanaceae di lahan yang sama minimal 2–3 tahun.', icon: '🔄', timing: 'Musim berikutnya', category: 'prevention' },
-  ],
-  'Late Blight': [
-    { step: 1, title: 'DARURAT: Semprot Fungisida Segera', detail: 'Late blight sangat agresif. Segera semprotkan Metalaxyl+Mancozeb atau Cymoxanil+Mancozeb. Jangan tunda lebih dari 24 jam.', icon: '🚨', timing: 'Segera (hari ini)', category: 'immediate' },
-    { step: 2, title: 'Buang Tanaman Terparah', detail: 'Tanaman yang sudah >50% terinfeksi sebaiknya dicabut dan dibakar untuk menyelamatkan tanaman di sekitarnya.', icon: '🔥', timing: 'Hari 1', category: 'immediate' },
-    { step: 3, title: 'Kurangi Kelembapan', detail: 'Perbaiki drainase dan hindari penyiraman dari atas. Late blight berkembang sangat cepat dalam kondisi lembap.', icon: '💧', timing: 'Segera', category: 'cultural' },
-    { step: 4, title: 'Pemantauan Intensif 3 Hari', detail: 'Periksa setiap tanaman setiap hari. Tanda awal (bercak cokelat bertepi putih) harus segera ditangani.', icon: '👁️', timing: 'Setiap hari', category: 'prevention' },
-  ],
-  'Leaf Spot': [
-    { step: 1, title: 'Buang Daun Terinfeksi', detail: 'Singkirkan daun bergejala. Ini mengurangi sumber inokulum secara signifikan.', icon: '🍃', timing: 'Segera', category: 'immediate' },
-    { step: 2, title: 'Semprot Fungisida Tembaga', detail: 'Copper Hydroxide atau Copper Fungicide efektif untuk berbagai jenis leaf spot. Semprotkan 2 kali seminggu selama 2–3 minggu.', icon: '🧪', timing: 'Hari 1', category: 'chemical' },
-    { step: 3, title: 'Perbaiki Nutrisi Tanaman', detail: 'Tanaman kekurangan Kalium atau Magnesium lebih rentan. Lakukan uji tanah dan perbaiki nutrisi sesuai kebutuhan.', icon: '🌱', timing: 'Minggu 1', category: 'cultural' },
-  ],
-  'Root Rot': [
-    { step: 1, title: 'Perbaiki Drainase Segera', detail: 'Buat alur drainase di sekitar tanaman. Jika dalam pot, ganti media tanam dengan campuran yang lebih poreus (perlite + kompos).', icon: '💧', timing: 'Segera', category: 'immediate' },
-    { step: 2, title: 'Kurangi Frekuensi Penyiraman', detail: 'Biarkan lapisan 2–3 cm tanah teratas mengering sebelum menyiram kembali. Overwatering adalah penyebab utama root rot.', icon: '🚿', timing: 'Mulai sekarang', category: 'cultural' },
-    { step: 3, title: 'Aplikasi Fungisida Tanah', detail: 'Siramkan Metalaxyl atau Fosetyl-Al ke daerah perakaran. Ini efektif untuk Pythium dan Phytophthora.', icon: '🧴', timing: 'Hari 1', category: 'chemical' },
-    { step: 4, title: 'Tambah Agen Hayati', detail: 'Aplikasikan Trichoderma spp. ke tanah. Jamur bermanfaat ini bersifat antagonis terhadap jamur penyebab root rot.', icon: '🦠', timing: 'Minggu 1', category: 'prevention' },
-  ],
-};
-
-const CATEGORY_LABEL: Record<string, { label: string; color: string; bg: string }> = {
-  immediate:  { label: 'Tindakan Segera', color: '#991b1b', bg: '#fee2e2' },
-  chemical:   { label: 'Kimiawi',         color: '#1e3a8a', bg: '#dbeafe' },
-  cultural:   { label: 'Kultural',        color: Theme.colors.grass[700], bg: Theme.colors.grass[100] },
-  prevention: { label: 'Pencegahan',      color: '#92400e', bg: '#fef3c7' },
-};
+function buildCategories(result: DiagnosisResult): Category[] {
+  const info = DISEASE_TREATMENT[result.disease_name] ?? DISEASE_TREATMENT['Leaf Spot'];
+  const sick = !result.is_healthy;
+  return [
+    {
+      key: 'suhu',
+      title: 'Suhu',
+      description: info.tempNote,
+      needsAction: sick && info.actionCategories.includes('suhu'),
+      steps: info.steps.suhu,
+    },
+    {
+      key: 'kelembapan',
+      title: 'Kelembapan',
+      description: info.humidNote,
+      needsAction: sick && info.actionCategories.includes('kelembapan'),
+      steps: info.steps.kelembapan,
+    },
+    {
+      key: 'hama',
+      title: 'Hama',
+      description: info.pestNote,
+      needsAction: sick && info.actionCategories.includes('hama'),
+      steps: info.steps.hama,
+    },
+    {
+      key: 'kesehatan',
+      title: 'Kesehatan',
+      description: `${(result.confidence * 100).toFixed(1)}% keyakinan — ${info.healthNote}`,
+      needsAction: false,
+      steps: [],
+    },
+  ];
+}
 
 export default function TreatmentScreen() {
   const navigation = useNavigation<any>();
-  const route      = useRoute<any>();
-  const insets     = useSafeAreaInsets();
+  const route = useRoute<any>();
+  const insets = useSafeAreaInsets();
 
-  const result: DiagnosisResult = route.params.result;
-  const steps: TreatmentStep[] = TREATMENTS[result.disease_name] ?? [];
-  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const result: DiagnosisResult = route.params?.result;
+  const imageUri: string = route.params?.imageUri ?? '';
 
-  const toggleStep = (n: number) => {
-    setCompletedSteps((prev) => {
-      const next = new Set(prev);
-      next.has(n) ? next.delete(n) : next.add(n);
-      return next;
-    });
-  };
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const progress = steps.length > 0 ? completedSteps.size / steps.length : 0;
+  if (!result) {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={[styles.backBtn, { top: insets.top + 8, left: 14, position: 'absolute' }]}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#fbf2d4" />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const categories = buildCategories(result);
+
+  const toggle = (key: string) =>
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 
   return (
-    <View style={styles.flex}>
-      <Header title="Langkah Penanggulangan" onBack={() => navigation.goBack()} />
+    <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
       >
-        {/* Disease header */}
-        <Card style={styles.diseaseHeader}>
-          <Text style={styles.diseaseTitle}>💊 {result.disease_name}</Text>
-          <Text style={styles.diseaseSubtitle}>
-            {steps.length} langkah penanggulangan direkomendasikan
-          </Text>
-
-          {/* Progress */}
-          <View style={styles.progressRow}>
-            <Text style={styles.progressLabel}>{completedSteps.size}/{steps.length} selesai</Text>
-            <Text style={styles.progressPct}>{Math.round(progress * 100)}%</Text>
+        {/* ── Header ── */}
+        <View style={[styles.headerArea, { paddingTop: insets.top + 8 }]}>
+          <View style={styles.titleRow}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+              <Ionicons name="arrow-back" size={24} color="#fbf2d4" />
+            </TouchableOpacity>
+            <Text style={styles.title}>Penanggulangan</Text>
           </View>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: `${progress * 100}%` as any }]} />
-          </View>
-        </Card>
 
-        {/* Steps */}
-        {steps.map((s) => {
-          const done = completedSteps.has(s.step);
-          const cat  = CATEGORY_LABEL[s.category];
-          return (
-            <TouchableOpacity
-              key={s.step}
-              style={[styles.stepCard, done && styles.stepCardDone]}
-              onPress={() => toggleStep(s.step)}
-              activeOpacity={0.85}
-            >
-              {/* Step number & checkbox */}
-              <View style={[styles.stepNum, done && styles.stepNumDone]}>
-                <Text style={[styles.stepNumText, done && styles.stepNumTextDone]}>
-                  {done ? '✓' : s.step}
+          {/* Sensor box */}
+          <View style={styles.sensorBox}>
+            <Ionicons name="leaf-outline" size={24} color="#0e4719" style={styles.decoLeafLeft} />
+
+            <View style={styles.sensorRow}>
+              <View style={styles.sensorCard}>
+                <Ionicons name="leaf" size={37} color="#0e4719" />
+                <Text style={styles.sensorVal}>
+                  {(result.confidence * 100).toFixed(0)}%
                 </Text>
               </View>
+              <View style={styles.sensorCard}>
+                <Image
+                  style={styles.icontemp}
+                  resizeMode="cover"
+                  source={require('../../assets/icons/icon-temp.png')}
+                />
+                <Text style={styles.sensorVal}>27°</Text>
+              </View>
+              <View style={styles.sensorCard}>
+                <Image
+                  style={styles.iconph}
+                  resizeMode="cover"
+                  source={require('../../assets/icons/icon-ph.png')}
+                />
+                <Text style={styles.sensorVal}>6.2</Text>
+              </View>
+            </View>
 
-              <View style={styles.stepBody}>
-                <View style={styles.stepHeader}>
-                  <Text style={styles.stepIcon}>{s.icon}</Text>
-                  <View style={styles.stepMeta}>
-                    <Text style={[styles.stepTitle, done && styles.stepTitleDone]}>{s.title}</Text>
-                    <View style={styles.stepTagRow}>
-                      <View style={[styles.stepTag, { backgroundColor: cat.bg }]}>
-                        <Text style={[styles.stepTagText, { color: cat.color }]}>{cat.label}</Text>
-                      </View>
-                      <View style={styles.timingTag}>
-                        <Text style={styles.timingText}>⏰ {s.timing}</Text>
-                      </View>
-                    </View>
+            <View style={styles.dotRow}>
+              <View style={[styles.dot, styles.dotLight]} />
+              <View style={[styles.dot, styles.dotDark]} />
+            </View>
+
+            <Ionicons name="leaf-outline" size={24} color="#0e4719" style={styles.decoLeafRight} />
+          </View>
+        </View>
+
+        {/* ── Category cards ── */}
+        <View style={styles.cardList}>
+          {categories.map((cat) => {
+            const isExpanded = !!expanded[cat.key];
+            return (
+              <View key={cat.key} style={styles.cardGroup}>
+                {/* Main card */}
+                <View style={styles.card}>
+                  {imageUri ? (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={styles.cardImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
+                  )}
+                  <View style={styles.cardText}>
+                    <Text style={styles.cardTitle}>{cat.title}</Text>
+                    <Text style={styles.cardDesc} numberOfLines={4}>{cat.description}</Text>
                   </View>
                 </View>
-                <Text style={[styles.stepDetail, done && styles.stepDetailDone]}>{s.detail}</Text>
+
+                {/* Expandable action bar — only for categories needing action */}
+                {cat.needsAction && (
+                  <View style={styles.actionGroup}>
+                    <TouchableOpacity
+                      style={styles.actionBar}
+                      onPress={() => toggle(cat.key)}
+                      activeOpacity={0.85}
+                    >
+                      <View style={styles.actionLeft}>
+                        <Ionicons name="alert-circle-outline" size={20} color="#923333" />
+                        <Text style={styles.actionLabel}>PERLU TINDAKAN</Text>
+                      </View>
+                      <Ionicons
+                        name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                        size={18}
+                        color="#923333"
+                      />
+                    </TouchableOpacity>
+
+                    {isExpanded && cat.steps.length > 0 && (
+                      <View style={styles.stepsList}>
+                        {cat.steps.map((step, i) => (
+                          <View key={i} style={styles.stepRow}>
+                            <View style={styles.stepNumber}>
+                              <Text style={styles.stepNumberText}>{i + 1}</Text>
+                            </View>
+                            <Text style={styles.stepText}>{step}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
-            </TouchableOpacity>
-          );
-        })}
-
-        {steps.length === 0 && (
-          <Card style={styles.noSteps}>
-            <Text style={styles.noStepsIcon}>✅</Text>
-            <Text style={styles.noStepsText}>Tanaman sehat. Tidak diperlukan tindakan khusus.</Text>
-          </Card>
-        )}
-
-        {/* Recommendation from AI */}
-        <Card style={styles.aiRec}>
-          <Text style={styles.aiRecTitle}>💬 Rekomendasi AI</Text>
-          <Text style={styles.aiRecText}>{result.recommendation}</Text>
-        </Card>
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Theme.colors.bgBase },
-
-  diseaseHeader: { margin: Theme.spacing.lg, marginBottom: Theme.spacing.sm },
-  diseaseTitle:    { fontSize: Theme.font.sizeLg, fontWeight: Theme.font.weightBold, color: Theme.colors.textPrimary, marginBottom: 4 },
-  diseaseSubtitle: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, marginBottom: Theme.spacing.md },
-  progressRow:   { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  progressLabel: { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted },
-  progressPct:   { fontSize: Theme.font.sizeXs, fontWeight: Theme.font.weightSemibold, color: Theme.colors.grass[600] },
-  progressBarBg: { height: 8, backgroundColor: Theme.colors.bgMuted, borderRadius: 4, overflow: 'hidden' },
-  progressBarFill: { height: '100%', backgroundColor: Theme.colors.grass[600], borderRadius: 4 },
-
-  stepCard: {
-    flexDirection: 'row', gap: Theme.spacing.sm,
-    backgroundColor: Theme.colors.bgCard,
-    marginHorizontal: Theme.spacing.lg, marginBottom: Theme.spacing.sm,
-    borderRadius: Theme.radius.lg, padding: Theme.spacing.md,
-    ...Theme.shadow.sm,
+  container: {
+    flex: 1,
+    backgroundColor: '#fffefb',
+    overflow: 'hidden',
   },
-  stepCardDone: { backgroundColor: Theme.colors.grass[50], opacity: 0.75 },
 
-  stepNum: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: Theme.colors.grass[600],
-    alignItems: 'center', justifyContent: 'center',
-    flexShrink: 0, marginTop: 2,
+  /* ── Header ── */
+  headerArea: {
+    paddingHorizontal: 14,
+    paddingBottom: 20,
   },
-  stepNumDone:     { backgroundColor: Theme.colors.grass[300] },
-  stepNumText:     { color: Theme.colors.white, fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightBold },
-  stepNumTextDone: { color: Theme.colors.grass[700] },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    marginBottom: 16,
+  },
+  backBtn: {
+    width: 43,
+    height: 43,
+    borderRadius: 8,
+    backgroundColor: '#0e4719',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 28,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
 
-  stepBody:  { flex: 1 },
-  stepHeader: { flexDirection: 'row', gap: 8, marginBottom: 8, alignItems: 'flex-start' },
-  stepIcon:  { fontSize: 22 },
-  stepMeta:  { flex: 1 },
-  stepTitle: { fontSize: Theme.font.sizeMd, fontWeight: Theme.font.weightSemibold, color: Theme.colors.textPrimary, marginBottom: 4 },
-  stepTitleDone: { color: Theme.colors.textMuted, textDecorationLine: 'line-through' },
-  stepTagRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
-  stepTag:    { paddingHorizontal: 7, paddingVertical: 2, borderRadius: Theme.radius.full },
-  stepTagText:{ fontSize: Theme.font.sizeXs, fontWeight: Theme.font.weightSemibold },
-  timingTag:  { paddingHorizontal: 7, paddingVertical: 2, borderRadius: Theme.radius.full, backgroundColor: Theme.colors.bgMuted },
-  timingText: { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted },
-  stepDetail: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, lineHeight: 20 },
-  stepDetailDone: { color: Theme.colors.textMuted, opacity: 0.6 },
+  /* Sensor box */
+  sensorBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    backgroundColor: '#fefdf9',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    position: 'relative',
+  },
+  decoLeafLeft: {
+    position: 'absolute',
+    top: -12,
+    left: 20,
+    opacity: 0.6,
+  },
+  decoLeafRight: {
+    position: 'absolute',
+    top: -12,
+    right: 20,
+    opacity: 0.6,
+    transform: [{ scaleX: -1 }],
+  },
+  sensorRow: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'center',
+  },
+  sensorCard: {
+    width: 104,
+    height: 94,
+    borderRadius: 12,
+    backgroundColor: '#d3e6d7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingTop: 10,
+    paddingBottom: 15,
+    paddingHorizontal: 26,
+  },
+  icontemp: {
+    width: 13,
+    height: 32,
+  },
+  iconph: {
+    width: 32,
+    height: 32,
+  },
+  sensorVal: {
+    fontSize: 20,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+    alignSelf: 'center',
+  },
+  dotRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  dot: {
+    width: 16,
+    height: 16,
+    borderRadius: 4,
+  },
+  dotLight: {
+    backgroundColor: '#e7ede8',
+  },
+  dotDark: {
+    backgroundColor: '#b4c0b6',
+  },
 
-  noSteps: { margin: Theme.spacing.lg, alignItems: 'center', paddingVertical: Theme.spacing.xl },
-  noStepsIcon: { fontSize: 48, marginBottom: 12 },
-  noStepsText: { fontSize: Theme.font.sizeMd, color: Theme.colors.textMuted, textAlign: 'center' },
+  /* ── Card list ── */
+  cardList: {
+    paddingHorizontal: 14,
+    gap: 14,
+    paddingBottom: 8,
+  },
+  cardGroup: {
+    gap: 0,
+  },
 
-  aiRec: { marginHorizontal: Theme.spacing.lg, marginTop: Theme.spacing.sm, backgroundColor: Theme.colors.grass[50] },
-  aiRecTitle: { fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightSemibold, color: Theme.colors.grass[700], marginBottom: 8 },
-  aiRecText:  { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, lineHeight: 20 },
+  /* Individual card */
+  card: {
+    height: 112,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    backgroundColor: '#fefbf2',
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  cardImage: {
+    width: 108,
+    height: 110,
+    borderRadius: 12,
+  },
+  cardImagePlaceholder: {
+    backgroundColor: '#d3e6d7',
+  },
+  cardText: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  cardDesc: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+    lineHeight: 16,
+  },
+
+  /* Action group */
+  actionGroup: {
+    marginHorizontal: 6,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    backgroundColor: '#f4c3c3',
+    overflow: 'hidden',
+  },
+  actionBar: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  actionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionLabel: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#923333',
+  },
+
+  /* Treatment steps */
+  stepsList: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    gap: 10,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  stepNumber: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#923333',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  stepNumberText: {
+    fontSize: 11,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#fff',
+  },
+  stepText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#5a1e1e',
+    lineHeight: 17,
+  },
 });
