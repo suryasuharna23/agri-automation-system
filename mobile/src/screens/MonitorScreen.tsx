@@ -1,193 +1,544 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl,
+  View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
+  Modal, FlatList, Pressable, RefreshControl, Dimensions,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { LineChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Card from '../components/Card';
-import Badge from '../components/Badge';
-import Header from '../components/Header';
-import { Theme } from '../theme';
 import { sensorApi } from '../services/api';
 import type { SensorNode, SensorReading } from '../types';
 
-type MetricKey = 'temperature' | 'humidity' | 'soil_moisture' | 'ph';
-const METRICS: { key: MetricKey; label: string; unit: string; icon: string; min: number; max: number }[] = [
-  { key: 'temperature',  label: 'Suhu',           unit: '°C', icon: '🌡️', min: 15, max: 35 },
-  { key: 'humidity',     label: 'Kelembapan Udara',unit: '%',  icon: '💨', min: 40, max: 90 },
-  { key: 'soil_moisture',label: 'Kelembapan Tanah',unit: '%',  icon: '🌱', min: 20, max: 80 },
-  { key: 'ph',           label: 'pH Air/Tanah',    unit: '',   icon: '⚗️', min: 5.5, max: 7.5 },
+const SCREEN_W = Dimensions.get('window').width;
+const CARD_W   = SCREEN_W - 28;   // 14px margin each side
+
+type Period = '1h' | '5h' | '1d';
+const PERIODS: Period[] = ['1h', '5h', '1d'];
+const PERIOD_HOURS: Record<Period, number> = { '1h': 1, '5h': 5, '1d': 24 };
+
+const TINDAKAN = [
+  'Pastikan kelembapan tanah di kisaran 60–70% untuk mendukung pertumbuhan optimal.',
+  'Cek kondisi nutrisi larutan hidroponik, EC di kisaran 1.5–2.0 mS/cm.',
+  'Periksa filter sistem irigasi dan bersihkan jika tersumbat.',
 ];
+
+const MOCK_NODE: SensorNode = { id: 'mock', name: 'Lahan 1', is_active: true } as any;
+
+function genMockReadings(count: number): SensorReading[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `m${i}`,
+    node_id: 'mock',
+    temperature:    Math.round((25 + Math.sin(i * 0.7) * 3) * 10) / 10,
+    humidity:       Math.round((60 + Math.sin(i * 0.4) * 10) * 10) / 10,
+    soil_moisture:  Math.round((55 + Math.sin(i * 0.3) * 8) * 10) / 10,
+    ph:             Math.round((6.2 + Math.sin(i * 0.5) * 0.3) * 10) / 10,
+    recorded_at:    new Date(Date.now() - i * 1800000).toISOString(),
+    is_anomaly:     false,
+    anomaly_description: null,
+  } as SensorReading));
+}
 
 export default function MonitorScreen() {
   const insets = useSafeAreaInsets();
-  const [nodes, setNodes]         = useState<SensorNode[]>([]);
-  const [activeNode, setActiveNode] = useState<SensorNode | null>(null);
-  const [readings, setReadings]   = useState<SensorReading[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async () => {
+  const [nodes,       setNodes]       = useState<SensorNode[]>([MOCK_NODE]);
+  const [activeNode,  setActiveNode]  = useState<SensorNode>(MOCK_NODE);
+  const [allReadings, setAllReadings] = useState<SensorReading[]>(genMockReadings(20));
+  const [period,      setPeriod]      = useState<Period>('1h');
+  const [nodeModal,   setNodeModal]   = useState(false);
+  const [refreshing,  setRefreshing]  = useState(false);
+
+  const load = useCallback(async (node: SensorNode) => {
     try {
-      const n = await sensorApi.listNodes();
-      setNodes(n);
-      const target = activeNode ?? n[0] ?? null;
-      setActiveNode(target);
-      if (target) {
-        const r = await sensorApi.getReadings(target.id, 24);
-        setReadings(r);
-      }
+      const r = await sensorApi.getReadings(node.id, 24);
+      if (r.length > 0) setAllReadings(r);
     } catch {}
-  }, [activeNode]);
+  }, []);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    sensorApi.listNodes().then((n) => {
+      if (n.length > 0) {
+        setNodes(n);
+        setActiveNode(n[0]);
+        load(n[0]);
+      }
+    }).catch(() => {});
+  }, []);
 
-  const onRefresh = async () => { setRefreshing(true); await load(); setRefreshing(false); };
-
-  const selectNode = async (node: SensorNode) => {
-    setActiveNode(node);
-    const r = await sensorApi.getReadings(node.id, 24);
-    setReadings(r);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await load(activeNode);
+    setRefreshing(false);
   };
 
-  const latest = readings[0];
-  const anomalyCount = readings.filter((r) => r.is_anomaly).length;
+  const selectNode = (node: SensorNode) => {
+    setActiveNode(node);
+    setNodeModal(false);
+    load(node);
+  };
+
+  // Filter readings by selected period
+  const cutoff = Date.now() - PERIOD_HOURS[period] * 3_600_000;
+  const readings = allReadings
+    .filter((r) => new Date(r.recorded_at).getTime() >= cutoff)
+    .slice()
+    .reverse();
+
+  // Chart data (temperature)
+  const chartData = readings.length > 0
+    ? readings.map((r) => r.temperature ?? 0)
+    : [0];
+
+  const chartLabels = readings.length > 0
+    ? readings.map((r) =>
+        new Date(r.recorded_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+      ).filter((_, i) => i % Math.max(1, Math.floor(readings.length / 4)) === 0)
+    : ['—'];
+
+  const latest   = readings[readings.length - 1];
+  const oldest   = readings[0];
+  const curTemp  = latest?.temperature ?? 0;
+  const prvTemp  = oldest?.temperature ?? curTemp;
+  const changePct = prvTemp !== 0 ? Math.round(((curTemp - prvTemp) / prvTemp) * 100 * 10) / 10 : 0;
+
+  const anomalyCount = allReadings.filter((r) => r.is_anomaly).length;
+  const isAman = anomalyCount === 0;
+
+  const lastUpdate = latest
+    ? new Date(latest.recorded_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })
+    : '—';
 
   return (
-    <View style={styles.flex}>
-      <Header title="Monitor Lahan" subtitle={activeNode?.name ?? '—'} />
+    <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Theme.colors.grass[600]} />}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#0e4719" />}
       >
-        {/* Node selector */}
-        {nodes.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.nodeScroll} contentContainerStyle={styles.nodeList}>
-            {nodes.map((n) => (
-              <TouchableOpacity
-                key={n.id}
-                style={[styles.nodeChip, activeNode?.id === n.id && styles.nodeChipActive]}
-                onPress={() => selectNode(n)}
-              >
-                <View style={[styles.nodeDot, { backgroundColor: n.is_active ? Theme.colors.success : Theme.colors.danger }]} />
-                <Text style={[styles.nodeLabel, activeNode?.id === n.id && styles.nodeLabelActive]}>{n.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
+        {/* ── Header row ── */}
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Lahan</Text>
+          <Pressable style={styles.lahanPill} onPress={() => setNodeModal(true)}>
+            <Text style={styles.lahanPillText}>{activeNode.name}</Text>
+            <Ionicons name="chevron-down" size={16} color="#0e4719" />
+          </Pressable>
+        </View>
 
-        {/* Status bar */}
-        {anomalyCount > 0 && (
-          <Card style={styles.anomalyBanner}>
-            <Text style={styles.anomalyBannerText}>⚠️  {anomalyCount} anomali dalam 24 jam terakhir</Text>
-          </Card>
-        )}
+        {/* ── Time period selector ── */}
+        <View style={styles.periodRow}>
+          {PERIODS.map((p) => (
+            <TouchableOpacity
+              key={p}
+              style={[styles.periodBtn, p === period && styles.periodBtnActive]}
+              onPress={() => setPeriod(p)}
+            >
+              <Text style={[styles.periodText, p === period && styles.periodTextActive]}>{p}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-        {/* Current metrics */}
-        {latest && (
-          <>
-            <Text style={styles.sectionTitle}>Pembacaan Terkini</Text>
-            <Text style={styles.readingTime}>
-              {new Date(latest.recorded_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })}
-            </Text>
-            <View style={styles.metricGrid}>
-              {METRICS.map((m) => {
-                const val = latest[m.key];
-                const isWarn = val !== null && (val < m.min || val > m.max);
-                return (
-                  <Card key={m.key} style={[styles.metricCard, isWarn && styles.metricCardWarn]}>
-                    <Text style={styles.metricIcon}>{m.icon}</Text>
-                    <Text style={[styles.metricVal, isWarn && styles.metricValWarn]}>
-                      {val !== null ? `${val}${m.unit}` : '—'}
-                    </Text>
-                    <Text style={styles.metricLabel}>{m.label}</Text>
-                    {isWarn && <Badge label="Anomali" variant="warning" style={styles.metricBadge} />}
-                    <Text style={styles.metricRange}>{m.min}–{m.max}{m.unit}</Text>
-                  </Card>
-                );
-              })}
+        {/* ── Chart card ── */}
+        <View style={[styles.chartCard, { width: CARD_W }]}>
+          <LinearGradient
+            style={StyleSheet.absoluteFillObject}
+            colors={['rgba(231,237,232,0)', '#e7ede8']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+
+          {/* Value overlay — top right */}
+          <View style={styles.chartValueBox}>
+            <View style={styles.chartPriceRow}>
+              <Text style={styles.chartMainVal}>{curTemp}°</Text>
+              <Text style={styles.chartUnit}>C</Text>
             </View>
-          </>
-        )}
+            <View style={styles.chartChangeRow}>
+              <Text style={[styles.chartChangePct, { color: changePct >= 0 ? '#d94e4e' : '#22c55e' }]}>
+                {changePct >= 0 ? '+' : ''}{changePct}%
+              </Text>
+              <Image
+                style={styles.iconIncrease}
+                resizeMode="cover"
+                source={require('../../assets/icons/icon-increase.png')}
+              />
+            </View>
+          </View>
 
-        {/* History list */}
-        <Text style={styles.sectionTitle}>Riwayat 24 Jam</Text>
-        {readings.length === 0 ? (
-          <Card variant="muted" style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Belum ada data sensor. Pastikan perangkat IoT terhubung.</Text>
-          </Card>
-        ) : (
-          readings.map((r) => (
-            <Card key={r.id} style={[styles.histRow, r.is_anomaly && styles.histRowAnomaly]}>
-              <View style={styles.histLeft}>
-                <Text style={styles.histTime}>
-                  {new Date(r.recorded_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-                {r.is_anomaly && <Badge label="Anomali" variant="warning" />}
+          {/* Line chart */}
+          <LineChart
+            data={{ labels: chartLabels, datasets: [{ data: chartData }] }}
+            width={CARD_W - 120}
+            height={157}
+            chartConfig={{
+              backgroundColor: 'transparent',
+              backgroundGradientFrom: '#e7ede8',
+              backgroundGradientTo: '#e7ede8',
+              decimalPlaces: 1,
+              color: (opacity = 1) => `rgba(14, 71, 25, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(14, 71, 25, ${opacity})`,
+              propsForDots: { r: '3', strokeWidth: '1', stroke: '#0e4719' },
+            }}
+            bezier
+            withInnerLines={false}
+            style={styles.lineChart}
+          />
+        </View>
+
+        {/* ── Last updated ── */}
+        <Text style={styles.lastUpdated}>Terakhir diperbarui {lastUpdate}</Text>
+
+        {/* ── Overview card ── */}
+        <View style={styles.overviewCard}>
+          <View style={styles.overviewHeader}>
+            <View style={styles.overviewTitleRow}>
+              <LinearGradient
+                style={styles.overviewIcon}
+                colors={['#ffd4a9', '#0e4719']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              >
+                <Ionicons name="leaf" size={16} color="#fff" />
+              </LinearGradient>
+              <Text style={styles.overviewTitle}>Overview</Text>
+            </View>
+            <LinearGradient
+              style={styles.amanBadge}
+              colors={isAman
+                ? ['rgba(255,212,169,0.8)', 'rgba(200,240,201,0.8)']
+                : ['rgba(255,212,169,0.8)', 'rgba(255,180,180,0.8)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+            >
+              <Text style={styles.amanText}>{isAman ? 'Aman!' : 'Perhatian!'}</Text>
+            </LinearGradient>
+          </View>
+          <Text style={styles.overviewDesc}>
+            {isAman
+              ? 'Kondisi lahan saat ini dalam batas normal. Suhu, kelembapan, dan pH tanah berada pada rentang optimal untuk pertumbuhan tanaman.'
+              : `Terdeteksi ${anomalyCount} anomali pada pembacaan sensor. Segera periksa kondisi lahan dan ambil tindakan yang diperlukan.`}
+          </Text>
+        </View>
+
+        {/* ── Tindakan section ── */}
+        <View style={styles.tindakanSection}>
+          <Text style={styles.tindakanTitle}>Tindakan yang diperlukan:</Text>
+          <View style={styles.tindakanList}>
+            {TINDAKAN.map((item, i) => (
+              <View key={i} style={styles.tindakanRow}>
+                <Text style={styles.tindakanText} numberOfLines={2}>{item}</Text>
+                <View style={styles.tindakanBtn}>
+                  <Ionicons name="chevron-forward" size={14} color="#0e4719" />
+                </View>
               </View>
-              <View style={styles.histMetrics}>
-                <MiniMetric label="Suhu" value={r.temperature} unit="°C" />
-                <MiniMetric label="Lembap" value={r.humidity} unit="%" />
-                <MiniMetric label="Tanah" value={r.soil_moisture} unit="%" />
-                <MiniMetric label="pH" value={r.ph} unit="" />
-              </View>
-              {r.is_anomaly && r.anomaly_description && (
-                <Text style={styles.histAnomDesc} numberOfLines={2}>{r.anomaly_description}</Text>
-              )}
-            </Card>
-          ))
-        )}
+            ))}
+          </View>
+        </View>
       </ScrollView>
-    </View>
-  );
-}
 
-function MiniMetric({ label, value, unit }: { label: string; value: number | null | undefined; unit: string }) {
-  return (
-    <View style={styles.miniMetric}>
-      <Text style={styles.miniVal}>{value !== null && value !== undefined ? `${value}${unit}` : '—'}</Text>
-      <Text style={styles.miniLabel}>{label}</Text>
+      {/* ── Node selector modal ── */}
+      <Modal visible={nodeModal} transparent animationType="fade">
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setNodeModal(false)}>
+          <View style={styles.modalList} onStartShouldSetResponder={() => true}>
+            <FlatList
+              data={nodes}
+              keyExtractor={(n) => n.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[styles.modalItem, item.id === activeNode.id && styles.modalItemActive]}
+                  onPress={() => selectNode(item)}
+                >
+                  <View style={[styles.nodeDot, { backgroundColor: item.is_active ? '#22c55e' : '#d94e4e' }]} />
+                  <Text style={[styles.modalItemText, item.id === activeNode.id && styles.modalItemTextActive]}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Theme.colors.bgBase },
+  container: {
+    flex: 1,
+    backgroundColor: '#fffefb',
+  },
+  scrollContent: {
+    paddingHorizontal: 14,
+    gap: 13,
+  },
 
-  nodeScroll: { marginTop: Theme.spacing.sm },
-  nodeList:   { paddingHorizontal: Theme.spacing.lg, gap: 8 },
-  nodeChip:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: Theme.radius.full, backgroundColor: Theme.colors.bgCard, borderWidth: 1, borderColor: Theme.colors.border },
-  nodeChipActive: { backgroundColor: Theme.colors.grass[600], borderColor: Theme.colors.grass[600] },
-  nodeDot:   { width: 8, height: 8, borderRadius: 4 },
-  nodeLabel: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted },
-  nodeLabelActive: { color: Theme.colors.white, fontWeight: Theme.font.weightMedium },
+  /* ── Header ── */
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: {
+    fontSize: 28,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  lahanPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+    justifyContent: 'space-between',
+    width: 100,
+    height: 43,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    backgroundColor: '#dbe3dd',
+    paddingHorizontal: 12,
+  },
+  lahanPillText: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
 
-  anomalyBanner: { marginHorizontal: Theme.spacing.lg, marginTop: Theme.spacing.md, backgroundColor: '#fef3c7', borderLeftWidth: 4, borderLeftColor: Theme.colors.warning },
-  anomalyBannerText: { fontSize: Theme.font.sizeSm, color: '#92400e', fontWeight: Theme.font.weightMedium },
+  /* ── Period selector ── */
+  periodRow: {
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    height: 43,
+    width: 228,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    backgroundColor: '#dbe3dd',
+    padding: 4,
+  },
+  periodBtn: {
+    width: 68,
+    height: 36,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  periodBtnActive: {
+    backgroundColor: '#0e4719',
+  },
+  periodText: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#55835e',
+  },
+  periodTextActive: {
+    color: '#fbf2d4',
+  },
 
-  sectionTitle: { fontSize: Theme.font.sizeLg, fontWeight: Theme.font.weightSemibold, color: Theme.colors.textPrimary, marginHorizontal: Theme.spacing.lg, marginTop: Theme.spacing.lg, marginBottom: 4 },
-  readingTime: { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted, marginHorizontal: Theme.spacing.lg, marginBottom: Theme.spacing.sm },
+  /* ── Chart card ── */
+  chartCard: {
+    height: 195,
+    borderRadius: 12,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  chartValueBox: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 110,
+    gap: 4,
+    alignItems: 'flex-end',
+    zIndex: 1,
+  },
+  chartPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  chartMainVal: {
+    fontSize: 24,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  chartUnit: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+    paddingBottom: 2,
+  },
+  chartChangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  chartChangePct: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+  },
+  iconIncrease: {
+    width: 20,
+    height: 20,
+  },
+  lineChart: {
+    position: 'absolute',
+    top: 33,
+    left: 8,
+  },
 
-  metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Theme.spacing.sm, paddingHorizontal: Theme.spacing.lg },
-  metricCard: { width: '47%', alignItems: 'center', paddingVertical: Theme.spacing.md },
-  metricCardWarn: { borderWidth: 1.5, borderColor: Theme.colors.warning },
-  metricIcon: { fontSize: 24, marginBottom: 6 },
-  metricVal:  { fontSize: Theme.font.size2xl, fontWeight: Theme.font.weightBold, color: Theme.colors.grass[700] },
-  metricValWarn: { color: Theme.colors.warning },
-  metricLabel: { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted, marginTop: 2 },
-  metricBadge: { marginTop: 4 },
-  metricRange: { fontSize: 10, color: Theme.colors.textMuted, marginTop: 3 },
+  /* ── Last updated ── */
+  lastUpdated: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    fontStyle: 'italic',
+    color: '#0e4719',
+    alignSelf: 'flex-end',
+  },
 
-  emptyCard: { marginHorizontal: Theme.spacing.lg },
-  emptyText: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, textAlign: 'center' },
+  /* ── Overview card ── */
+  overviewCard: {
+    borderRadius: 12,
+    backgroundColor: '#fefbf2',
+    paddingLeft: 11,
+    paddingTop: 12,
+    paddingRight: 12,
+    paddingBottom: 16,
+    gap: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  overviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  overviewTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+  },
+  overviewIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  overviewTitle: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  amanBadge: {
+    height: 28,
+    paddingHorizontal: 13,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0d4c19',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  amanText: {
+    fontSize: 14,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0d4c19',
+  },
+  overviewDesc: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+    lineHeight: 18,
+  },
 
-  histRow: { marginHorizontal: Theme.spacing.lg, marginBottom: Theme.spacing.sm, padding: Theme.spacing.sm },
-  histRowAnomaly: { borderLeftWidth: 3, borderLeftColor: Theme.colors.warning },
-  histLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
-  histTime: { fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightMedium, color: Theme.colors.textPrimary },
-  histMetrics: { flexDirection: 'row', justifyContent: 'space-between' },
-  histAnomDesc: { fontSize: Theme.font.sizeXs, color: '#a16207', marginTop: 6 },
+  /* ── Tindakan ── */
+  tindakanSection: {
+    gap: 12,
+  },
+  tindakanTitle: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  tindakanList: {
+    gap: 12,
+  },
+  tindakanRow: {
+    height: 47,
+    borderRadius: 8,
+    backgroundColor: '#eaf3ec',
+    paddingLeft: 13,
+    paddingTop: 9,
+    paddingBottom: 10,
+    paddingRight: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  tindakanText: {
+    width: 285,
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#000',
+    lineHeight: 16,
+  },
+  tindakanBtn: {
+    width: 36,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    backgroundColor: '#fefdf9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  miniMetric: { alignItems: 'center' },
-  miniVal:   { fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightSemibold, color: Theme.colors.grass[700] },
-  miniLabel: { fontSize: 10, color: Theme.colors.textMuted },
+  /* ── Node modal ── */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalList: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    width: 240,
+    maxHeight: 200,
+    overflow: 'hidden',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  modalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f3f0',
+  },
+  modalItemActive: {
+    backgroundColor: '#f0f3f0',
+  },
+  nodeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  modalItemText: {
+    fontSize: 15,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#1e3c22',
+  },
+  modalItemTextActive: {
+    color: '#0e4719',
+    fontWeight: '700',
+  },
 });
