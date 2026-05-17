@@ -1,6 +1,7 @@
 import * as React from "react";
 import { StyleSheet, View, Text, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function DashboardScreen() {
   return (
@@ -9,11 +10,78 @@ export default function DashboardScreen() {
         style={styles.dashboardChild}
         locations={[0, 1]}
         colors={["rgba(217, 217, 217, 0)", "#fbf2d4"]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+        start={{ x: 1, y: 0.5 }}
+        end={{ x: 0, y: 0.5 }}
       />
+
+      {/* Decorative top elements */}
+      <LinearGradient
+        style={styles.container}
+        locations={[0, 1]}
+        colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <Image
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+          source={require("../../assets/images/deco-right.png")}
+        />
+      </LinearGradient>
+      <LinearGradient
+        style={styles.frame}
+        locations={[0, 1]}
+        colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <Image
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+          source={require("../../assets/images/deco-left.png")}
+        />
+      </LinearGradient>
+      <Image
+        style={styles.dashboardItem}
+        resizeMode="cover"
+        source={require("../../assets/images/dashboard-plant.png")}
+      />
+
+      {/* Greeting */}
       <Text style={[styles.siang, styles.siangPosition]}>Siang!</Text>
       <Text style={[styles.sobatPetani, styles.siangPosition]}>Sobat Petani</Text>
+
+      {/* Balance card */}
+      <View style={styles.frameParent7}>
+        <View style={styles.rp20140340Parent}>
+          <Text style={styles.rp20140340}>Rp20.140.340</Text>
+          <Text style={[styles.saldoAnda, styles.kgTypo]}>Saldo Anda</Text>
+        </View>
+        <View style={styles.frameParent8}>
+          <View style={[styles.frameParent9, styles.frameParentLayout]}>
+            <View style={[styles.iconbanknoteWrapper, styles.wrapperFlexBox]}>
+              <Image
+                style={styles.iconbanknote}
+                resizeMode="cover"
+                source={require("../../assets/icons/icon-banknote.png")}
+              />
+            </View>
+            <Text style={[styles.keuangan, styles.phTypo]}>Keuangan</Text>
+          </View>
+          <View style={[styles.frameParent10, styles.frameParentLayout]}>
+            <View style={[styles.iconbanknoteWrapper, styles.wrapperFlexBox]}>
+              <Ionicons name="arrow-down-circle-outline" size={24} color="#44694b" />
+            </View>
+            <Text style={[styles.tarikTunai, styles.tarikTunaiTypo]}>Tarik Tunai</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Monitor tanaman label */}
+      <View style={[styles.monitorTanamanParent, styles.parentFlexBox1]}>
+        <Text style={[styles.hargaTerkini, styles.text3Typo]}>Monitor Tanaman</Text>
+        <Text style={[styles.kangkung, styles.text3Typo]}>Kangkung</Text>
+      </View>
 
       {/* Sensor row 1 */}
       <View style={styles.frameParent}>
@@ -26,7 +94,11 @@ export default function DashboardScreen() {
         >
           <View style={[styles.frameGroup, styles.frameLayout1]}>
             <View style={styles.icontempParent}>
-              <Image style={styles.icontemp} resizeMode="cover" />
+              <Image
+                style={styles.icontemp}
+                resizeMode="cover"
+                source={require("../../assets/icons/icon-temp.png")}
+              />
               <Text style={[styles.text, styles.textTypo]}>21°</Text>
             </View>
             <Text style={[styles.suhu, styles.phTypo]}>Suhu</Text>
@@ -41,7 +113,11 @@ export default function DashboardScreen() {
         >
           <View style={[styles.frameGroup, styles.frameLayout1]}>
             <View style={styles.icontempParent}>
-              <Image style={styles.iconph} resizeMode="cover" />
+              <Image
+                style={styles.iconph}
+                resizeMode="cover"
+                source={require("../../assets/icons/icon-ph.png")}
+              />
               <Text style={[styles.text, styles.textTypo]}>7</Text>
             </View>
             <Text style={[styles.ph, styles.phTypo]}>pH</Text>
@@ -56,7 +132,11 @@ export default function DashboardScreen() {
         >
           <View style={[styles.frameGroup, styles.frameLayout1]}>
             <View style={styles.iconhumidParent}>
-              <Image style={styles.iconhumid} resizeMode="cover" />
+              <Image
+                style={styles.iconhumid}
+                resizeMode="cover"
+                source={require("../../assets/icons/icon-humid.png")}
+              />
               <Text style={[styles.text3, styles.text3Typo]}>50%</Text>
             </View>
             <Text style={[styles.ph, styles.phTypo]}>Humidity</Text>
@@ -64,55 +144,13 @@ export default function DashboardScreen() {
         </LinearGradient>
       </View>
 
-      {/* Sensor row 2 */}
-      <View style={[styles.frameParent, styles.frameParentRow2]}>
-        <LinearGradient
-          style={[styles.frameWrapper, styles.wrapperLayout]}
-          locations={[0, 1]}
-          colors={["#d3e6d7", "#9fc0a6"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <View style={[styles.frameGroup, styles.frameLayout1]}>
-            <View style={styles.icontempParent}>
-              <Image style={styles.icontemp} resizeMode="cover" />
-              <Text style={[styles.text, styles.textTypo]}>21°</Text>
-            </View>
-            <Text style={[styles.suhu, styles.phTypo]}>Suhu</Text>
-          </View>
-        </LinearGradient>
-        <LinearGradient
-          style={[styles.frameWrapper, styles.wrapperLayout]}
-          locations={[0, 1]}
-          colors={["#d3e6d7", "#9fc0a6"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <View style={[styles.frameGroup, styles.frameLayout1]}>
-            <View style={styles.icontempParent}>
-              <Image style={styles.iconph} resizeMode="cover" />
-              <Text style={[styles.text, styles.textTypo]}>7</Text>
-            </View>
-            <Text style={[styles.ph, styles.phTypo]}>pH</Text>
-          </View>
-        </LinearGradient>
-        <LinearGradient
-          style={[styles.frameWrapper, styles.wrapperLayout]}
-          locations={[0, 1]}
-          colors={["#d3e6d7", "#9fc0a6"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <View style={[styles.frameGroup, styles.frameLayout1]}>
-            <View style={styles.iconhumidParent}>
-              <Image style={styles.iconhumid} resizeMode="cover" />
-              <Text style={[styles.text3, styles.text3Typo]}>50%</Text>
-            </View>
-            <Text style={[styles.ph, styles.phTypo]}>Humidity</Text>
-          </View>
-        </LinearGradient>
+      {/* Komoditas filter */}
+      <View style={[styles.komoditasParent, styles.parentFlexBox]}>
+        <Text style={[styles.kg, styles.kgTypo]}>Komoditas</Text>
+        <Ionicons name="chevron-down" size={20} color="#0e4719" />
       </View>
 
+      {/* Harga terkini header */}
       <View style={[styles.hargaTerkiniParent, styles.parentLayout]}>
         <Text style={[styles.hargaTerkini, styles.text3Typo]}>Harga Terkini</Text>
         <Text style={[styles.terakhirDiperbarui4, styles.saldoAndaTypo]}>
@@ -120,89 +158,15 @@ export default function DashboardScreen() {
         </Text>
       </View>
 
-      <View style={[styles.monitorTanamanParent, styles.parentFlexBox1]}>
-        <Text style={[styles.hargaTerkini, styles.text3Typo]}>Monitor Tanaman</Text>
-        <Text style={[styles.kangkung, styles.text3Typo]}>Kangkung</Text>
-      </View>
-
-      {/* Balance card */}
-      <View style={styles.frameParent7}>
-        <View style={styles.rp20140340Parent}>
-          <Text style={styles.rp20140340}>Rp20.140.340</Text>
-          <Text style={[styles.saldoAnda, styles.kgTypo]}>Saldo Anda</Text>
-        </View>
-        <View style={styles.frameParent8}>
-          <View style={[styles.frameParent9, styles.frameParentLayout]}>
-            <View style={[styles.iconbanknoteWrapper, styles.wrapperFlexBox]}>
-              <Image style={styles.iconbanknote} resizeMode="cover" />
-            </View>
-            <Text style={[styles.keuangan, styles.phTypo]}>Keuangan</Text>
-          </View>
-          <View style={styles.frameParentLayout}>
-            <View style={[styles.iconbanknoteWrapper, styles.wrapperFlexBox]}>
-              <Image style={styles.iconbanknote} resizeMode="cover" />
-            </View>
-            <Text style={[styles.tarikTunai, styles.tarikTunaiTypo]}>Tarik Tunai</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Navbar */}
-      <View style={styles.navbar}>
-        <View style={styles.navbarInner}>
-          <View style={[styles.frameParent11, styles.frameLayout1]}>
-            <View style={styles.frameParent12}>
-              <View style={[styles.icondashboardParent, styles.parentFlexBox1]}>
-                <Image style={styles.iconbanknote} resizeMode="cover" />
-                <Text style={[styles.dashboard2, styles.phTypo]}>Dashboard</Text>
-              </View>
-              <View style={styles.parentFlexBox1}>
-                <Image style={styles.iconbanknote} resizeMode="cover" />
-                <Text style={[styles.dashboard2, styles.phTypo]}>Notification</Text>
-              </View>
-            </View>
-            <View style={styles.frameParent12}>
-              <View style={[styles.icondashboardParent, styles.parentFlexBox1]}>
-                <Image style={styles.iconbanknote} resizeMode="cover" />
-                <Text style={[styles.dashboard2, styles.phTypo]}>Diagnosis</Text>
-              </View>
-              <View style={styles.parentFlexBox1}>
-                <Image style={styles.iconbanknote} resizeMode="cover" />
-                <Text style={[styles.dashboard2, styles.phTypo]}>Notification</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-        <LinearGradient
-          style={[styles.navbarChild, styles.wrapperLayout]}
-          locations={[0, 1]}
-          colors={["#0e4719", "#062f0e"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <LinearGradient
-            style={[styles.iconcameraWrapper, styles.wrapperFlexBox]}
-            locations={[0, 0.42]}
-            colors={["#a69e84", "#fbf2d4"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          >
-            <Image style={styles.iconcamera} resizeMode="cover" />
-          </LinearGradient>
-        </LinearGradient>
-      </View>
-
       {/* Price card */}
       <View style={[styles.groupView, styles.parentLayout]}>
         <LinearGradient
           style={[styles.wrapper, styles.iconLayout]}
           locations={[0, 1]}
-          colors={["rgba(231, 237, 232, 0)", "#e7ede8"]}
+          colors={["#e7ede8", "#d3dcd3"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-        >
-          <Image style={styles.iconLayout} resizeMode="cover" />
-        </LinearGradient>
+        />
         <View style={styles.frameParent14}>
           <View style={styles.rp3540Parent}>
             <Text style={[styles.rp3540, styles.textTypo1]}>Rp3.540</Text>
@@ -210,37 +174,14 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.parent}>
             <Text style={[styles.text7, styles.kgTypo]}>10%</Text>
-            <Image style={styles.iconincrease} resizeMode="cover" />
+            <Image
+              style={styles.iconincrease}
+              resizeMode="cover"
+              source={require("../../assets/icons/icon-increase.png")}
+            />
           </View>
         </View>
       </View>
-
-      <View style={[styles.komoditasParent, styles.parentFlexBox]}>
-        <Text style={[styles.kg, styles.kgTypo]}>Komoditas</Text>
-        <Image style={styles.iconbanknote} resizeMode="cover" />
-      </View>
-
-      <Image style={styles.dashboardItem} resizeMode="cover" />
-
-      <LinearGradient
-        style={[styles.container, styles.iconLayout]}
-        locations={[0, 1]}
-        colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <Image style={styles.iconLayout} resizeMode="cover" />
-      </LinearGradient>
-
-      <LinearGradient
-        style={[styles.frame, styles.frameLayout]}
-        locations={[0, 1]}
-        colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <Image style={styles.frameLayout} resizeMode="cover" />
-      </LinearGradient>
     </View>
   );
 }
@@ -250,6 +191,7 @@ const styles = StyleSheet.create({
     left: 23,
     textAlign: "left",
     color: "#0e4719",
+    fontFamily: "Faculty Glyphic",
     position: "absolute",
   },
   wrapperLayout: {
@@ -262,6 +204,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   textTypo: {
+    fontFamily: "Lato-Light",
     fontWeight: "500",
     color: "#0e4719",
   },
@@ -278,6 +221,7 @@ const styles = StyleSheet.create({
     left: 24,
   },
   saldoAndaTypo: {
+    fontFamily: "Lato-BoldItalic",
     fontStyle: "italic",
   },
   parentFlexBox1: {
@@ -320,11 +264,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: "left",
   },
-  frameLayout: {
-    height: "100%",
-    backgroundColor: "transparent",
-    width: "100%",
-  },
   dashboard: {
     height: 852,
     backgroundColor: "#fefdf9",
@@ -342,18 +281,14 @@ const styles = StyleSheet.create({
   siang: {
     top: 73,
     fontSize: 32,
-    textAlign: "left",
-    color: "#0e4719",
   },
   sobatPetani: {
     top: 115,
     fontSize: 40,
-    textAlign: "left",
-    color: "#0e4719",
   },
   frameParent: {
     marginLeft: -173,
-    top: 347,
+    top: 356,
     width: 346,
     gap: 19,
     alignItems: "center",
@@ -379,6 +314,7 @@ const styles = StyleSheet.create({
   },
   icontempParent: {
     gap: 12,
+    alignSelf: "center",
     alignItems: "center",
     flexDirection: "row",
   },
@@ -391,7 +327,9 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   suhu: {
+    fontFamily: "Lato-Regular",
     textAlign: "center",
+    alignSelf: "center",
     color: "#0e4719",
   },
   iconph: {
@@ -400,11 +338,13 @@ const styles = StyleSheet.create({
   },
   ph: {
     alignSelf: "stretch",
+    fontFamily: "Lato-Regular",
     textAlign: "center",
     color: "#0e4719",
   },
   iconhumidParent: {
     gap: 8,
+    alignSelf: "center",
     alignItems: "center",
     flexDirection: "row",
   },
@@ -413,11 +353,12 @@ const styles = StyleSheet.create({
     height: 22,
   },
   text3: {
+    fontFamily: "Lato-Light",
     fontWeight: "500",
     color: "#0e4719",
   },
   hargaTerkiniParent: {
-    top: 447,
+    top: 456,
     gap: 20,
     justifyContent: "space-between",
     alignItems: "flex-end",
@@ -426,6 +367,7 @@ const styles = StyleSheet.create({
   },
   hargaTerkini: {
     color: "#0e4719",
+    fontFamily: "Faculty Glyphic",
   },
   terakhirDiperbarui4: {
     fontWeight: "600",
@@ -434,26 +376,30 @@ const styles = StyleSheet.create({
     color: "#0e4719",
   },
   monitorTanamanParent: {
-    top: 312,
+    top: 320,
     left: 24,
     gap: 6,
     flexDirection: "row",
     position: "absolute",
   },
-  kangkung: {},
+  kangkung: {
+    fontSize: 20,
+    textAlign: "left",
+    fontFamily: "Faculty Glyphic",
+    color: "#0e4719",
+  },
   frameParent7: {
-    marginLeft: -202,
     top: 198,
+    left: 0,
+    right: 0,
     borderRadius: 14,
     backgroundColor: "#44694b",
     borderColor: "#669e71",
     borderWidth: 2,
-    width: 405,
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    gap: 36,
-    justifyContent: "center",
-    left: "50%",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 24,
+    justifyContent: "space-between",
     overflow: "hidden",
     position: "absolute",
     flexDirection: "row",
@@ -461,16 +407,21 @@ const styles = StyleSheet.create({
   },
   rp20140340Parent: {
     gap: 4,
+    alignItems: "flex-start",
     justifyContent: "center",
   },
   rp20140340: {
-    fontSize: 28,
+    fontSize: 24,
+    fontFamily: "Lato-Bold",
     fontWeight: "600",
     textAlign: "left",
     color: "#fbf2d4",
+    alignSelf: "flex-start",
   },
   saldoAnda: {
     color: "#fbf2d4",
+    alignSelf: "flex-start",
+    fontFamily: "Lato-BoldItalic",
     fontStyle: "italic",
   },
   frameParent8: {
@@ -481,16 +432,17 @@ const styles = StyleSheet.create({
   frameParent9: {
     alignItems: "center",
   },
+  frameParent10: {
+    alignItems: "flex-start",
+  },
   iconbanknoteWrapper: {
-    height: 49,
+    height: 40,
     backgroundColor: "#fbf2d4",
     borderWidth: 1,
-    paddingLeft: 11,
-    paddingTop: 12,
-    paddingRight: 12,
-    paddingBottom: 11,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderRadius: 8,
-    alignSelf: "stretch",
+    width: "100%",
   },
   iconbanknote: {
     height: 24,
@@ -498,81 +450,18 @@ const styles = StyleSheet.create({
   },
   keuangan: {
     color: "#fbf2d4",
+    fontFamily: "Lato-Bold",
     fontWeight: "600",
     alignSelf: "stretch",
   },
   tarikTunai: {
     color: "#fbf2d4",
+    fontFamily: "Lato-Bold",
     fontWeight: "600",
     alignSelf: "stretch",
   },
-  navbar: {
-    top: 734,
-    height: 118,
-    width: 393,
-    left: 0,
-    position: "absolute",
-  },
-  navbarInner: {
-    height: "67.8%",
-    top: "32.2%",
-    right: "0%",
-    bottom: "0%",
-    left: "0%",
-    backgroundColor: "#0e4719",
-    paddingHorizontal: 13,
-    paddingTop: 16,
-    paddingBottom: 20,
-    justifyContent: "space-between",
-    alignItems: "center",
-    position: "absolute",
-    width: "100%",
-  },
-  frameParent11: {
-    gap: 20,
-    justifyContent: "space-between",
-    flexDirection: "row",
-  },
-  frameParent12: {
-    gap: 20,
-    alignItems: "center",
-    flexDirection: "row",
-  },
-  icondashboardParent: {
-    width: 63,
-  },
-  dashboard2: {
-    color: "#fbf2d4",
-    textAlign: "center",
-  },
-  navbarChild: {
-    height: "55.51%",
-    width: "21.5%",
-    top: "0%",
-    right: "40.33%",
-    bottom: "44.49%",
-    left: "38.17%",
-    paddingLeft: 9,
-    paddingTop: 6,
-    paddingRight: 10,
-    paddingBottom: 7,
-    position: "absolute",
-  },
-  iconcameraWrapper: {
-    width: 66,
-    height: 53,
-    borderWidth: 3,
-    paddingHorizontal: 9,
-    paddingBottom: 5,
-    borderRadius: 12,
-    backgroundColor: "transparent",
-  },
-  iconcamera: {
-    height: 40,
-    width: 40,
-  },
   groupView: {
-    top: 534,
+    top: 538,
     height: 195,
     position: "absolute",
   },
@@ -598,28 +487,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   rp3540: {
+    fontFamily: "Lato-Bold",
     fontWeight: "600",
     color: "#0e4719",
   },
   kg: {
-    fontWeight: "600",
+    fontFamily: "Lato-Bold",
     color: "#0e4719",
   },
   parent: {
+    alignSelf: "flex-end",
     gap: 4,
     alignItems: "center",
     flexDirection: "row",
   },
   text7: {
     color: "#d94e4e",
-    fontWeight: "600",
+    fontFamily: "Lato-Bold",
   },
   iconincrease: {
     height: 20,
     width: 20,
   },
   komoditasParent: {
-    top: 482,
+    top: 490,
     backgroundColor: "#dbe3dd",
     borderColor: "#0e4719",
     borderWidth: 1,
@@ -641,11 +532,18 @@ const styles = StyleSheet.create({
   container: {
     left: 225,
     top: -92,
+    width: 180,
+    height: 220,
     position: "absolute",
   },
   frame: {
     left: 152,
     top: -150,
+    width: 160,
+    height: 200,
     position: "absolute",
+  },
+  frameParentRow2: {
+    top: 450,
   },
 });
