@@ -1,166 +1,349 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import Card from '../components/Card';
-import Badge from '../components/Badge';
-import Button from '../components/Button';
-import Header from '../components/Header';
-import { Theme } from '../theme';
-import type { GradingResult, DiagnosisResult } from '../types';
-import type { CameraMode } from './CameraScreen';
+import { useNavigation } from '@react-navigation/native';
+import api from '../services/api';
+
+interface SensorReading {
+  suhuUdara: string;
+  kelembapan: string;
+  phTanah: string;
+}
+
+interface DiagnosisHistoryItem {
+  id: string;
+  cropName: string;
+  date: string;
+  status: 'Diproses' | 'Selesai';
+  description: string;
+  sensors: SensorReading;
+  result?: any;
+  imageUri?: string;
+}
+
+const MOCK_ITEMS: DiagnosisHistoryItem[] = [
+  {
+    id: '1',
+    cropName: 'Kangkung',
+    date: '28 Feb 2026',
+    status: 'Diproses',
+    description: 'Daun menunjukkan bercak kuning kecoklatan pada permukaan atas. Gejala belum dapat dikonfirmasi, sedang dianalisis oleh sistem.',
+    sensors: { suhuUdara: '27°', kelembapan: '50%', phTanah: '5.3' },
+  },
+  {
+    id: '2',
+    cropName: 'Bayam',
+    date: '26 Feb 2026',
+    status: 'Diproses',
+    description: 'Terdeteksi perubahan warna pada batang bagian bawah. Analisis sedang berlangsung untuk mengidentifikasi jenis penyakit.',
+    sensors: { suhuUdara: '29°', kelembapan: '62%', phTanah: '6.1' },
+  },
+  {
+    id: '3',
+    cropName: 'Kangkung',
+    date: '20 Feb 2026',
+    status: 'Selesai',
+    description: 'Terdeteksi Downy Mildew pada daun. Disarankan untuk mengurangi kelembapan dan menyemprotkan fungisida berbasis tembaga.',
+    sensors: { suhuUdara: '25°', kelembapan: '78%', phTanah: '5.8' },
+  },
+  {
+    id: '4',
+    cropName: 'Tomat',
+    date: '15 Feb 2026',
+    status: 'Selesai',
+    description: 'Tanaman sehat. Tidak ditemukan gejala penyakit. Pertahankan kondisi lingkungan saat ini dan jadwal pemupukan rutin.',
+    sensors: { suhuUdara: '28°', kelembapan: '55%', phTanah: '6.5' },
+  },
+];
 
 export default function DiagnosisScreen() {
   const navigation = useNavigation<any>();
-  const route      = useRoute<any>();
-  const insets     = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
 
-  const mode: CameraMode           = route.params.mode;
-  const imageUri: string           = route.params.imageUri;
-  const result: GradingResult | DiagnosisResult = route.params.result;
+  const [items, setItems] = useState<DiagnosisHistoryItem[]>(MOCK_ITEMS);
+
+  useEffect(() => {
+    api.get('/diagnoses').then((res) => {
+      if (Array.isArray(res.data) && res.data.length > 0) setItems(res.data);
+    }).catch(() => {});
+  }, []);
 
   return (
-    <View style={styles.flex}>
-      <Header title="Hasil Analisis AI" onBack={() => navigation.popToTop()} />
+    <View style={styles.container}>
+      {/* Decorative top-right */}
+      <LinearGradient
+        style={styles.decoGradient}
+        colors={['rgba(113, 175, 125, 0)', '#0e4719']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+      >
+        <Image
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+          source={require('../../assets/images/deco-right.png')}
+        />
+      </LinearGradient>
+      <Image
+        style={styles.decoPlant}
+        resizeMode="cover"
+        source={require('../../assets/images/dashboard-plant.png')}
+      />
+
+      {/* Header */}
+      <View style={[styles.headerArea, { paddingTop: insets.top + 8 }]}>
+        <Text style={styles.title}>Riwayat</Text>
+        <TouchableOpacity style={styles.filterBtn} activeOpacity={0.75}>
+          <Text style={styles.filterText}>Filter</Text>
+          <Ionicons name="options-outline" size={16} color="#000" />
+        </TouchableOpacity>
+      </View>
+
+      {/* Card list */}
       <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 16 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Image */}
-        <Image source={{ uri: imageUri }} style={styles.previewImg} resizeMode="cover" />
-
-        {mode === 'grading'
-          ? <GradingCard result={result as GradingResult} />
-          : <DiseaseCard result={result as DiagnosisResult} onDetail={() => navigation.navigate('DiagnosisDetail', { result, imageUri })} />
-        }
-
-        <View style={styles.actions}>
-          <Button
-            label="Foto Ulang"
-            variant="outline"
-            fullWidth
-            onPress={() => navigation.navigate('Camera', { mode })}
-            style={{ marginBottom: Theme.spacing.sm }}
+        {items.map((item) => (
+          <DiagnosisCard
+            key={item.id}
+            item={item}
+            onPress={() => {
+              if (item.status === 'Selesai' && item.result) {
+                navigation.navigate('DiagnosisDetail', {
+                  result: item.result,
+                  imageUri: item.imageUri ?? '',
+                });
+              }
+            }}
           />
-          <Button
-            label="Kembali ke Beranda"
-            variant="ghost"
-            fullWidth
-            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })}
-          />
-        </View>
+        ))}
       </ScrollView>
     </View>
   );
 }
 
-function GradingCard({ result }: { result: GradingResult }) {
-  const gradeConfig: Record<string, { color: string; bg: string; label: string; desc: string }> = {
-    A: { color: Theme.colors.grass[700], bg: Theme.colors.grass[50],  label: 'Grade A — Premium', desc: 'Kualitas terbaik, layak untuk pasar premium B2B.' },
-    B: { color: Theme.colors.cream[600], bg: Theme.colors.cream[50] ?? '#fffdf5', label: 'Grade B — Standar',  desc: 'Kualitas standar, cocok untuk pasar reguler.' },
-    C: { color: Theme.colors.danger,      bg: '#fff1f2',               label: 'Grade C — Di bawah standar', desc: 'Perlu perbaikan metode budidaya.' },
-  };
-  const cfg = gradeConfig[result.grade] ?? gradeConfig.C;
+function DiagnosisCard({
+  item,
+  onPress,
+}: {
+  item: DiagnosisHistoryItem;
+  onPress: () => void;
+}) {
+  const isSelesai = item.status === 'Selesai';
 
   return (
-    <View style={styles.resultSection}>
-      <Card style={[styles.gradeCard, { backgroundColor: cfg.bg }]}>
-        <View style={styles.gradeRow}>
-          <Text style={[styles.gradeLetter, { color: cfg.color }]}>{result.grade}</Text>
-          <View style={styles.gradeInfo}>
-            <Text style={[styles.gradeLabel, { color: cfg.color }]}>{cfg.label}</Text>
-            <Text style={styles.gradeDesc}>{cfg.desc}</Text>
-            <Text style={styles.confidence}>Keyakinan: {(result.confidence * 100).toFixed(1)}%</Text>
-          </View>
-        </View>
-      </Card>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={isSelesai ? 0.75 : 1}
+    >
+      {/* Background */}
+      <View style={styles.cardBg} />
 
-      {/* Probability bars */}
-      <Card style={styles.probCard}>
-        <Text style={styles.probTitle}>Distribusi Probabilitas</Text>
-        {(['A', 'B', 'C'] as const).map((g) => {
-          const val = g === 'A' ? result.grade_a_prob : g === 'B' ? result.grade_b_prob : result.grade_c_prob;
-          return <ProbBar key={g} grade={g} value={val} active={result.grade === g} />;
-        })}
-      </Card>
-    </View>
-  );
-}
-
-function DiseaseCard({ result, onDetail }: { result: DiagnosisResult; onDetail: () => void }) {
-  return (
-    <View style={styles.resultSection}>
-      <Card style={[styles.diseaseCard, { backgroundColor: result.is_healthy ? Theme.colors.grass[50] : '#fff1f2' }]}>
-        <View style={styles.diseaseHeader}>
-          <Text style={styles.diseaseIcon}>{result.is_healthy ? '✅' : '🦠'}</Text>
-          <View style={styles.diseaseInfo}>
-            <Text style={[styles.diseaseName, { color: result.is_healthy ? Theme.colors.grass[700] : Theme.colors.danger }]}>
-              {result.disease_name}
-            </Text>
-            <Badge label={`${(result.confidence * 100).toFixed(1)}% keyakinan`} variant={result.is_healthy ? 'success' : 'danger'} />
-          </View>
-        </View>
-        <Text style={styles.recommendation} numberOfLines={3}>{result.recommendation}</Text>
-      </Card>
-
-      {!result.is_healthy && (
-        <TouchableOpacity style={styles.detailBtn} onPress={onDetail} activeOpacity={0.85}>
-          <Text style={styles.detailBtnText}>Lihat Detail Diagnosis & Penanggulangan →</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-}
-
-function ProbBar({ grade, value, active }: { grade: string; value: number; active: boolean }) {
-  return (
-    <View style={styles.probRow}>
-      <Text style={styles.probGrade}>Grade {grade}</Text>
-      <View style={styles.barBg}>
-        <View style={[styles.barFill, { width: `${value * 100}%` as any, backgroundColor: active ? Theme.colors.grass[600] : Theme.colors.grass[200] }]} />
+      {/* Status badge — top right */}
+      <View style={[styles.badge, isSelesai ? styles.badgeSelesai : styles.badgeDiproses]}>
+        <Text style={[styles.badgeText, isSelesai ? styles.badgeTextSelesai : styles.badgeTextDiproses]}>
+          {item.status}
+        </Text>
       </View>
-      <Text style={styles.probPct}>{(value * 100).toFixed(0)}%</Text>
-    </View>
+
+      {/* Crop name + date — top left */}
+      <View style={styles.cardTopLeft}>
+        <Text style={styles.cardCrop}>{item.cropName}</Text>
+        <Text style={styles.cardDate}>{item.date}</Text>
+      </View>
+
+      {/* Bottom section: description + sensors */}
+      <View style={styles.cardBottom}>
+        <Text style={styles.cardDesc} numberOfLines={5}>
+          {item.description}
+        </Text>
+
+        <View style={styles.sensorPanel}>
+          <View style={styles.sensorRow}>
+            <Text style={styles.sensorLabel}>Suhu udara</Text>
+            <Text style={styles.sensorValue}>{item.sensors.suhuUdara}</Text>
+          </View>
+          <View style={styles.sensorDivider} />
+          <View style={styles.sensorRow}>
+            <Text style={styles.sensorLabel}>Kelembapan</Text>
+            <Text style={styles.sensorValue}>{item.sensors.kelembapan}</Text>
+          </View>
+          <View style={styles.sensorDivider} />
+          <View style={styles.sensorRow}>
+            <Text style={styles.sensorLabel}>pH Tanah</Text>
+            <Text style={styles.sensorValue}>{item.sensors.phTanah}</Text>
+          </View>
+          <View style={styles.sensorDivider} />
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Theme.colors.bgBase },
-  previewImg: { width: '100%', height: 220 },
+  container: {
+    flex: 1,
+    backgroundColor: '#fffefb',
+    overflow: 'hidden',
+  },
 
-  resultSection: { padding: Theme.spacing.lg, gap: Theme.spacing.md },
-  actions: { paddingHorizontal: Theme.spacing.lg },
+  /* ── Decorative ── */
+  decoGradient: {
+    position: 'absolute',
+    left: 225,
+    top: -127,
+    width: 180,
+    height: 220,
+  },
+  decoPlant: {
+    position: 'absolute',
+    top: -109,
+    left: 246,
+    width: 203,
+    height: 247,
+  },
 
-  gradeCard: { padding: Theme.spacing.md },
-  gradeRow: { flexDirection: 'row', alignItems: 'center', gap: Theme.spacing.md },
-  gradeLetter: { fontSize: 64, fontWeight: Theme.font.weightBold },
-  gradeInfo: { flex: 1 },
-  gradeLabel: { fontSize: Theme.font.sizeLg, fontWeight: Theme.font.weightBold },
-  gradeDesc: { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted, marginTop: 4, lineHeight: 16 },
-  confidence: { fontSize: Theme.font.sizeXs, color: Theme.colors.grass[600], marginTop: 6, fontWeight: Theme.font.weightMedium },
+  /* ── Header ── */
+  headerArea: {
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+  },
+  title: {
+    fontSize: 32,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  filterBtn: {
+    marginTop: 10,
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 8,
+    backgroundColor: '#dbe3dd',
+    borderColor: '#0e4719',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  filterText: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#000',
+  },
 
-  probCard: {},
-  probTitle: { fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightSemibold, color: Theme.colors.textPrimary, marginBottom: 12 },
-  probRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
-  probGrade: { width: 52, fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted },
-  barBg: { flex: 1, height: 8, backgroundColor: Theme.colors.bgMuted, borderRadius: 4, overflow: 'hidden' },
-  barFill: { height: '100%', borderRadius: 4 },
-  probPct: { width: 36, fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted, textAlign: 'right' },
+  /* ── Scroll ── */
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 14,
+    gap: 13,
+  },
 
-  diseaseCard: { padding: Theme.spacing.md },
-  diseaseHeader: { flexDirection: 'row', gap: 12, marginBottom: 10, alignItems: 'flex-start' },
-  diseaseIcon: { fontSize: 40 },
-  diseaseInfo: { flex: 1, gap: 6 },
-  diseaseName: { fontSize: Theme.font.sizeLg, fontWeight: Theme.font.weightBold },
-  recommendation: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, lineHeight: 20 },
+  /* ── Card ── */
+  card: {
+    height: 153,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#b4c6b8',
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  cardBg: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#fefdf9',
+  },
 
-  detailBtn: {
-    backgroundColor: Theme.colors.grass[600],
-    borderRadius: Theme.radius.md,
-    paddingVertical: 14, paddingHorizontal: Theme.spacing.lg,
+  /* Status badge */
+  badge: {
+    position: 'absolute',
+    top: 0,
+    left: 253,
+    width: 111,
+    height: 37,
+    borderBottomLeftRadius: 12,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  detailBtnText: { color: Theme.colors.white, fontSize: Theme.font.sizeMd, fontWeight: Theme.font.weightSemibold },
+  badgeDiproses: { backgroundColor: '#d9e2f9' },
+  badgeSelesai:  { backgroundColor: '#d1f2d7' },
+  badgeText: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+  },
+  badgeTextDiproses: { color: '#2e3d63' },
+  badgeTextSelesai:  { color: '#0e4719' },
+
+  /* Crop + date */
+  cardTopLeft: {
+    position: 'absolute',
+    top: 9,
+    left: 11,
+    gap: 2,
+  },
+  cardCrop: {
+    fontSize: 20,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  cardDate: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+
+  /* Bottom section */
+  cardBottom: {
+    position: 'absolute',
+    top: 55,
+    left: 11,
+    width: 340,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  cardDesc: {
+    width: 175,
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+    lineHeight: 16,
+  },
+
+  /* Sensor panel */
+  sensorPanel: {
+    width: 141,
+    gap: 6,
+  },
+  sensorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sensorLabel: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  sensorValue: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  sensorDivider: {
+    height: 1,
+    backgroundColor: '#000',
+    alignSelf: 'stretch',
+  },
 });

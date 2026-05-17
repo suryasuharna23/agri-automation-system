@@ -1,10 +1,49 @@
 import * as React from "react";
-import { StyleSheet, View, Text, Image } from "react-native";
+import { useState, useEffect } from "react";
+import {
+  StyleSheet, View, Text, Image,
+  TouchableOpacity, Pressable, Modal, FlatList,
+  ActivityIndicator, Dimensions, ScrollView,
+} from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { LineChart } from "react-native-chart-kit";
+import {
+  getCommodityList,
+  getCommodityPriceHistory,
+  type CommodityPriceHistory,
+} from "../services/commodityService";
+
+const CHART_WIDTH = Dimensions.get("window").width - 48;
 
 export default function DashboardScreen() {
+  const [commodities, setCommodities] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string>("");
+  const [history, setHistory] = useState<CommodityPriceHistory | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getCommodityList().then((list) => {
+      setCommodities(list);
+      if (list.length > 0) setSelected(list[0]);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!selected) return;
+    setLoading(true);
+    getCommodityPriceHistory(selected)
+      .then(setHistory)
+      .finally(() => setLoading(false));
+  }, [selected]);
+
   return (
+    <ScrollView
+      style={styles.scrollRoot}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
     <View style={styles.dashboard}>
       <LinearGradient
         style={styles.dashboardChild}
@@ -144,11 +183,51 @@ export default function DashboardScreen() {
         </LinearGradient>
       </View>
 
-      {/* Komoditas filter */}
-      <View style={[styles.komoditasParent, styles.parentFlexBox]}>
-        <Text style={[styles.kg, styles.kgTypo]}>Komoditas</Text>
+      {/* Komoditas dropdown */}
+      <Pressable
+        style={[styles.komoditasParent, styles.parentFlexBox]}
+        onPress={() => setDropdownOpen(true)}
+      >
+        <Text style={[styles.kg, styles.kgTypo]}>{selected || "Komoditas"}</Text>
         <Ionicons name="chevron-down" size={20} color="#0e4719" />
-      </View>
+      </Pressable>
+
+      {/* Dropdown modal */}
+      <Modal visible={dropdownOpen} transparent animationType="fade">
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setDropdownOpen(false)}
+        >
+          <View style={styles.dropdownList} onStartShouldSetResponder={() => true}>
+            <FlatList
+              data={commodities}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[
+                    styles.dropdownItem,
+                    item === selected && styles.dropdownItemActive,
+                  ]}
+                  onPress={() => {
+                    setSelected(item);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      item === selected && styles.dropdownItemTextActive,
+                    ]}
+                  >
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Harga terkini header */}
       <View style={[styles.hargaTerkiniParent, styles.parentLayout]}>
@@ -158,7 +237,7 @@ export default function DashboardScreen() {
         </Text>
       </View>
 
-      {/* Price card */}
+      {/* Price chart card */}
       <View style={[styles.groupView, styles.parentLayout]}>
         <LinearGradient
           style={[styles.wrapper, styles.iconLayout]}
@@ -167,22 +246,65 @@ export default function DashboardScreen() {
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
         />
-        <View style={styles.frameParent14}>
-          <View style={styles.rp3540Parent}>
-            <Text style={[styles.rp3540, styles.textTypo1]}>Rp3.540</Text>
-            <Text style={[styles.kg, styles.kgTypo]}>/kg</Text>
-          </View>
-          <View style={styles.parent}>
-            <Text style={[styles.text7, styles.kgTypo]}>10%</Text>
-            <Image
-              style={styles.iconincrease}
-              resizeMode="cover"
-              source={require("../../assets/icons/icon-increase.png")}
+        {loading ? (
+          <ActivityIndicator
+            style={styles.chartLoader}
+            size="large"
+            color="#0e4719"
+          />
+        ) : history ? (
+          <View style={styles.chartContainer}>
+            <View style={styles.chartHeader}>
+              <View style={styles.priceRow}>
+                <Text style={[styles.rp3540, styles.textTypo1]}>
+                  Rp{history.currentPrice.toLocaleString("id-ID")}
+                </Text>
+                <Text style={[styles.kg, styles.kgTypo]}>/kg</Text>
+              </View>
+              <View style={styles.changeRow}>
+                <Text
+                  style={[
+                    styles.changeText,
+                    { color: history.changePercent >= 0 ? "#d94e4e" : "#22c55e" },
+                  ]}
+                >
+                  {history.changePercent >= 0 ? "+" : ""}
+                  {history.changePercent}%
+                </Text>
+                <Ionicons
+                  name={history.changePercent >= 0 ? "trending-up" : "trending-down"}
+                  size={16}
+                  color={history.changePercent >= 0 ? "#d94e4e" : "#22c55e"}
+                />
+              </View>
+            </View>
+            <LineChart
+              data={{
+                labels: history.data.map((d) => d.date),
+                datasets: [{ data: history.data.map((d) => d.price) }],
+              }}
+              width={CHART_WIDTH}
+              height={130}
+              chartConfig={{
+                backgroundColor: "transparent",
+                backgroundGradientFrom: "#e7ede8",
+                backgroundGradientTo: "#d3dcd3",
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(14, 71, 25, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(14, 71, 25, ${opacity})`,
+                propsForDots: { r: "3", strokeWidth: "1", stroke: "#0e4719" },
+              }}
+              bezier
+              withInnerLines={false}
+              style={{ borderRadius: 8, marginTop: 4 }}
             />
           </View>
-        </View>
+        ) : (
+          <Text style={styles.chartPlaceholder}>Pilih komoditas</Text>
+        )}
       </View>
     </View>
+    </ScrollView>
   );
 }
 
@@ -191,7 +313,7 @@ const styles = StyleSheet.create({
     left: 23,
     textAlign: "left",
     color: "#0e4719",
-    fontFamily: "Faculty Glyphic",
+    fontFamily: "FacultyGlyphic_400Regular",
     position: "absolute",
   },
   wrapperLayout: {
@@ -204,7 +326,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   textTypo: {
-    fontFamily: "Lato-Light",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontWeight: "500",
     color: "#0e4719",
   },
@@ -221,7 +343,7 @@ const styles = StyleSheet.create({
     left: 24,
   },
   saldoAndaTypo: {
-    fontFamily: "Lato-BoldItalic",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontStyle: "italic",
   },
   parentFlexBox1: {
@@ -264,10 +386,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: "left",
   },
+  scrollRoot: {
+    flex: 1,
+    backgroundColor: "#fefdf9",
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
   dashboard: {
     height: 852,
     backgroundColor: "#fefdf9",
-    overflow: "hidden",
     width: "100%",
   },
   dashboardChild: {
@@ -327,7 +455,7 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   suhu: {
-    fontFamily: "Lato-Regular",
+    fontFamily: "FacultyGlyphic_400Regular",
     textAlign: "center",
     alignSelf: "center",
     color: "#0e4719",
@@ -338,7 +466,7 @@ const styles = StyleSheet.create({
   },
   ph: {
     alignSelf: "stretch",
-    fontFamily: "Lato-Regular",
+    fontFamily: "FacultyGlyphic_400Regular",
     textAlign: "center",
     color: "#0e4719",
   },
@@ -353,7 +481,7 @@ const styles = StyleSheet.create({
     height: 22,
   },
   text3: {
-    fontFamily: "Lato-Light",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontWeight: "500",
     color: "#0e4719",
   },
@@ -367,7 +495,7 @@ const styles = StyleSheet.create({
   },
   hargaTerkini: {
     color: "#0e4719",
-    fontFamily: "Faculty Glyphic",
+    fontFamily: "FacultyGlyphic_400Regular",
   },
   terakhirDiperbarui4: {
     fontWeight: "600",
@@ -385,7 +513,7 @@ const styles = StyleSheet.create({
   kangkung: {
     fontSize: 20,
     textAlign: "left",
-    fontFamily: "Faculty Glyphic",
+    fontFamily: "FacultyGlyphic_400Regular",
     color: "#0e4719",
   },
   frameParent7: {
@@ -412,7 +540,7 @@ const styles = StyleSheet.create({
   },
   rp20140340: {
     fontSize: 24,
-    fontFamily: "Lato-Bold",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontWeight: "600",
     textAlign: "left",
     color: "#fbf2d4",
@@ -421,7 +549,7 @@ const styles = StyleSheet.create({
   saldoAnda: {
     color: "#fbf2d4",
     alignSelf: "flex-start",
-    fontFamily: "Lato-BoldItalic",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontStyle: "italic",
   },
   frameParent8: {
@@ -450,19 +578,19 @@ const styles = StyleSheet.create({
   },
   keuangan: {
     color: "#fbf2d4",
-    fontFamily: "Lato-Bold",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontWeight: "600",
     alignSelf: "stretch",
   },
   tarikTunai: {
     color: "#fbf2d4",
-    fontFamily: "Lato-Bold",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontWeight: "600",
     alignSelf: "stretch",
   },
   groupView: {
     top: 538,
-    height: 195,
+    height: 220,
     position: "absolute",
   },
   wrapper: {
@@ -487,12 +615,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
   },
   rp3540: {
-    fontFamily: "Lato-Bold",
+    fontFamily: "FacultyGlyphic_400Regular",
     fontWeight: "600",
     color: "#0e4719",
   },
   kg: {
-    fontFamily: "Lato-Bold",
+    fontFamily: "FacultyGlyphic_400Regular",
     color: "#0e4719",
   },
   parent: {
@@ -503,11 +631,83 @@ const styles = StyleSheet.create({
   },
   text7: {
     color: "#d94e4e",
-    fontFamily: "Lato-Bold",
+    fontFamily: "FacultyGlyphic_400Regular",
   },
   iconincrease: {
     height: 20,
     width: 20,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dropdownList: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    width: 280,
+    maxHeight: 240,
+    overflow: "hidden",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  dropdownItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f3f0",
+  },
+  dropdownItemActive: {
+    backgroundColor: "#f0f3f0",
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    color: "#1e3c22",
+    fontWeight: "500",
+  },
+  dropdownItemTextActive: {
+    color: "#0e4719",
+    fontWeight: "700",
+  },
+  chartContainer: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+  },
+  chartHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  changeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  changeText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  chartLoader: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  chartPlaceholder: {
+    flex: 1,
+    textAlign: "center",
+    textAlignVertical: "center",
+    color: "#8a9e8d",
+    fontSize: 14,
   },
   komoditasParent: {
     top: 490,
@@ -542,8 +742,5 @@ const styles = StyleSheet.create({
     width: 160,
     height: 200,
     position: "absolute",
-  },
-  frameParentRow2: {
-    top: 450,
   },
 });

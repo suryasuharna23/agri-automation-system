@@ -26,7 +26,6 @@ function MainTabs() {
     >
       <Tab.Screen name="Dashboard"     component={DashboardScreen} />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
-      <Tab.Screen name="Camera"        component={CameraScreen} />
       <Tab.Screen name="Diagnosis"     component={DiagnosisScreen} />
       <Tab.Screen name="Monitor"       component={MonitorScreen} />
     </Tab.Navigator>
@@ -46,6 +45,7 @@ function AppStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Main"            component={MainTabs} />
+      <Stack.Screen name="Camera"          component={CameraScreen} />
       <Stack.Screen name="CameraPreview"   component={CameraPreviewScreen} />
       <Stack.Screen name="DiagnosisDetail" component={DiagnosisDetailScreen} />
       <Stack.Screen name="Treatment"       component={TreatmentScreen} />

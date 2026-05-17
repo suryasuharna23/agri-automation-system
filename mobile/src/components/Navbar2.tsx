@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   dashboard: {
     alignSelf: "center",
     fontSize: 10,
-    fontFamily: "Lato-Regular",
+    fontFamily: "FacultyGlyphic_400Regular",
     color: "#fbf2d4",
     textAlign: "center",
   },
