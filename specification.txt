@@ -1,0 +1,1452 @@
+Tugas Deliverable 3
+II3240 Rekayasa Sistem dan Teknologi Informasi
+
+Agri
+
+
+
+
+
+
+Disusun oleh
+Kelompok 08
+
+Wisa Ahmaduta Dinutama
+18223003
+Muhammad Faiz Alfikrona
+18223009
+Raka Adhitya Nugraha
+18223013
+Surya Suharna
+18223075
+Ni Made Sekar Jelita Parameswari
+18223101
+
+
+
+
+
+
+
+
+
+
+
+
+
+PROGRAM STUDI SISTEM DAN TEKNOLOGI INFORMASI
+SEKOLAH TEKNIK ELEKTRO DAN INFORMATIKA
+INSTITUT TEKNOLOGI BANDUNG
+2026
+
+Daftar Isi
+
+Daftar Isi	1
+Daftar Gambar	3
+Daftar Tabel	4
+1. Engineering Design	5
+1.1 Pendahuluan dan Ruang Lingkup	5
+1.1.1 Tujuan Pengembangan Sistem	6
+1.1.2 Pengguna Utama dan Kebutuhan Spesifik	6
+1.1.3 Nilai Tambah Sistem Dibandingkan Sistem Konvensional	6
+1.1.4 Batasan Ruang Lingkup Proyek	6
+1.1.5 Asumsi Pengembangan Sistem	6
+1.2 Engineering Development Lifecycle	6
+1.2.1 Concept Development	6
+1.2.2 Preliminary Design	7
+1.3 Detailed Design	7
+1.3.1 Spesifikasi Teknis Komponen Hardware	8
+1.3.2 Arsitektur Software Frontend, Backend, dan Subsistem Lain	8
+1.3.3 Skema Database Sistem	8
+1.3.4 Rancangan Komunikasi Antar Komponen	8
+1.3.5 Protokol Komunikasi	8
+1.4 Production & Deployment	8
+1.4.1 Rencana Pengadaan Komponen Hardware dan Lisensi Software	8
+1.4.2 Strategi Integrasi dan Pengujian Subsistem	9
+1.4.3 Rencana Deployment dari Prototipe ke Implementasi Penuh	9
+1.4.4 Lingkungan Pengujian Sebelum Deployment	9
+1.4.5 Rencana Menjamin Kualitas Manufaktur dan Assembly Komponen	9
+1.5 Operations & Support	9
+1.5.1 Mekanisme Monitoring dan Pemeliharaan Sistem Pasca Implementasi	9
+1.5.2 Rencana Upgrade Sistem di Masa Depan	9
+1.5.3 Strategi Menghadapi Kegagalan Sistem	9
+1.5.4 Dokumentasi Teknis untuk Dukungan Operasional	9
+1.5.5 Pelatihan Pengguna Sistem	10
+1.6 Requirement Analysis	10
+1.6.1 Kebutuhan Fungsional	10
+1.6.2 Mekanisme Penentuan [Logika/Aksi Utama Sistem]	10
+1.6.3 Parameter [Lingkungan/Data] yang Diukur/Diolah	10
+1.6.4 Fitur Utama pada Frontend, Backend, dan Komponen Lain	10
+1.6.5 Penanganan Kondisi Abnormal	10
+1.6.6 Kebutuhan Non-Fungsional	10
+1.7 Risk Assessment	11
+1.7.1 Identifikasi Risiko Teknis Utama	11
+1.7.2 Risiko Keandalan Komponen	11
+1.7.3 Risiko Keamanan	11
+1.7.4 Risiko Integrasi Antar Subsistem	11
+1.7.5 Risiko Lingkungan Operasional	12
+1.7.6 Assessment Risiko	12
+1.7.7 Dampak Kegagalan Komponen dan Sistem	12
+1.7.8 Strategi Mitigasi Risiko	12
+1.7.9 Residual Risk Management	13
+1.8 Configuration Management & Change Control	13
+1.8.1 Version Control	13
+1.8.2 Change Requests	13
+1.8.3 Impact Analysis	13
+1.8.4 Approval & Documentation	13
+1.9 Project Management	13
+1.9.1 Timeline & Milestones	13
+1.9.2 Resource Allocation (Alokasi Sumber Daya)	14
+1.9.3 Quality Assurance (QA)	14
+1.9.4 Communication (Komunikasi)	14
+2.  Integration and Evaluation	15
+2.1 Perencanaan dan Persiapan Pengujian (Test Planning and Preparation)	15
+2.2 Integrasi Sistem (System Integration)	17
+2.2.1 Konfigurasi Pengujian Fisik	17
+2.2.2 Proses Integrasi Sistem	18
+2.2.3 Integrasi Total Sistem	19
+2.2.4 Fasilitas Pengujian Integrasi Sistem	19
+2.3 Pengujian Sistem dalam Pengembangan (Developmental System Testing)	20
+2.3.1 Tujuan Pengujian Sistem dalam Pengembangan	20
+2.3.2 Lingkup Pengujian	20
+2.3.3 Rencana Skenario dan Validasi Teknis	20
+2.3.4 Hasil Pengujian	21
+2.3.5 Analisis dan Kesimpulan	21
+2.4 Evaluasi Operasional (Operational Test & Evaluation)	21
+2.4.1 Tujuan Evaluasi Operasional	21
+2.4.2 Skenario Pengujian	22
+2.4.3 Metode Pelaksanaan	22
+2.4.4 Parameter Evaluasi	22
+2.4.5 Hasil Observasi	22
+2.4.5 Hasil Akhir	23
+2.4.6 Kesimpulan	24
+Daftar Pustaka	24
+Lampiran	24
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Daftar Gambar
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Daftar Tabel
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. Engineering Design
+1.1 Pendahuluan dan Ruang Lingkup
+Bagian Engineering Design mendokumentasikan seluruh proses perancangan rekayasa sistem Agri, mulai dari penyusunan konsep awal hingga rencana operasi dan pemeliharaan pasca-implementasi. Sistem Agri adalah ekosistem Agriculture Intelligence of Things (AIoT) yang mengintegrasikan perangkat Internet of Things (IoT), kecerdasan buatan (AI), dan marketplace digital untuk mendukung petani hortikultura dalam meningkatkan kualitas produk, transparansi rantai pasok, dan efisiensi transaksi. Ruang lingkup perancangan mencakup tiga komponen utama: aplikasi mobile berbasis React Native untuk petani, website dan web service berbasis FastAPI/Flask untuk pembeli B2B serta administrator, dan node IoT berbasis ESP32 untuk akuisisi data lingkungan lahan secara real-time.
+1.1.1 Tujuan Pengembangan Sistem
+Tujuan utama pengembangan sistem Agri adalah menyediakan platform yang membantu petani hortikultura dalam tiga aspek kritis: 
+meningkatkan akurasi dan konsistensi penilaian mutu hasil panen melalui klasifikasi otomatis berbasis CNN dengan akurasi >90%; 
+menyediakan sistem pemantauan lahan real-time yang mampu mendeteksi anomali lingkungan dan memberikan peringatan dini dalam waktu <10 detik; 
+memfasilitasi transaksi jual-beli yang transparan dan aman antara petani dan pembeli B2B melalui marketplace digital dengan pencatatan transaksi 100% akurat.
+1.1.2 Pengguna Utama dan Kebutuhan Spesifik
+Petani Hortikultura
+Pengguna utama aplikasi mobile yang membutuhkan kemudahan dalam melakukan grading kualitas sayuran secara otomatis, mendiagnosis penyakit tanaman berbasis foto, memantau kondisi lahan melalui data sensor IoT, menerima peringatan dini anomali, serta mengelola transaksi penjualan dan penarikan dana.
+
+
+Pembeli B2B (Korporat dan Grosir)
+Pengguna dashboard web yang membutuhkan akses terhadap data ketersediaan stok, kualitas produk berbasis hasil grading AI, riwayat budidaya (traceability) yang terverifikasi, serta kemudahan dalam melakukan transaksi pengadaan.
+1.1.3 Nilai Tambah Sistem Dibandingkan Sistem Konvensional
+Dibandingkan dengan metode konvensional di sektor pertanian, sistem Agri menawarkan beberapa keunggulan kompetitif:
+Grading Otomatis
+Penilaian mutu sayuran secara konvensional dilakukan oleh tenaga manusia yang subjektif dan tidak konsisten. Sistem Agri menggunakan model CNN yang memberikan klasifikasi objektif (Grade A/B/C) dengan akurasi >90% dan waktu pemrosesan <5 detik per sampel.
+
+
+Pemantauan Lahan Real-time
+Petani konvensional mengandalkan kunjungan fisik ke lahan. Sistem Agri menyediakan pemantauan kontinu melalui sensor IoT (suhu, kelembapan, pH, soil moisture) dengan latensi data <10 detik dan notifikasi peringatan dini otomatis.
+
+
+Traceability Digital
+Riwayat budidaya konvensional berbentuk catatan kertas yang mudah hilang atau dimanipulasi. Sistem Agri menyimpan log historis terenkripsi yang mencakup data sensor dan hasil grading AI sebagai bukti kualitas (Proof of Quality) yang tamper-proof.
+
+
+Marketplace Terintegrasi
+Transaksi konvensional melibatkan banyak perantara yang seringkali merugikan petani. Sistem Agri menghubungkan petani langsung dengan pembeli B2B melalui marketplace digital dengan pencatatan transaksi 100% akurat dan settlement <24 jam yang tentunya dilengkapi dengan antarmuka ramah pengguna untuk meningkatkan pengalaman pengguna.
+
+1.1.4 Batasan Ruang Lingkup Proyek
+Batasan sistem Agri dalam fase pengembangan ini meliputi:
+Skala Implementasi
+Prototipe ditargetkan untuk petani hortikultura (sayuran) di wilayah Jawa Barat sebagai pilot project. Sistem Agri kami buat dalam bentuk yang scalable sehingga dapat dikembangkan lebih jauh lagi tanpa reengineering yang terlalu berat apabila ingin di-scale  ke lingkup yang lebih besar.
+
+
+Jenis Komoditas
+Klasifikasi mutu AI terbatas pada komoditas sayuran yang telah memiliki dataset pelatihan yang memadai. Tentunya, komoditas yang didukung dapat dikembangkan lebih lanjut pada skala berikutnya apabila ingin dikembangkan lebih lanjut.
+
+
+Fitur yang Tidak Termasuk
+Sistem belum mencakup fitur penilaian mutu bibit, logistik pengiriman, asuransi pertanian, sistem e-wallet, dan integrasi dengan sistem pemerintah.
+
+
+Batasan Teknis
+Perangkat IoT bergantung pada ketersediaan jaringan Wi-Fi di area lahan. Pada kondisi offline, data disimpan secara lokal dan disinkronisasi setelah koneksi kembali tersedia. Selain itu, tentunya sistem tidak dapat diimplementasikan di lingkungan yang belum terjangkau internet dan listrik. 
+
+
+Batasan Anggaran
+Pengembangan dilakukan dengan komponen open-source dan hardware berbiaya rendah (ESP32, sensor generik) untuk menekan biaya produksi.
+
+1.1.5 Asumsi Pengembangan Sistem
+Asumsi yang digunakan selama pengembangan sistem Agri:
+Infrastruktur jaringan Wi-Fi tersedia di lokasi lahan pertanian atau setidaknya dalam radius yang dapat dijangkau oleh node IoT.
+Petani memiliki perangkat smartphone Android/iOS dengan kamera yang memadai untuk pengambilan citra sayuran pada rentang pencahayaan normal dan resolusi yang memadai
+Cuaca lingkungan cukup baik untuk mengambil gambar yang jelas
+Pembeli B2B memiliki akses internet stabil untuk menggunakan dashboard web pada jaringan 4G.
+Sumber daya listrik atau baterai tersedia untuk mengoperasikan perangkat IoT secara kontinu di lapangan.
+Data harga komoditas dari API eksternal pasar induk tersedia dan dapat diakses secara programatik minimal satu kali per hari.
+1.2 Engineering Development Lifecycle
+1.2.1 Concept Development
+Tahap concept development pada proyek Agri bertujuan untuk mematangkan ide awal menjadi konsep sistem yang layak secara teknis, ekonomis, dan operasional. Proses ini mencakup perumusan konsep dasar sistem, studi kelayakan, evaluasi alternatif solusi, identifikasi keunikan konsep, dan pemetaan pemenuhan kebutuhan pengguna. Hasil dari tahap ini menjadi dasar bagi perancangan arsitektur pada tahap Preliminary Design.
+
+1.2.1.1 Konsep Dasar Sistem
+Sistem Agri dibangun dengan konsep ekosistem AIoT terintegrasi yang terdiri dari tiga komponen utama yang saling terhubung:
+Node IoT (Field Layer)
+Perangkat berbasis ESP32 yang dilengkapi sensor DHT22, soil moisture, dan pH meter untuk mengakuisisi data parameter fisik lingkungan lahan secara real-time. Data divalidasi secara lokal menggunakan pendekatan Edge Intelligence sebelum ditransmisikan ke cloud server melalui protokol MQTT (QoS Level 1).
+
+
+Web Service dan Backend (Cloud Layer)
+Server berbasis FastAPI/Flask yang bertanggung jawab atas seluruh business logic, termasuk integrasi model AI (CNN untuk grading dan diagnosis penyakit), manajemen database relasional, rule engine untuk deteksi anomali, dan penyediaan RESTful API bagi mobile app maupun dashboard web.
+
+
+Aplikasi Klien (Application Layer)
+Terdiri dari aplikasi mobile React Native (Android/iOS) sebagai antarmuka utama petani dan dashboard web untuk pembeli B2B serta administrator. Kelima subsistem internal (IoT dan Pemantauan Lahan, AI, Integrasi dan Keamanan, Platform, Manajemen Pasokan) saling berinteraksi melalui subsistem Integrasi dan Keamanan sebagai pusat koordinasi.
+
+1.2.1.2 Studi Kelayakan (Feasibility Study)
+Kelayakan Teknis
+	Seluruh teknologi yang dipilih telah terbukti matang dan tersedia secara luas. ESP32 mendukung Wi-Fi native dan memiliki performa memadai untuk pemrosesan sensor real-time. Framework FastAPI/Flask menyediakan performa API yang tinggi. Model CNN untuk klasifikasi citra sayuran telah menunjukkan akurasi >90% pada dataset serupa dalam literatur. Protokol MQTT menjamin pengiriman data dengan PDR >=99% pada QoS Level 1.
+
+
+Kelayakan Ekonomis
+	Komponen hardware menggunakan sensor generik berbiaya rendah (DHT22, soil moisture sensor, pH meter analog) dan mikrokontroler ESP32 yang terjangkau. Soft	ware dikembangkan dengan framework open-source (React Native, FastAPI, Flask) tanpa biaya lisensi. Biaya operasional cloud dapat diminimalkan dengan auto-scaling.
+
+
+Kelayakan Operasional
+	Antarmuka mobile dirancang dengan pendekatan user-friendly untuk petani yang mungkin memiliki literasi digital terbatas. Dashboard web menyediakan visualisasi data yang intuitif bagi pembeli B2B. Perangkat IoT menggunakan casing IP65 untuk ketahanan di lingkungan pertanian. Mekanisme offline queuing memastikan data tidak hilang saat koneksi terputus.
+
+1.2.1.3 Alternatif Solusi yang Dipertimbangkan
+Berdasarkan analisis pemilihan konsep (Concept Selection), sistem Agri yang dikembangkan mengadopsi "Konsep B: Semi-Otomatis (Digital Monitoring)". Berikut adalah alternatif konsep lain yang telah dievaluasi namun ditolak:
+Konsep A (Otomatisasi Penuh Smart Farming)
+	Integrasi penuh sensor IoT dengan aktuator otomatis serta grading AI pada ban berjalan (conveyor). Konsep ini ditolak karena biaya infrastruktur fisik yang sangat mahal dan tingginya risiko kegagalan teknis di area lahan dengan listrik/internet tidak stabil.
+Konsep C (Sistem Konvensional Terdigitalisasi)
+	Hanya menggunakan aplikasi mobile untuk pencatatan transaksi manual dan referensi harga pasar tanpa instalasi sensor di lahan. Konsep ini ditolak karena tidak menyediakan data kondisi lahan yang objektif (Proof of Quality) dan tingkat akurasi grading yang rendah akibat tidak adanya bantuan AI.
+Konsep D (Sistem Ekosistem Terpusat)
+	Penggunaan pusat pengolahan pasca-panen (gudang pintar) yang melayani banyak kelompok tani secara kolektif. Konsep ini ditolak karena memerlukan biaya investasi awal yang masif serta menuntut koordinasi logistik yang sangat kompleks, sehingga berisiko menyebabkan keterlambatan jadwal implementasi.
+
+1.2.1.4 Keunikan Konsep Sistem
+Keunikan sistem Agri (B) secara langsung mengatasi kelemahan dari alternatif-alternatif solusi yang ditolak, melalui pendekatan berikut:
+Keseimbangan Otomatisasi dan Fleksibilitas
+	Alih-alih menggunakan infrastruktur fisik mahal seperti aktuator dan conveyor untuk otomatisasi penuh (Konsep A), Agri memanfaatkan Dual AI Engine dan Edge Intelligence. Pemrosesan AI untuk grading dan diagnosis penyakit cukup diakses melalui aplikasi mobile, sementara validasi data sensor lahan dilakukan secara efisien pada ESP32, menekan beban biaya operasional dan risiko teknis tanpa mengorbankan fungsionalitas cerdas.
+Objektivitas Data dan Bukti Mutu
+	Berbeda dengan konsep digitalisasi konvensional (Konsep C) yang sekadar memindahkan catatan manual dan rawan bias subjektif, Agri menghasilkan Proof of Quality Terintegrasi. Sistem secara otomatis menggabungkan hasil grading objektif dari AI dan riwayat data sensor lingkungan (IoT) menjadi traceability log terenkripsi yang tidak dapat dimanipulasi, memberikan jaminan mutu yang mutlak bagi pembeli B2B.
+Implementasi Terdistribusi dan Mandiri
+	Tidak seperti konsep ekosistem terpusat yang menuntut investasi gudang pintar dan koordinasi logistik masif (Konsep D), Agri membangun ekosistem mandiri di tingkat petani individu. Melalui fitur Early Warning System yang mendeteksi anomali lahan secara kontinu dan integrasi langsung ke marketplace, setiap petani dapat beroperasi secara terdesentralisasi dengan implementasi yang cepat, namun tetap terhubung secara efisien dengan pasar B2B.
+
+1.2.1.5 Pemenuhan Kebutuhan Pengguna
+Agri dirancang untuk memenuhi semua kebutuhan operasional:
+OP-01 (Pemantauan Lahan Real-time)
+Dipenuhi oleh node IoT ESP32 yang mengirimkan data sensor setiap 15-30 menit dengan latensi <10 detik (R-4, R-8).
+OP-02 (Grading Kualitas Otomatis)
+Dipenuhi oleh model CNN dengan akurasi >90% dan inference time <5 detik (R-1).
+OP-03 (Diagnosis Penyakit Berbasis AI)
+Dipenuhi oleh model klasifikasi patogen dengan confidence score >85% (R-3).
+OP-04 (Transparansi Harga Pasar)
+Dipenuhi oleh integrasi API pasar induk dengan deviasi <5% (R-5)
+OP-05 (Manajemen Dompet Digital)
+Dipenuhi oleh modul transaksi dengan akurasi 100% dan settlement <24 jam (R-6).
+OP-06 (Traceability Data)
+Dipenuhi oleh log historis terenkripsi yang mencakup data sensor dan grading AI (R-7).
+OP-07 (Akses Multi-perangkat)
+Dipenuhi oleh aplikasi mobile dan dashboard web dengan RBAC dan waktu muat <3 detik (R-2, R-9).
+
+1.2.2 Preliminary Design
+Tahap preliminary design pada proyek Agri menerjemahkan konsep sistem menjadi arsitektur teknis awal yang mencakup pembagian subsistem, pola interaksi antar komponen, pemilihan teknologi, dan pertimbangan desain untuk setiap layer sistem. Hasil dari tahap ini menjadi landasan bagi detailed design pada fase selanjutnya.
+
+1.2.2.1 Arsitektur Sistem Keseluruhan
+Arsitektur sistem Agri mengikuti pola arsitektur tiga layer yang terdiri dari Field Layer, Cloud Layer, dan Application Layer.
+
+
+
+1.2.2.2 Subsistem Utama yang Dikembangkan
+Sistem Agri terdiri dari lima subsistem utama:
+Subsistem IoT & Pemantauan Lahan 
+Bertanggung jawab atas akuisisi data lahan melalui perangkat sensor pH, suhu, dan kelembapan.
+Subsistem Artificial Intelligence
+Berperan dalam memberikan hasil AI berupa diagnosa penyakit dan grading mutu komoditas.
+Subsistem Integrasi & Keamanan
+Berfungsi sebagai pusat koordinasi sistem yang mencakup fitur autentikasi, autorisasi, enkripsi, dan API gateway.
+Subsistem Platform & Finansial
+Mengelola seluruh aktivitas yang berkaitan dengan finansial dan transaksi digital sistem.
+Subsistem Manajemen Pasokan
+Menangani aktivitas rantai pasok yang meliputi penawaran, kontrak, dan proses logistik.
+
+1.2.2.3 Interaksi Antar Subsistem
+
+Berdasarkan diagram interaksi di atas, interaksi dimulai dari Petani yang mengirimkan Data lahan ke Subsistem IoT & Pemantauan Lahan serta melakukan Transaksi pada Subsistem Platform & Finansial. Subsistem IoT kemudian meneruskan aliran data (Stream) ke Subsistem Integrasi & Keamanan. Subsistem Artificial Intelligence memproses dan memberikan Hasil AI ke Subsistem Integrasi & Keamanan, di mana pusat integrasi ini kemudian mendistribusikan Otorisasi ke Subsistem Platform & Finansial dan Data pasokan ke Subsistem Manajemen Pasokan. Di sisi lain, Pembeli B2B dapat melakukan Cek kualitas secara langsung ke Subsistem Artificial Intelligence dan melakukan Penawaran ke Subsistem Manajemen Pasokan.
+
+1.2.2.4 Teknologi dan Platform yang Digunakan
+Komponen
+Teknologi
+Alasan Pemilihan
+Mikrokontroler
+ESP32 (30-Pin) 
+Wi-Fi native, ADC memadai, biaya rendah
+Sensor Udara 
+DHT22 (AM2302)
+Akurasi tinggi (suhu +/-0.5C, RH +/-2%)
+Sensor Tanah
+Soil Moisture Sensor
+Pembacaan analog kadar air tanah
+Sensor Kimia 
+pH Meter Analog V1.1
+Pengukuran pH tanah secara analog
+Protokol IoT
+MQTT (QoS Level 1)
+At-least-once delivery, efisien bandwidth
+Backend Framework
+FastAPI / Flask
+Performa tinggi, dukungan async, bahasa mudah
+Frontend Mobile
+React Native
+Cross-platform (Android/iOS)
+Frontend Web 
+React / Vue.js
+SPA responsif, ekosistem library luas
+Database
+PostgreSQL
+Relasional, mendukung enkripsi dan indexing
+AI Framework
+TensorFlow / PyTorch
+Support CNN, Komunitas besar
+Cloud Hosting
+Cloud server
+Skalabilitas sesuai beban
+Payment Gateway
+API Payment Eksternal
+Integrasi settlement dan verifikasi
+
+
+
+
+1.2.2.5 Pertimbangan Desain Awal Frontend, Backend, dan Subsistem Lain
+Frontend (Mobile dan Web)
+Desain antarmuka mengutamakan kemudahan penggunaan bagi petani dengan literasi digital terbatas.
+Dashboard web menyajikan visualisasi data sensor dan grading dalam format grafik yang intuitif.
+Waktu muat halaman ditargetkan <3 detik pada jaringan 4G.
+Desain responsif untuk berbagai ukuran layar perangkat.\
+
+
+Backend
+Arsitektur RESTful API memisahkan logika bisnis dari antarmuka pengguna.
+Auto-scaling memastikan performa tetap stabil saat beban puncak (hingga 200 permintaan inferensi AI simultan).
+Sistem idempotency key mencegah duplikasi transaksi finansial.
+Autentikasi JWT dengan RBAC dan strategi anti OWASP 10
+Rate limiting dan firewall melindungi API dari penyalahgunaan.
+IoT
+Pendekatan Edge Intelligence melakukan validasi data secara lokal untuk efisiensi bandwidth
+Mekanisme offline queuing menyimpan data pada LittleFS saat koneksi terputus.
+Interval pengiriman data 15-30 menit untuk efisiensi energi baterai.
+Casing IP65 dengan conformal coating untuk ketahanan di lingkungan pertanian.
+1.3 Detailed Design
+Desain terperinci menjabarkan arsitektur perangkat keras dan perangkat lunak secara spesifik, mencakup komponen elektronik, framework software, skema basis data, dan protokol komunikasi yang digunakan dalam sistem Agri.
+1.3.1 Spesifikasi Teknis Komponen Hardware
+Komponen perangkat keras IoT yang digunakan dalam sistem pemantauan lahan Agri dirancang dengan prinsip Edge Intelligence dan ketahanan fisik.
+
+Komponen
+Spesifikasi Teknis
+Keterangan
+Mikrokontroler ESP32
+30-Pin
+Wi-Fi 802.11 b/g/n
+Bluetooth v4.2 BR/EDR
+ADC memadai
+Pusat pemrosesan lokal, Validasi Edge, dan Transmisi data nirkabel.
+Sensor Udara DHT22
+AM2302
+Tegangan 3.3-5.5V
+Akurasi suhu ±0.5°C
+Akurasi kelembapan ±2% RH
+Mengukur suhu dan kelembapan udara secara digital dengan presisi tinggi.
+Sensor Tanah (Soil Moisture)
+AM2302
+Tegangan 3.3-5.5V
+Analog output, Tegangan 3.3-5V
+Mengukur kadar air dalam tanah secara analog.
+Sensor Kimia (pH Meter)
+Analog V1.1
+Rentang pengukuran 0-14
+Akurasi ±0.1 pH
+Mengukur tingkat asam basa tanah melalui probe.
+Modul Daya LM2596
+DC-DC Buck Converter
+Input 4-40V
+Output 1.5-35V
+Menurunkan dan menstabilkan tegangan baterai menjadi 5V/3.3V agar aman
+Sumber Energi
+3x Baterai Li-ion (Seri/Paralel)
+12V
+Sumber daya utama perangkat di lapangan untuk operasional kontinu.
+Breadboard & Kabel
+MB-102 & Jumper Wires
+Media penghubung komponen dalam purwarupa.
+Casing Eksternal
+Standar IP65
+Conformal Coating
+Melindungi PCB dari air, debu, dan korosi akibat kondensasi lingkungan pertanian.
+
+
+1.3.2 Arsitektur Software Frontend, Backend, dan Subsistem Lain
+Arsitektur perangkat lunak dibagi berdasarkan komponen aplikasi:
+Frontend Mobile (Aplikasi Petani)
+	Dibangun menggunakan React Native untuk menyediakan aplikasi cross-platform (Android dan iOS). Modul utama mencakup antarmuka dashboard, integrasi akses kamera untuk klasifikasi mutu dan diagnosis penyakit, visualisasi grafik data sensor, notifikasi real-time via Firebase Cloud Messaging, dan formulir pencatatan transaksi penjualan.
+Frontend Web (Dashboard Pembeli B2B & Admin)
+	Dibangun menggunakan framework React atau Vue.js. Menyediakan antarmuka Single Page Application (SPA) yang responsif dengan waktu muat <3 detik. Fitur utama mencakup katalog komoditas, integrasi keranjang belanja, status pesanan, dan tampilan traceability log.
+Backend dan Web Service (Logika Bisnis)
+	Dikembangkan menggunakan framework FastAPI atau Flask (Python) yang mendukung pemrosesan asinkron (async) untuk menangani hingga 200 permintaan konkuren dengan waktu respons <5 detik. Backend mengelola integrasi model CNN (TensorFlow/PyTorch), manajemen transaksi dan idempotency key, komunikasi ke layanan Payment Gateway eksternal, dan penarikan harga komoditas harian.
+AI
+Menggunakan model Convolutional Neural Network (CNN) terlatih untuk klasifikasi kualitas panen (Grade A/B/C) dan klasifikasi patogen. Model di-deploy di cloud dan diakses secara REST API.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1.3.3 Skema Database Sistem
+Database relasional yang digunakan adalah PostgreSQL, yang dapat memastikan integritas data dan kemampuan manajemen relasi kompleks.
+
+1.3.4 Rancangan Komunikasi Antar Komponen
+Komunikasi antar sistem diatur dengan ketat untuk menjamin keamanan dan efisiensi.
+
+
+
+1.3.5 Protokol Komunikasi
+Komunikasi IoT ke Server
+Menggunakan protokol MQTT berstandar QoS Level 1. MQTT adalah protokol ringan yang ideal untuk lingkungan dengan bandwidth terbatas, dan QoS 1 memberikan garansi pengiriman data minimal sekali (at-least-once delivery) meskipun koneksi tidak stabil. Format pertukaran data menggunakan JSON. Autentikasi dilakukan menggunakan client certificate atau token akses.
+Komunikasi Klien ke Server (Mobile/Web ke Backend)
+Seluruh interaksi menggunakan protokol HTTP/S berarsitektur RESTful API. Autentikasi pengguna dilakukan menggunakan JSON Web Token (JWT) yang diamankan via jalur TLS (Transport Layer Security) untuk mencegah serangan Man-In-The-Middle (MITM).
+Komunikasi Antar Layanan Pihak Ketiga
+Pengambilan data dari API Pasar Induk dan layanan transaksi Payment Gateway dilakukan via RESTful API yang aman dengan mekanisme Webhook untuk konfirmasi status pembayaran.
+1.4 Production & Deployment
+1.4.1 Rencana Pengadaan Komponen Hardware dan Lisensi Software
+Pengadaan komponen keras mencakup pembelian ESP32, sensor DHT22, soil moisture, pH meter analog, serta bahan penunjang (modul LM2596, baterai Li-ion, breadboard, kabel) yang dapat diperoleh melalui vendor elektronik komersial dengan prioritas efisiensi biaya. Casing standar IP65 akan dipesan melalui produsen plastik atau metode cetak 3D.
+	Pada aspek perangkat lunak, sistem memanfaatkan stack open-source tanpa biaya lisensi: React Native (Mobile), React/Vue (Web), FastAPI/Flask (Backend), PostgreSQL (Database), dan framework machine learning (TensorFlow/PyTorch). Biaya lisensi berfokus pada sewa server cloud, domain, layanan MQTT broker, serta layanan eksternal API Payment Gateway yang berbayar berbasis per-transaksi (Pay-As-You-Go).
+1.4.2 Strategi Integrasi dan Pengujian Subsistem
+Sistem diuji dengan pendekatan berjenjang (bottom-up):
+Unit Testing
+	Memastikan setiap modul fungsi berjalan benar. Pada backend, fungsi API dan kalkulasi logika keuangan diuji; pada IoT, kalibrasi serta toleransi deviasi pembacaan sensor (suhu ±0.5°C, kelembapan ±2%) dipastikan akurat.
+Integration Testing
+	Menggabungkan modul dan menguji konektivitas, termasuk pengiriman paket MQTT ke cloud (target PDR ≥99%), sinkronisasi LittleFS ke cloud secara offline/online, serta komunikasi frontend-backend.
+System & Load Testing
+	Menguji sistem secara menyeluruh dari awal hingga akhir, di mana disimulasikan 200 koneksi bersamaan ke modul inferensi AI untuk mengevaluasi fitur auto-scaling dan response time (<5 detik).
+User Acceptance Testing (UAT)
+	Pengujian berbasis skenario oleh representasi petani dan pembeli B2B terhadap prototipe akhir guna memastikan fungsionalitas UI terpenuhi.
+
+1.4.3 Rencana Deployment dari Prototipe ke Implementasi Penuh
+Fase Prototipe Awal
+Implementasi terbatas di lingkungan laboratorium menggunakan sirkuit breadboard, database staging, dan aplikasi mobile simulator.
+Fase Pengujian Lapangan (Pilot)
+Penempatan node IoT yang telah dirakit dan dilapisi conformal coating serta casing IP65 pada 2-3 lahan petani lokal (Jawa Barat). Deployment web services dan database pada satu mesin cloud. 
+Fase Implementasi Penuh
+Peluncuran aplikasi ke app store (Google Play). Scaling infrastruktur backend pada cluster dengan load balancer dan auto-scaling rules, ditambah penerapan CI/CD pipeline untuk efisiensi pembaruan perangkat lunak.
+
+1.4.4 Lingkungan Pengujian Sebelum Deployment
+Lingkungan pengujian dibagi menjadi tiga area:
+Lingkungan Lokal (Local Development)
+Mesin masing-masing pengembang yang memiliki mock server API, database dummy, dan emulator perangkat seluler.
+Lingkungan Staging Cloud
+Tiruan identik dari sistem produksi yang terisolasi dari data riil. Berfungsi untuk UAT dan integration testing, mencakup integrasi sandbox Payment Gateway.
+Field Testing Area
+Petak lahan percontohan dengan kondisi pertanian sesungguhnya (iklim, fluktuasi sinyal Wi-Fi, debu) untuk mengevaluasi ketahanan fisik perangkat IoT.
+
+1.4.5 Rencana Menjamin Kualitas Manufaktur dan Assembly Komponen
+Untuk perakitan hardware yang lebih luas:
+Desain sirkuit akan dicetak menjadi Printed Circuit Board (PCB) komersial alih-alih breadboard untuk mencegah koneksi kendor.
+Perakitan hardware akan mengikuti checklist operasional standar (SOP) dan pemeriksaan kontrol kualitas (QC), yang mencakup inspeksi visual solderan, pengujian fungsional modul konverter buck, dan pengujian transmisi Wi-Fi setiap unit rakitan sebelum diintegrasikan pada lahan.
+Perlindungan lingkungan akan diaplikasikan berupa pemberian conformal coating pada papan sirkuit dan gasket pada casing tahan air IP65.
+1.5 Operations & Support
+1.5.1 Mekanisme Monitoring dan Pemeliharaan Sistem Pasca Implementasi
+Cloud Infrastructure
+Menggunakan platform monitoring (misal: Prometheus dan Grafana) untuk memonitor beban server, waktu respons API, dan status kesehatan database. Layanan error logging akan menangkap pengecualian pada backend maupun antarmuka mobile (contoh: Sentry/Crashlytics).
+IoT Devices
+Implementasi status health check (ping status) secara berkala dan fitur Over-The-Air (OTA) update via Wi-Fi sehingga firmware dapat diperbaiki tanpa harus mencabut perangkat dari lahan.
+Customer Support
+Penyediaan saluran bantuan pada aplikasi bagi petani dan pembeli untuk melaporkan kendala, dilengkapi sistem ticketing untuk penanganan insiden oleh tim pengembang.
+1.5.2 Rencana Upgrade Sistem di Masa Depan
+Pengembangan Agri tahap selanjutnya diproyeksikan mencakup:
+Penambahan dataset pelatihan AI agar sistem klasifikasi mutu dan diagnosis penyakit dapat mendukung berbagai ragam komoditas tambahan selain sayuran.
+
+
+Integrasi sensor tambahan seperti sensor Nitrogen, Fosfor, dan Kalium (NPK) makro-tanah untuk pemantauan yang lebih mendalam.
+Implementasi algoritma prediktif (forecasting) untuk estimasi hasil panen dan rekomendasi masa tanam.
+1.5.3 Strategi Menghadapi Kegagalan Sistem
+Sistem Agri menerapkan mekanisme mitigasi dan pemulihan:
+Kegagalan Jaringan IoT
+Fallback ke penyimpanan memori lokal (LittleFS buffering), dengan auto-sync data saat jaringan Wi-Fi kembali normal.
+Kegagalan Server Cloud
+Mekanisme failover, auto-scaling untuk mengatasi lonjakan beban tiba-tiba (surge load), serta pencadangan pangkalan data (database snapshot) harian.
+Fallback Manual
+Petani tetap dapat menggunakan antarmuka secara manual untuk mencatat histori budidaya atau menavigasi harga komoditas apabila modul sensor IoT tidak beroperasi. 
+1.5.4 Dokumentasi Teknis untuk Dukungan Operasional
+Seluruh modul dan operasi sistem akan terdokumentasi meliputi:
+API Documentation, disusun dalam format standar seperti Swagger/OpenAPI.
+Buku Panduan Instalasi (Hardware Manual) yang mendemonstrasikan cara pemasangan fisik sensor IoT pada lahan pertanian beserta kalibrasinya.
+Pedoman Pemecahan Masalah (Troubleshooting Guide) terkait perbaikan jaringan konektivitas Wi-Fi IoT.
+Standar Prosedur Operasi Maintenance (Maintenance SOP) server.
+
+1.5.5 Pelatihan Pengguna Sistem
+Pelatihan ditargetkan secara spesifik kepada petani (sebagai end-user aplikasi mobile dan pengelola node sensor) yang meliputi:
+Sesi lokakarya (workshop) lapangan mengenai cara aktivasi perangkat, interpretasi notifikasi anomali lahan, cara tepat untuk pemindaian gambar AI, dan alur transaksi jual.
+
+
+Materi berupa tutorial interaktif in-app dan media edukasi dalam bentuk video instruksional untuk mengurangi kendala adopsi teknologi.
+1.6 Requirement Analysis
+1.6.1 Kebutuhan Fungsional
+Kode
+Kebutuhan Sistem
+Deskripsi
+F01
+Sistem dapat mengklasifikasikan kualitas hasil panen sayuran.
+Sistem menerima input citra digital dari kamera perangkat mobile pengguna, kemudian menggunakan model Computer Vision (Convolutional Neural Network) untuk mengklasifikasikan kualitas sayuran ke dalam tiga kelas mutu (Grade A, B, C) secara otomatis berdasarkan parameter visual: warna, tekstur, dan ukuran.
+F02
+Sistem dapat melakukan authentication pengguna berdasarkan role pengguna.
+Sistem mengelola autentikasi dan otorisasi akses pengguna. Pengguna wajib memasukkan kredensial yang valid untuk mendapatkan hak akses antarmuka yang berbeda, yaitu Mobile-Apps untuk profil Petani dan Dashboard Web untuk profil Pembeli B2B atau Administrator
+F03
+Sistem dapat mendeteksi penyakit tanaman berdasarkan foto
+Sistem menyediakan fitur diagnosa penyakit tanaman berbasis AI. Petani mengunggah foto bagian tanaman yang bergejala (daun, batang, atau buah). Model AI mengidentifikasi jenis hama/patogen dan memberikan rekomendasi penanganan presisi secara instan sebagai early warning system.
+F04
+Sistem dapat mengumpulkan data lingkungan lahan secara real-time.
+Sistem mampu membaca dan mengakuisisi parameter fisik lingkungan lahan, yang mencakup suhu udara, kelembaban udara, kelembapan tanah, dan pH air, melalui perangkat sensor secara berkala. Data lingkungan tersebut kemudian ditransmisikan dan disimpan ke dalam cloud server agar dapat dipantau oleh pengguna.
+F05
+Sistem dapat menampilkan data harga komoditas terkini.
+Sistem secara otomatis menarik data harga komoditas hortikultura terkini dari sumber pasar induk (API eksternal) dan menampilkannya kepada petani sebagai referensi harga jual yang transparan dan diperbarui minimal sekali per hari dengan selisih < 5% terhadap harga pasar riil.
+F06
+Sistem dapat memungkinkan pembeli B2B memantau stok dan kualitas panen
+Dashboard web menyediakan fitur monitoring real-time bagi pembeli korporat dan grosir untuk memantau ketersediaan stok, kualitas produk (berbasis data grading AI), serta riwayat budidaya (traceability) yang telah terverifikasi. Dashboard harus dapat diakses kapan saja.
+F07
+Sistem dapat mengelola transaksi keuangan untuk memfasilitasi dan mencatat transaksi pembayaran hasil panen.
+Sistem merekam data transaksi jual-beli antara petani dan pembeli B2B secara otomatis. Sistem memfasilitasi proses pembayaran dengan merutekan pencairan dana dari pihak pembeli langsung menuju ke rekening bank petani yang telah terdaftar, serta menyediakan histori transaksi tersebut untuk keperluan pelacakan keuangan pengguna.
+F08
+Sistem dapat memverifikasi dan menyimpan data histori budidaya
+Seluruh data yang dihasilkan oleh sensor IoT dan proses grading AI dicatat dan disimpan dalam database sebagai traceability log yang terenkripsi dan tidak dapat dimanipulasi, memberikan bukti kualitas (Proof of Quality) kepada pembeli B2B.
+F09
+Sistem dapat mengirimkan notifikasi peringatan dini kepada petani
+Apabila data sensor mendeteksi kondisi anomali lingkungan (contoh: pH turun drastis, kelembapan ekstrem), sistem secara otomatis mengirimkan notifikasi push ke aplikasi mobile petani dalam waktu <10 detik sebagai tindakan mitigasi dini.
+
+
+1.6.2 Mekanisme Penentuan [Logika/Aksi Utama Sistem]
+Logika deteksi dan peringatan pada rule engine beroperasi dengan ambang batas (threshold):
+Node IoT mengirim payload data sensor (suhu, RH, kelembapan tanah, pH) ke backend.
+Backend (Web Service) membandingkan nilai tersebut terhadap nilai referensi. Misalnya, jika pH air menyentuh level kritis asam (<5.5) atau suhu melewati (>35°C).
+Apabila terjadi pelanggaran ambang batas selama dua siklus pengiriman berturut-turut (guna mencegah alarm palsu akibat noise sementara), backend memerintahkan cloud messaging (FCM) mengirimkan notifikasi.
+
+Pada sistem AI klasifikasi:
+Model memproses matriks pixel citra masukan, dan mengekstraksi fitur visual utama (warna, cacat, ukuran). Lapisan terakhir dari CNN (softmax) menghitung rentang probabilitas kelas mutu (Grade A, B, C).
+1.6.3 Parameter [Lingkungan/Data] yang Diukur/Diolah
+Data yang diakuisisi oleh node ESP32:
+Suhu Udara: Diukur dalam derajat Celsius (°C) via DHT22 (Akurasi ±0.5°C).
+Kelembapan Udara (Relative Humidity): Diukur dalam persentase (% RH) via DHT22 (Akurasi ±2%).
+Kelembapan Tanah (Soil Moisture): Diukur via modul probe soil analog dan dikonversi ESP32 melalui Analog to Digital Converter (ADC).
+Tingkat Asam/Basa (pH): Diukur dari range 0 hingga 14 oleh modul pH analog.
+Semua pengukuran tersebut ditransformasikan ke bentuk data sekuensial yang ditautkan bersama dengan parameter waktu (timestamp).
+1.6.4 Fitur Utama pada Frontend, Backend, dan Komponen Lain
+Komponen
+Fitur Utama
+Frontend Mobile
+Fitur diagnosis tanaman via kamera (CNN), form klasifikasi kualitas hasil panen, monitor parameter grafik sensor (real-time), log pencatatan transaksi penjualan produk, fitur notifikasi sistem peringatan dini, dan manajemen tarik dana (wallet).
+Frontend Web
+Antarmuka pasar/marketplace digital produk pertanian, akses log traceability setiap batch hasil sayuran, manajemen keranjang, riwayat pengadaan pasokan.
+Backend API 
+Autentikasi berbasis RBAC (Role-Based Access Control), orkestrasi routing endpoint REST, manajemen database (penyimpanan log histori dan transaksi), interaksi dengan model TensorFlow/PyTorch, serta endpoint API Payment Gateway.
+Perangkat IoT
+Akuisisi pembacaan lingkungan, transmisi protokol MQTT QoS Level 1, buffering LittleFS (operasi mode offline).
+
+
+1.6.5 Penanganan Kondisi Abnormal
+Koneksi Terputus (IoT Offline)
+Modul ESP32 akan menyimpan sementara nilai pada file LittleFS lokal. Saat konektivitas Wi-Fi terhubung ulang, backlog data otomatis ditransfer ke broker MQTT.
+
+
+Data Sensor Tidak Valid (Noise)
+Logika Edge Intelligence pada ESP32 menetapkan filter bandpass; misal sensor suhu melaporkan angka "-999", nilai tersebut dibuang sebelum diunggah ke jaringan.
+Kegagalan API Transaksi (Timeout)
+Request terhadap Payment Gateway yang gagal secara sementara akan ditangani oleh skema eksponensial retry serta validasi idempotency key untuk menghindari transfer uang berlipat ganda.
+1.6.6 Kebutuhan Non-Fungsional
+1.6.6.1 Persyaratan Performa Sistem
+Waktu respons halaman web atau mobile kurang dari 3 detik (pada jaringan 4G stabil). API service mampu menjalankan inferensi AI dalam batas toleransi <5 detik dan menyelesaikan sinkronisasi data IoT dengan latensi <10 detik.
+
+1.6.6.2 Persyaratan Keamanan
+Autentikasi menggunakan algoritma berbasis JWT (JSON Web Tokens). Jalur komunikasi sepenuhnya beroperasi di atas protokol terenkripsi (HTTPS/TLS dan MQTT SSL). Penerapan Rate Limiting pada akses API untuk menepis serangan DoS.
+
+1.6.6.3 Persyaratan Keandalan dan Ketersediaan Sistem
+Target keandalan uptime mencapai 99.9%. Fitur recovery IoT dapat melakukan sinkronisasi mandiri. Settlement pembayaran transaksi diselesaikan kurang dari batas 24 jam.
+
+1.6.6.4 Persyaratan Efisiensi Energi (jika relevan)
+Node sensor IoT memanfaatkan status sleep ketika berada di luar interval pengiriman data periodik (yaitu selama window 15-30 menit) guna mengurangi disipasi arus listrik baterai.
+
+1.6.6.5 Persyaratan Skalabilitas
+Konfigurasi auto-scaling server backend diberlakukan, khususnya ketika musim panen raya, dengan toleransi penerimaan permintaan klasifikasi AI mencapai lebih dari 200 sambungan serentak.
+1.7 Risk Assessment
+1.7.1 Identifikasi Risiko Teknis Utama
+Beberapa risiko teknis kritis pada sistem AIoT Agri meliputi potensi fluktuasi voltase atau kehabisan daya baterai perangkat, kerentanan sambungan internet yang buruk di area pertanian terpencil, ketidakakuratan interpretasi sensor akibat penuaan modul, risiko ancaman keamanan jaringan MITM pada transaksi finansial, hingga latensi pemrosesan atau kegagalan API server akibat load request tinggi.
+
+1.7.2 Risiko Keandalan Komponen
+Modul sensor kimia semacam pH meter sangat rentan mengalami degradasi kalibrasi akibat kontak panjang dengan tanah yang bersifat destruktif/korosif. Pembacaan akurasi sensor dapat bergeser sehingga menghasilkan data tidak valid yang mengganggu interpretasi log traceability bagi pembeli.
+1.7.3 Risiko Keamanan
+Ancaman terbesar bersumber dari pencurian JWT token, potensi penyadapan data via lalu lintas HTTP tak terenkripsi (sniffing/MITM), yang dapat membahayakan catatan finansial penjualan maupun kredensial pengguna. Serangan bot DoS terhadap model AI juga berpotensi mematikan kemampuan inferensi server.
+1.7.4 Risiko Integrasi Antar Subsistem
+Integrasi perangkat sensor, backend, serta aplikasi seluler sangat kompleks. Ketidakcocokan format paket pertukaran (misal JSON parsing error) maupun pembaruan modul (inkompatibilitas API version) dapat menyebabkan kerusakan alur dari akuisisi data menuju database historis.
+
+1.7.5 Risiko Lingkungan Operasional
+Perangkat IoT akan digunakan secara eksklusif dalam lingkungan outdoor yang panas, lembap, kotor, dan berdebu. Kondensasi air atau genangan hujan merupakan faktor dominan kerusakan sirkuit, di samping gangguan interferensi elektromagnetis.
+1.7.6 Assessment Risiko
+Risiko
+Probabilitas
+Dampak
+Level Risiko
+Kegagalan Akurasi Sensor Lingkungan/pH
+Sedang
+Tinggi
+Mayor
+Kehabisan Daya Perangkat IoT
+Tinggi
+Sedang
+Mayor
+Inkonsistensi/Gangguan Jaringan Wi-Fi Lahan
+Tinggi
+Tinggi
+Kritis
+Serangan Siber / Keamanan Data Finansial
+Rendah
+Tinggi
+Kritis
+Backend Down Akibat Beban Puncak
+Sedang
+Sedang
+Mayor
+Inkompatibilitas Integrasi Firmware/Backend
+Sedang
+Tinggi
+Mayor
+
+
+1.7.7 Dampak Kegagalan Komponen dan Sistem
+Bila terjadi malfungsi pada komponen hardware ESP32 atau sensor, sistem tidak dapat mengakuisisi kondisi lapangan secara riil, memutus alur traceability dan fitur alert anomali, namun operasional transaksi finansial tetap berfungsi. Jika backend/cloud platform mengalami kegagalan, maka seluruh fitur yang memerlukan autentikasi, model AI, dan fungsionalitas perdagangan tidak dapat diakses (full system halt).
+1.7.8 Strategi Mitigasi Risiko
+1.7.8.1 Mitigasi Risiko Komponen / Hardware
+Penetapan mekanisme kalibrasi berkala pada instrumen pH meter serta penerapan algoritma filter rentang wajar (ambang batas) untuk menolak nilai noise secara otomatis (Edge Intelligence).
+
+1.7.8.2 Mitigasi Risiko Keamanan
+Mengalihkan semua layanan web melalui HTTPS dengan enkripsi SSL/TLS berlapis. Penerapan identitas berbatas waktu (JWT expiry) yang dikombinasikan pada gateway API yang dilengkapi modul firewall dan rate limiter.
+
+1.7.8.3 Mitigasi Risiko Koneksi / Offline
+Implementasi antrean penyimpanan paket (LittleFS queueing buffer) lokal pada mikrokontroler. ESP32 secara persisten menjaga data selama koneksi hilang dan hanya melakukan pengiriman setelah sinyal Wi-Fi diuji memadai.
+
+1.7.8.4 Mitigasi Risiko Lingkungan
+Aplikasi perlakuan conformal coating ke atas papan PCB, isolasi seluruh rangkaian dengan gasket antiair pada kotak boks proyek berstandar pelindung Ingress Protection (IP65) minimal.
+
+1.7.8.5 Strategi Cadangan Sistem
+Membangun protokol pemantauan status kesehatan server maupun layanan sensor berupa Health Check ping. Pengguna dapat melangsungkan fungsi pencatatan komoditas dan navigasi produk dalam format offline dan mode pencatatan finansial manual.
+
+1.7.9 Residual Risk Management
+Setelah mengaplikasikan upaya tersebut, risiko tersisa meliputi kelemahan infrastruktur absolut lokal (misalnya ISP lumpuh atau pemadaman area meluas). Strategi sisa adalah memberlakukan monitoring terus menerus dari pihak teknisi pada sistem logging (Prometheus/Grafana) agar bisa segera melakukan intervensi serta merencanakan audit keamanan berkala (penetration testing) per kuartal.
+1.8 Configuration Management & Change Control
+1.8.1 Version Control
+Sistem Agri akan menjamin versi saat pengembangan terjaga dan konsisten dengan menggunakan metode-metode, seperti berikut.
+Git dan Gitflow Workflow
+	Git adalah sistem terdistribusi yang digunakan untuk mengontrol versi berbagai project. Gitflow Workflow adalah model branching Git yang menggunakan berbagai feature branch dan primary branch untuk mengontrol versi. Ilustrasi cara kerja Gitflow dapat dilihat pada Gambar XX.X berikut.
+
+Gambar 1.X Ilustrasi Gitflow Workflow
+
+	Pada masa pengembangan, akan dibentuk dua branch atau lebih seperti pada gambar (branch Main dan Develop). Branch Develop digunakan untuk mengembangkan feature-feature secara independen (hanya satu feature untuk satu branch). Kemudian, feature branch hanya akan di-merge ke Main ketika fitur telah selesai dikembangkan sehingga tidak terjadi konflik saat pengembangan.
+
+Pencatatan Versi Software
+	Pencatatan versi software dilakukan dengan menggunakan Semantic Versionin dengan format X.Y.Z (Major.Minor.Patch) untuk memberikan makna standar pada setiap perubahan kode. Melalui skema ini, kenaikan nomor versi secara spesifik menunjukkan adanya perbaikan bug (patch), penambahan fitur yang kompatibel (minor), atau perubahan besar yang tidak kompatibel dengan versi sebelumnya (major). 
+
+Pencatatan Versi Hardware
+Spesifikasi skema rangkaian ESP32 dan daftar komponen didokumentasikan dalam folder khusus dengan penomoran versi berdasarkan revisi desain. 
+
+Mekanisme Rollback
+	Jika terjadi kegagalan pasca-deployment, tim dapat melakukan revert kode ke commit sebelumnya melalui Git atau mengganti firmware ESP32 ke versi cadangan yang telah teruji. 
+
+1.8.2 Change Requests
+	Prosedur pengajuan perubahan harus mengikuti dengan kesepakatan yang telah dibuat bersama.
+Dokumentasi Dampak
+Setiap pengajuan perubahan wajib menyertakan formulir CR yang menjelaskan alasan perubahan dan dampaknya terhadap fitur lain.
+Proses Persetujuan
+Perubahan harus disetujui oleh project manager atau ketua kelompok setelah meninjau urgensi kebutuhan.
+Changelog & Kriteria Penerimaan
+Setiap CR yang selesai harus dicatat dalam berkas CHANGELOG.md dan memenuhi kriteria pengujian (misal: akurasi grading AI tetap > 90% atau parameter lainnya).
+Prioritisasi
+Perubahan dikategorikan menjadi Critical, Major (fitur baru), atau Minor (perubahan UI sederhana).
+1.8.3 Impact Analysis
+Untuk mencegah adanya impact signifikan terhadap kode-kode atau progress awal selama pengembangan berlangsung, perlu adanya metode penanganan agar hal tersebut tidak terjadi.
+Simulasi & Regression Testing
+Melakukan pengujian ulang pada fitur-fitur lama untuk memastikan kode baru tidak merusak fungsi yang sudah ada.
+Konsultasi Stakeholder
+Dengan perkembangan sistem, kami perlu berdiskusi dengan perwakilan petani atau pembeli B2B jika hal tersebut berpotensi mempengaruhi cara mereka bertransaksi.
+Evaluasi Jadwal & Biaya
+Menganalisis potensi pergeseran timeline 10 minggu yang telah ditetapkan atau menambah biaya komponen di luar anggaran awal berdasarkan perubahan atau pembaruan pada sistem.
+
+1.8.4 Approval & Documentation
+	Proses ini dilakukan untuk memastikan perubahan yang akan dilakukan sudah disepakati dan disetujui secara formal.
+Persetujuan Formal
+Persetujuan tertulis pada sistem tiket feature sebelum kode di-merge ke cabang main.
+Pembaruan Dokumentasi
+Memperbarui manual penggunaan untuk petani (Mobile App) dan panduan operasional marketplace (Web View).
+Sistem Tiket Perubahan
+Menggunakan platform manajemen tugas (seperti Trello, GitHub Issues, atau Jira) untuk melacak status setiap perubahan dari pengajuan hingga selesai.
+Komunikasi Tim
+Mengadakan daily stand-up atau pengiriman notifikasi melalui media komunikasi internal tim untuk memastikan semua pengembang mengetahui versi sistem terbaru.
+1.9 Project Management
+1.9.1 Timeline & Milestones
+Pengembangan dibagi menjadi lima fase utama untuk memastikan sistem IoT dan Marketplace terintegrasi dengan baik.
+Fase
+Deskripsi Aktivitas
+Durasi
+Milestone
+Studi Kelayakan
+Pengumpulan kebutuhan petani, analisis teknis sensor, dan perancangan arsitektur sistem
+1 minggu
+Dokumen desain dan Functional Requirement selesai
+Pengembangan Prototipe
+Perakitan hardware ESP32, penulisan firmware, serta perakitan backend dan UI marketplace
+2 minggu
+Prototipe fungsional
+Pengujian
+Pelaksanaan unit test, pengujian integrasi sensor ke cloud, dan user acceptance test (UAT) terbatas
+1 minggu
+Laporan pengujian
+Implementasi
+Deployment sistem ke produksi dan pengujian langsung pada komoditas pertanian lokal
+1 minggu
+Sistem live
+Evaluasi & Scaling
+Analisis MoE/MoP dan penyusunan laporan akhir serta rencana keberlanjutan
+Berkelanjutan
+Produk final
+
+
+1.9.2 Resource Allocation (Alokasi Sumber Daya)
+Berikut adalah tabel pembagian tugas anggota tim.
+Nama - NIM
+Tugas / Modul
+Raka Adhitya Nugraha  - 18223013
+Muhammad Faiz Alfikrona - 18223009
+
+
+Modul: hardware IoT, firmware, integrasi sensor
+Surya Suharna - 18223075
+Wisa Ahmaduta Dinutama - 18223003
+Modul: backend server, API, database
+Ni Made Sekar Jelita Parameswari - 18223101
+Modul: frontend web/dashboard
+Raka Adhitya Nugraha  - 18223013
+Ni Made Sekar Jelita Parameswari - 18223101
+Modul: aplikasi mobile
+Semua
+Modul: integrasi sistem, QA
+
+
+1.9.3 Quality Assurance (QA)
+Tahap QA pada proyek sistem Agri dilakukan untuk menjamin reliabilitas teknologi AIoT.
+Pengujian Unit per Modul
+Setiap komponen fungsional diuji untuk memastikan kebenaran logikanya. Hal ini mencakup pengujian algoritma kalkulasi bagi hasil pada sistem pembayaran, akurasi pembacaan nilai sensor pada firmware ESP32, serta validasi input pada formulir listing produk.
+Pengujian Integrasi
+Menguji kelancaran aliran data antar komponen sistem, terutama sinkronisasi data dari node sensor IoT ke cloud server melalui protokol MQTT, serta keterhubungan antara hasil grading AI dengan hasil di web.
+UAT
+Melakukan simulasi transaksi dan operasional aplikasi bersama perwakilan petani dan pembeli B2B untuk memastikan antarmuka marketplace mudah dipahami dan memenuhi kebutuhan alur kerja mereka di lapangan. 
+Metrik QA yang Dipantau
+Pengujian difokuskan secara mendalam pada core feature yang mempengaruhi integritas data dan keuangan, yaitu akurasi data sensor lingkungan (MoP1-MoP3).
+Proses Code Review
+Sebelum melakukan merge kode ke branch utama, setiap anggota tim wajib melalui sesi code review. Untuk meningkatkan objektivitas, tim menggunakan ekstensi GitHub yang secara otomatis memberikan skor kualitas kode berdasarkan kompleksitas dan standar penulisan. Skor ini menjadi syarat ambang batas sebelum peninjauan manual dilakukan. Dengan begitu, dipastikan tidak ada kesalahan logika yang menghambat pengembangan di hari berikutnya serta menjaga standar kualitas teknis tetap tinggi.
+
+1.9.4 Communication (Komunikasi)
+Karena Agri merupakan project yang belum memiliki dana secara besar, media komunikasi yang digunakan masih sederhana. Meskipun begitu, media komunikasi tetap menggunakan tools yang sesuai dengan kebutuhan.
+Internal
+	Menggunakan papan Kanban digital sederhana untuk pemantauan progress tugas dan diskusi teknis melalui platform chat.
+Eksternal
+	Penyampaian progres mingguan kepada dosen di kelas.
+2.  Integration and Evaluation
+2.1 Perencanaan dan Persiapan Pengujian (Test Planning and Preparation)
+Perencanaan dan persiapan pengujian pada sistem Agri bertujuan untuk memastikan seluruh subsistem—yaitu Field Layer (IoT), Cloud Layer (Backend API & AI), dan Application Layer (Mobile App & Web Dashboard)—dapat beroperasi secara terintegrasi dan memenuhi seluruh kebutuhan fungsional serta non-fungsional sebelum dipindahkan ke lingkungan produksi.
+Proses ini mengikuti pendekatan pengujian bertingkat (bottom-up testing) untuk meminimalkan risiko integrasi antar-subsistem.
+Tabel 2.1 - Pengembangan Sistem dan Perencanaan Pengujian dan Evaluasi
+System Development
+T&E Planning
+Need: Sistem Agri harus memverifikasi tiga fungsi kritis: 
+
+(1) akuisisi dan transmisi data lingkungan lahan dari node IoT ESP32 secara real-time
+(2) klasifikasi mutu sayuran dan diagnosis penyakit berbasis model CNN dengan akurasi dan latensi yang terukur
+(3) integrasi transaksi finansial yang akurat antara petani dan pembeli B2B melalui Payment Gateway. 
+
+Seluruh fungsi ini harus diverifikasi agar sistem dapat dinyatakan layak beroperasi di lapangan. 
+Objective: Memastikan seluruh komponen sistem Agri, mulai dari IoT, AI, backend, frontend mobile, dan dashboard web beroperasi sesuai spesifikasi teknis yang telah didefinisikan (F01–F09, R-1–R-9). Pengujian bertujuan membuktikan keandalan transmisi data sensor (PDR ≥99%, latensi <10 detik), akurasi model AI (F1-Score ≥90% untuk grading, confidence ≥85% untuk diagnosis), keamanan autentikasi RBAC, serta integritas transaksi keuangan (0% error rate) dalam kondisi mendekati nyata. 
+System Concept: Trade-off utama yang dianalisis: 
+
+(a) Performa vs. Biaya: 
+Penggunaan ESP32 dan sensor generik berbiaya rendah berpotensi mengkompromikan akurasi sensor dibanding sensor industrial-grade
+(b) Kecepatan Pengembangan vs. Kompleksitas :
+Framework open-source (FastAPI, React Native) mempercepat pengembangan namun menuntut konfigurasi keamanan dan integrasi yang lebih hati-hati
+(c) Kebutuhan Pengguna vs. Batasan Teknis : 
+Petani membutuhkan respon instan, namun inferensi AI di cloud bergantung pada kualitas koneksi jaringan di area lahan. 
+Test Concept: Trade-off metode pengujian yang dievaluasi: 
+
+(a) Manual vs. Otomatis : Pengujian sensor IoT dan UAT dilakukan secara manual karena membutuhkan kondisi fisik nyata, sedangkan pengujian API backend dan load testing menggunakan alat otomatis (pytest, Locust)
+(b) Simulasi vs. Lapangan :
+Fase awal menggunakan simulasi lingkungan terkontrol di lab, dilanjutkan uji lapangan terbatas pada 2–3 lahan petani di Jawa Barat
+(c) Cakupan vs. Waktu :
+Prioritas pengujian difokuskan pada fungsi kritis (akurasi AI, integritas transaksi, latensi IoT) sebelum fitur sekunder. 
+Functional Design: Modul-modul fungsional yang dirancang meliputi: 
+
+(1) Sensor/Input : Node ESP32 dengan DHT22 (suhu & RH), soil moisture sensor, dan pH meter analog
+(2) Firmware & Edge Intelligence : Validasi data lokal dan offline queueing via LittleFS
+(3) Backend API : FastAPI/Flask menangani RBAC, orkestrasi AI, manajemen database PostgreSQL, dan payment gateway
+(4) Model AI : CNN TensorFlow/PyTorch untuk grading (Grade A/B/C) dan klasifikasi patogen
+(5) Frontend Mobile : React Native untuk antarmuka petani
+(6) Frontend Web : React/Vue.js untuk dashboard pembeli B2B dan admin. 
+Test Plan: Rencana pengujian mencakup: 
+
+(1) Unit Testing : Validasi akurasi tiap sensor (suhu ±0.5°C, RH ±2%, pH ±0.1), pengujian tiap endpoint API secara terisolasi, dan validasi logika kalkulasi transaksi
+(2) Integration Testing : Uji transmisi MQTT ESP32 ke cloud (target PDR ≥99%), sinkronisasi LittleFS saat offline/online, dan konektivitas frontend-backend
+(3) System & Load Testing : Simulasi 200 permintaan inferensi AI serentak untuk mengevaluasi auto-scaling dengan response time ≤5 detik
+(4) Security Testing : Validasi JWT, enkripsi TLS, dan rate limiting
+(5) UAT : Skenario berbasis peran (petani dan pembeli B2B) terhadap prototipe akhir
+(6) Field Testing : penempatan node IoT di lahan nyata untuk menguji ketahanan fisik dan stabilitas jaringan. 
+Detailed Design: Rancangan rinci mencakup: 
+
+Hardware : ESP32 (Wi-Fi 802.11 b/g/n), DHT22 (3.3–5.5V), soil moisture analog, pH meter (range 0–14, akurasi ±0.1), LM2596 buck converter (output 5V/3.3V), baterai Li-ion 3S 12V, casing IP65 dengan conformal coating
+
+Software : JWT + RBAC untuk autentikasi, PostgreSQL dengan enkripsi log historis, MQTT QoS Level 1 dengan JSON payload, mekanisme idempotency key untuk transaksi, LittleFS buffer untuk operasi offline, OTA update via Wi-Fi
+
+Security : HTTPS/TLS untuk semua komunikasi klien-server, MQTT SSL, rate limiting, dan firewall API. 
+Test Procedures: Prosedur pengujian rinci meliputi: 
+
+(1) Kalibrasi Sensor : Membandingkan pembacaan DHT22, soil moisture, dan pH meter terhadap alat referensi terstandar sebelum deployment 
+(2) Validasi Protokol MQTT : Memantau Packet Delivery Ratio (PDR) selama 30 menit dengan kondisi sinyal bervariasi (normal dan lemah)
+(3) Uji Offline Queuing : Memutus koneksi Wi-Fi node ESP32 selama 30 menit, lalu memverifikasi integritas data yang disinkronisasi (target: 100% data tersimpan tanpa kehilangan)
+(4) Uji Inferensi AI : Mengunggah 50 sampel citra sayuran dengan variasi pencahayaan (100–500 lux) dan mengukur F1-Score serta inference time
+(5) Load Testing Backend : Menggunakan Locust untuk mensimulasikan 200 permintaan konkuren
+(6) Penetration Testing : Menguji kerentanan JWT dan endpoint API; (7) UAT Lapangan : Melakukan alur lengkap: scan sayuran → grading → lihat harga → catat penjualan. 
+Asumsi dan Batasan Sistem: 
+
+(1) jaringan Wi-Fi tersedia di area lahan atau dalam jangkauan node IoT
+(2) petani memiliki smartphone Android/iOS dengan kamera memadai
+(3) pencahayaan lingkungan cukup untuk pengambilan citra sayuran (100–500 lux)
+(4) sumber daya listrik atau baterai tersedia untuk operasional IoT kontinu
+(5) API pasar induk dapat diakses programatik minimal satu kali per hari. 
+
+Batasan: sistem terbatas pada komoditas sayuran, wilayah pilot Jawa Barat, dan belum mencakup logistik, asuransi, atau integrasi sistem pemerintah. 
+Peninjauan dan Penyesuaian Rencana Pengujian: Review rencana pengujian dilakukan setiap akhir fase milestone. Jika suatu pengujian tidak dapat diselesaikan tepat waktu akibat keterbatasan hardware atau koneksi lapangan, skenario dialihkan ke lingkungan simulasi staging. Kriteria penerimaan minimum (akurasi AI >90%, PDR ≥99%, latensi <10 detik) bersifat tetap dan tidak dapat diturunkan tanpa persetujuan formal dari seluruh anggota tim. Setiap deviasi dicatat dalam CHANGELOG dan dijadikan dasar iterasi perbaikan. 
+Risiko dan Mitigasi Teknis: 
+
+(1) gangguan jaringan Wi-Fi di lahan, dimitigasi dengan LittleFS offline queueing
+(2) degradasi kalibrasi pH meter akibat paparan tanah, dimitigasi dengan jadwal kalibrasi berkala dan filter ambang batas Edge Intelligence
+(3) beban puncak server saat panen raya, dimitigasi dengan auto-scaling dan load balancer
+(4) serangan MITM pada transaksi finansial, dimitigasi dengan HTTPS/TLS, JWT expiry, dan rate limiting
+(5) inkompatibilitas firmware/API, dimitigasi dengan semantic versioning dan regression testing. 
+Penanganan Risiko Pengujian: 
+
+Pengujian khusus risiko meliputi: (1) Simulasi Kegagalan Jaringan : Memutus koneksi secara paksa dan memverifikasi auto-sync LittleFS
+(2) Pengujian Keamanan Berlapis : Uji penetrasi JWT, simulasi serangan DoS ke endpoint inferensi AI
+(3) Uji Kalibrasi Berkala : Pembacaan sensor dibandingkan dengan referensi setelah 72 jam operasional kontinu
+(4) Fallback Testing : Memastikan pengguna tetap dapat mencatat transaksi secara manual saat modul AI atau IoT tidak tersedia
+(5) Monitoring Log : Penggunaan Prometheus/Grafana untuk mendeteksi anomali performa selama pengujian berlangsung. 
+Timeline dan Alokasi Sumber Daya: 
+Pengembangan dibagi dalam lima fase, yakni Studi Kelayakan (2 minggu), Pengembangan Prototipe (6 minggu), Pengujian (1 minggu), Implementasi (1 minggu), dan Evaluasi & Scaling (berkelanjutan). 
+
+Pembagian tugas: Raka & Faiz menangani hardware IoT dan firmware; Surya & Wisa menangani backend dan API; Jelita menangani frontend web; Raka & Jelita menangani aplikasi mobile; seluruh tim terlibat dalam integrasi dan QA. 
+Jadwal dan Alokasi Sumber Daya Pengujian: Pengujian unit dan kalibrasi sensor dilakukan paralel selama fase pengembangan prototipe (minggu 4–6). Integration testing dijadwalkan pada minggu ke-7 (fase pengujian). Load testing dan security testing dilakukan pada minggu ke-7 di lingkungan staging cloud. UAT dengan representasi petani dijadwalkan pada akhir fase pengujian. Field testing pada lahan Jawa Barat dilakukan selama fase implementasi (minggu ke-8). Buffer waktu iterasi sebesar 2–3 hari dialokasikan untuk perbaikan bug kritis yang ditemukan selama pengujian integrasi. 
+Dokumentasi dan Komunikasi: Hasil desain dan pengembangan terdokumentasi dalam: API Documentation (Swagger/OpenAPI), Hardware Manual instalasi sensor IoT, Troubleshooting Guide konektivitas Wi-Fi, Maintenance SOP server, dan CHANGELOG.md untuk setiap perubahan. Komunikasi internal menggunakan papan Kanban digital dan platform chat tim. Progress mingguan disampaikan kepada dosen pembimbing. 
+Pelaporan dan Dokumentasi Hasil Pengujian: Laporan pengujian disusun per milestone yang mencakup: tabel hasil uji (komponen, target, hasil, status Lolos/Gagal), log bug beserta prioritas (Critical/Major/Minor), rekomendasi perbaikan teknis, dan feedback pengguna dari sesi UAT. Laporan harian dibuat selama fase pengujian intensif untuk memantau progres resolusi bug. Seluruh hasil pengujian diarsipkan di repository GitHub dan dilampirkan dalam dokumen deliverable akhir. 
+
+
+2.2 Integrasi Sistem (System Integration)
+Proses integrasi sistem Agri dilakukan secara bertahap mengikuti pendekatan bottom-up, dimulai dari validasi komponen individual, dilanjutkan ke integrasi subsistem, hingga pengujian sistem secara menyeluruh. Pendekatan ini dipilih untuk memudahkan isolasi masalah dan meminimalkan risiko kegagalan pada tahap integrasi total
+2.2.1 Konfigurasi Pengujian Fisik
+Konfigurasi pengujian fisik sistem Agri dirancang untuk mensimulasikan kondisi operasional di lahan pertanian dengan batasan fungsionalitas protorype, mencakup akuisisi data sensor, transmisi ke cloud, pemrosesan AI, dan tampilan antarmuka pengguna. Pengujian dilakukan menggunakan perangkat keras asli yang dirangkai dalam modul terintegrasi sebagai berikut:
+
+[ Sisipkan Diagram Konfigurasi Pengujian Fisik (Gambar 2.1) di sini ]
+
+Tabel 2.2 - Detail Diagram Konfigurasi Pengujian Fisik
+Komponen / Alur
+Deskripsi
+Peran dalam Sistem
+Input Generator
+Lingkungan simulasi lahan pertanian yang menghasilkan kondisi nyata, seperti variasi suhu ruangan (18–35°C), kelembapan udara (40–90% RH), larutan buffer pH terstandar (pH 4.0, 7.0, 10.0) untuk kalibrasi sensor, serta sampel citra sayuran dengan variasi pencahayaan (100–500 lux) untuk pengujian model AI. 
+Menyediakan input yang terkontrol dan terukur agar hasil pengujian sensor, transmisi MQTT, dan inferensi CNN dapat diverifikasi secara objektif dan berulang. 
+System Element
+Node IoT ESP32 beserta sensor DHT22, soil moisture, dan pH meter; firmware dengan Edge Intelligence dan LittleFS buffer; MQTT broker (cloud); backend FastAPI; model CNN; database PostgreSQL; aplikasi mobile React Native; dan dashboard web React/Vue.js. 
+Komponen aktual sistem yang diuji secara menyeluruh, mulai dari pembacaan sensor di lapangan hingga tampilan data di antarmuka pengguna. 
+Output Analyzer
+Alat dan metode pengumpulan output, yakni
+(1) MQTT client monitor (MQTT Explorer) untuk memverifikasi paket data JSON dari ESP32
+(2) log database PostgreSQL untuk memvalidasi penyimpanan data sensor dan transaksi
+(3) antarmuka dashboard web untuk mengamati visualisasi data real-time
+(4) pytest untuk validasi respons API backend
+(5) alat ukur referensi (termometer digital, pH meter industrial) untuk kalibrasi silang sensor. 
+Memastikan output aktual sistem sesuai dengan spesifikasi yang ditetapkan: PDR ≥99%, latensi <10 detik, akurasi sensor sesuai toleransi, dan response time API <5 detik. 
+Element Model
+Model simulasi berupa: 
+(1) skrip Python yang mensimulasikan pengiriman payload MQTT dari ESP32 untuk menguji backend tanpa hardware fisik
+(2) dataset citra sayuran terstandar untuk mengukur performa baseline model CNN
+(3) skenario transaksi terskrip untuk menguji alur payment gateway di lingkungan sandbox. 
+Memungkinkan pengujian komponen backend dan AI secara paralel dengan pengujian hardware, sehingga mengefisienkan waktu pengembangan dan memudahkan identifikasi sumber masalah. 
+Performance Comparator
+Perbandingan antara output aktual dengan nilai target spesifikasi dilakukan dengan melakukan komparasi antara akurasi sensor dibandingkan dengan alat referensi, kemudian latensi transmisi MQTT diukur dengan timestamp, penggunaan F1-Score model CNN dihitung terhadap dataset ground truth, pencatatan response time API menggunakan Locust, serta pengecekan integritas transaksi diverifikasi dengan idempotency key. 
+Memberikan penilaian kuantitatif dan objektif terhadap keberhasilan setiap komponen dalam memenuhi kriteria penerimaan (acceptance criteria) yang telah ditetapkan. 
+Test Manager
+Tim pengembang Kelompok 08, dengan penanggung jawab per subsistem: Raka & Faiz untuk IoT, Surya & Wisa untuk backend, Jelita untuk frontend web, serta seluruh tim untuk pengujian integrasi. 
+Mengawasi keseluruhan proses pengujian, menetapkan kriteria keberhasilan, mendokumentasikan hasil, dan mengambil keputusan tindak lanjut (pass/fail/iterate) untuk setiap skenario uji. 
+Test Control Unit
+Skrip otomatisasi pengujian (pytest untuk backend, Locust untuk load testing) yang dikombinasikan dengan prosedur manual terstandar (SOP kalibrasi sensor, SOP pengujian UAT) untuk mengontrol skenario pengujian secara terpusat dan konsisten. 
+Memastikan setiap skenario pengujian dieksekusi dengan kondisi awal yang sama (reproducible), sehingga hasil pengujian dapat dibandingkan antar iterasi secara valid. 
+
+
+2.2.2 Proses Integrasi Sistem
+Integrasi sistem Agri dilakukan secara bertahap dalam tiga subsistem utama sebelum dilakukan integrasi total. Setiap subsistem diintegrasikan secara berurutan dengan pendekatan bottom-up, dengan rancangan sebagai berikut: 
+Field Layer → Cloud Layer → Application Layer.
+
+
+
+Tabel 6.3 - Detail Diagram Subsystem Test Configuration
+Komponen / Alur
+Deskripsi Fungsi
+Implementasi dalam Sistem
+Peran dan Manfaat
+Input Generator
+Menghasilkan data uji yang menyerupai kondisi lapangan nyata untuk setiap tahap integrasi subsistem. 
+Pada tahap IoT: kondisi lingkungan terukur (suhu, RH, pH) dari chamber simulasi. 
+
+Pada tahap backend: payload MQTT terskrip dari simulator Python. 
+
+Pada tahap frontend: data mock API untuk populasi antarmuka. 
+Memungkinkan pengujian terkontrol dan berulang pada setiap subsistem secara independen sebelum diintegrasikan satu sama lain, meminimalkan variabel pengganggu. 
+Subsystem A: Field Layer (IoT)
+Akuisisi dan transmisi data lingkungan lahan secara real-time dengan validasi Edge Intelligence. 
+Firmware ESP32 membaca sensor DHT22 (suhu & RH), soil moisture (GPIO 32), dan pH meter (GPIO 34) setiap 15–30 menit. Kemudian, dilakukan validasi nilai apakah hasil bacaan sensor dalam batas wajar. Data disimpan sementara di LittleFS jika offline, kemudian dikirimkan payload JSON ke MQTT Broker via protokol MQTT QoS Level 1. 
+Sebagai fondasi dari seluruh sistem, memastikan data lingkungan lahan tersedia, valid, dan terkirim ke cloud dengan PDR ≥99% dan latensi <10 detik sebelum diintegrasikan ke subsistem backend. 
+Subsystem B: Cloud Layer (Backend & AI)
+Memproses, menyimpan, dan mendistribusikan seluruh data serta logika bisnis sistem. 
+Backend FastAPI/Flask menerima data MQTT dari broker, menyimpan ke PostgreSQL, menjalankan rule engine anomali (trigger FCM jika pH <5.5 selama 2 siklus berturut-turut), melayani inferensi model CNN (grating + diagnosis patogen) via REST API, mengintegrasikan Payment Gateway via Webhook, dan menarik harga komoditas dari API pasar induk harian. 
+Sebagai pusat koordinasi sistem, memastikan seluruh logika bisnis, AI, dan transaksi berjalan dengan benar dan aman sebelum diekspos ke antarmuka pengguna. 
+Subsystem C: Application Layer (Frontend) 
+Menyediakan antarmuka pengguna yang intuitif bagi petani (mobile) dan pembeli B2B (web). 
+Aplikasi mobile React Native menampilkan dashboard sensor real-time, antarmuka kamera untuk grading/diagnosis AI, notifikasi FCM, dan modul transaksi. Dashboard web React/Vue.js menyajikan katalog produk, traceability log, status pesanan, dan laporan keuangan bagi pembeli B2B dan admin. 
+Memastikan seluruh data dan fungsi dari subsistem A dan B dapat diakses oleh pengguna dengan waktu muat <3 detik, tampilan yang responsif, dan alur penggunaan yang sesuai dengan kebutuhan petani maupun pembeli B2B. 
+Output Analyzer
+Mengumpulkan dan mengolah output dari setiap subsistem untuk divalidasi terhadap kriteria penerimaan. 
+Pengumpulan log MQTT (PDR, latensi), log database (kelengkapan data), response API (status code, payload), akurasi inferensi CNN (F1-Score), dan feedback UAT pengguna. 
+Memastikan output tiap subsistem sesuai spesifikasi sebelum dilanjutkan ke integrasi dengan subsistem berikutnya, sehingga masalah dapat diisolasi lebih awal. 
+Performance Comparator
+Membandingkan output aktual setiap subsistem dengan prediksi model atau nilai target spesifikasi. 
+PDR aktual dibandingkan target ≥99%; latensi transmisi dibandingkan <10 detik, F1-Score CNN dibandingkan apakah valid ≥90%, response time API dibandingkan apakah <5 detik dan load time halaman dibandingkan apakah <3 detik. 
+Menjadi indikator kuantitatif keberhasilan integrasi tiap subsistem, memandu keputusan apakah integrasi dapat dilanjutkan ke tahap berikutnya atau memerlukan iterasi perbaikan. 
+Test Manager
+Mengawasi pengujian tiap subsistem, menetapkan kriteria, memonitor progres, dan mendokumentasikan laporan. 
+Penjadwalan pengujian per milestone, monitoring menggunakan Prometheus/Grafana untuk subsistem cloud, dan penyusunan laporan hasil uji harian selama fase integrasi. 
+Menjamin setiap tahap integrasi subsistem dieksekusi secara sistematis, terdokumentasi, dan dapat dipertanggungjawabkan, serta memastikan tidak ada komponen yang diintegrasikan sebelum memenuhi kriteria penerimaan minimum. 
+
+
+2.2.3 Integrasi Total Sistem
+Tabel 2.4 - Analisis Konteks Pengintegrasian Sistem secara Total
+Aspek
+Penjelasan dan Implikasi pada Pengintegrasian Sistem Total
+Penggabungan semua subsistem
+Integrasi total sistem Agri menggabungkan tiga layer secara simultan: 
+
+Field Layer (ESP32 + sensor)
+Cloud Layer (MQTT Broker + FastAPI Backend + PostgreSQL + Model CNN + Payment Gateway + Market API)
+Application Layer (React Native Mobile App + React/Vue Web Dashboard). 
+
+Integrasi ini menciptakan alur data end-to-end yang utuh: sensor membaca data → dikirim via MQTT → diproses backend → disimpan di database → ditampilkan di antarmuka → notifikasi dikirim via FCM. Seluruh subsistem beroperasi secara bersamaan dan saling bergantung, sehingga kegagalan satu komponen akan berdampak langsung pada subsistem lainnya. 
+Kompleksitas tinggi integrasi sistem
+Sinkronisasi data real-time dari node IoT yang beroperasi dengan interval 15–30 menit harus selaras dengan kebutuhan tampilan dashboard yang real-time bagi pengguna. Komunikasi dua arah terjadi antara backend dan FCM untuk push notifikasi, serta antara backend dan Payment Gateway via Webhook. Autentikasi RBAC harus memastikan setiap request dari mobile app maupun web dashboard divalidasi JWT-nya sebelum mengakses resource. Penanganan 200 permintaan inferensi AI konkuren harus dilakukan tanpa mendegradasi performa endpoint lainnya, yang menuntut konfigurasi auto-scaling yang tepat. 
+Kesulitan isolasi masalah
+Pada integrasi total, kegagalan tampilan data di dashboard dapat disebabkan oleh banyak faktor: sensor tidak mengirim data, MQTT broker terputus, backend gagal memproses, atau frontend gagal merender. Strategi debugging yang digunakan mencakup: penggunaan distributed tracing (correlation ID pada setiap request), logging terpusat dengan Prometheus/Grafana untuk memantau health setiap layanan secara bersamaan, dan pengujian bertahap dari Field Layer ke Application Layer untuk mempersempit lingkup masalah. 
+Biaya dan risiko waktu yang lebih besar
+Integrasi total melibatkan koordinasi seluruh lima anggota tim secara bersamaan dengan domain keahlian berbeda (hardware, firmware, backend, frontend mobile, frontend web). Risiko keterlambatan muncul apabila terjadi inkompatibilitas format data antar subsistem (misalnya perbedaan skema JSON antara payload MQTT dan ekspektasi backend) atau perubahan API yang tidak dikomunikasikan antar sub-tim. Hal ini dimitigasi dengan mendefinisikan kontrak API (Swagger/OpenAPI) dan format JSON payload MQTT secara eksplisit sebelum fase integrasi dimulai, serta mengadakan daily stand-up selama fase integrasi. 
+Kebutuhan perencanaan pengujian detail
+Pengujian integrasi total mencakup: 
+
+(1) uji end-to-end alur grading : petani scan sayuran via mobile → inferensi CNN → hasil tampil di mobile dan web
+(2) uji alur transaksi : petani catat penjualan → verifikasi Payment Gateway → histori tersimpan 
+(3) uji peringatan dini : sensor deteksi anomali → rule engine trigger → notifikasi FCM diterima di mobile <10 detik
+(4) load testing : 200 permintaan konkuren ke endpoint inferensi AI
+(5) uji keamanan end-to-end : validasi JWT, enkripsi TLS, dan rate limiting pada semua endpoint. 
+Pengawasan dan keahlian diagnostik tinggi
+Integrasi lintas komponen (firmware C++, Python backend, JavaScript frontend) menuntut pemahaman lintas domain. Setiap anggota tim bertanggung jawab sebagai "domain expert" untuk subsistemnya masing-masing, namun harus memahami antarmuka (interface contract) dengan subsistem tetangganya. Protokol eskalasi ditetapkan: jika masalah tidak dapat diisolasi dalam 2 jam, seluruh tim diundang ke sesi debugging bersama (war room). 
+Pengujian integrasi dan validasi akhir
+Validasi akhir integrasi total dilakukan dengan menjalankan seluruh skenario pengujian kritis secara simultan dalam satu sesi, yakni node IoT aktif mengirim data nyata, backend memproses, model AI diakses via mobile app, dan dashboard web memantau secara real-time. Kriteria kelulusan integrasi total adalah semua 6 skenario pengujian utama (Tabel 1.9, Deliverable 2) mencapai status "Pass", tidak ada timeout pada alur end-to-end, dan tidak ada data yang hilang selama 60 menit sesi pengujian kontinu. 
+
+
+
+2.2.4 Fasilitas Pengujian Integrasi Sistem
+Tabel 2.5 - Analisis Fasilitas Pengujian Integrasi Sistem
+Aspek
+Deskripsi dan Implikasi pada Sistem
+Kebutuhan fasilitas khusus
+Pengujian integrasi total sistem Agri membutuhkan: 
+
+(1) Ruang dengan meja kerja elektronik, catu daya yang stabil, alat ukur referensi (termometer digital, pH meter industrial grade) untuk kalibrasi silang sensor ESP32
+(2) Lingkungan Staging Cloud yang mereplikasi konfigurasi produksi lengkap dengan MQTT broker, backend FastAPI, PostgreSQL, dan model CNN ter-deploy
+(3) Perangkat Klien berupa smartphone Android/iOS dengan aplikasi React Native ter-install dan laptop untuk mengakses dashboard web
+(4) Koneksi jaringan Wi-Fi yang dapat dikonfigurasi (termasuk kemampuan memutus koneksi secara terkontrol untuk uji offline queuing). 
+Pengembangan bertahap
+Fasilitas pengujian dibangun secara bertahap sesuai fase integrasi. Pada fase Unit Testing, cukup menggunakan meja kerja elektronik dengan alat ukur individual. Pada fase Integration Testing subsistem IoT-Backend, ditambahkan MQTT broker lokal (Mosquitto) dan mock backend. Pada fase Integration Testing total, fasilitas ditingkatkan ke lingkungan staging cloud penuh dengan seluruh layanan aktif. Pendekatan bertahap ini mencegah investasi fasilitas yang prematur sebelum komponen individual tervalidasi. 
+Rekayasa fasilitas dari subsistem
+Fasilitas pengujian subsistem yang telah ada dimanfaatkan kembali dan ditingkatkan. Simulator MQTT yang dibangun untuk pengujian backend secara terisolasi kemudian diintegrasikan sebagai komponen "Input Generator" untuk pengujian total. Skrip pytest yang dikembangkan untuk unit testing API kemudian dirangkai menjadi suite regression testing yang dijalankan otomatis setelah setiap merge ke branch utama. Emulator Android yang digunakan untuk pengujian mobile app kemudian dilengkapi dengan mock data IoT untuk pengujian integrasi end-to-end. 
+Ekstraksi data dari titik uji
+Data uji diekstraksi dari titik-titik batas (boundary) antar subsistem: 
+(1) IoT → MQTT Broker : menggunakan MQTT Explorer untuk memantau payload JSON yang dipublikasikan
+(2) MQTT Broker → Backend : log subscriber backend mencatat setiap pesan yang diterima dengan timestamp
+(3) Backend → Database : query langsung ke PostgreSQL untuk memverifikasi integritas data tersimpan
+(4) Backend → Frontend : response API dicatat menggunakan Postman/Swagger untuk validasi skema dan nilai
+(5) Backend → FCM : log notifikasi Firebase untuk memverifikasi pengiriman alert anomali. Seluruh data diekstraksi ke dalam format CSV/JSON untuk analisis post-test. 
+Fleksibilitas desain fasilitas
+Fasilitas dirancang fleksibel untuk mengakomodasi skenario pengujian baru tanpa rekonfigurasi besar. MQTT broker dikonfigurasi dengan topik yang dapat ditambah sesuai jenis sensor baru, staging environment menggunakan container Docker sehingga dapat di-spin up ulang dengan konfigurasi berbeda dalam hitungan menit, skrip pengujian otomatis diparameterisasi sehingga dapat mengubah nilai threshold (misalnya target latensi) tanpa memodifikasi kode pengujian. 
+Peran dalam rekayasa sistem
+Fasilitas integrasi sistem berfungsi sebagai basis validasi akhir sebelum deployment ke produksi. Tidak ada komponen yang di-deploy ke lingkungan produksi tanpa terlebih dahulu lulus seluruh skenario pengujian di fasilitas staging. Fasilitas ini juga berfungsi sebagai lingkungan sandboxing untuk menguji perubahan sistem (patch, minor update) sebelum diterapkan ke produksi, sehingga memastikan tidak ada regresi pada fungsi yang telah berjalan. 
+
+
+2.3 Pengujian Sistem dalam Pengembangan (Developmental System Testing)
+2.3.1 Tujuan Pengujian Sistem dalam Pengembangan
+Pengujian sistem dalam tahap pengembangan (developmental system testing) pada proyek Agri bertujuan untuk memastikan bahwa setiap komponen dan subsistem AIoT berfungsi sesuai spesifikasi teknis sebelum dilakukan pengujian operasional di lingkungan nyata. Pengujian ini juga digunakan untuk mendeteksi sejak dini bug, kesalahan fungsional, serta kendala teknis lainnya. Dengan demikian, stabilitas dan keandalan sistem dapat terjamin sebelum sistem diuji oleh pengguna akhir. Pengujian difokuskan pada empat aspek kritis:
+
+Akurasi komponen sensor
+Memastikan pembacaan DHT22 (suhu ±0.5°C, RH ±2%), soil moisture, dan pH meter (±0.1 pH) berada dalam batas toleransi yang ditentukan dibandingkan alat referensi terstandar.
+Latensi sistem 
+Memverifikasi bahwa transmisi data MQTT dari ESP32 ke cloud memiliki latensi <10 detik, inferensi model CNN diselesaikan <5 detik per sampel, dan waktu muat antarmuka pengguna <3 detik pada jaringan 4G.
+Keandalan koneksi 
+Membuktikan bahwa mekanisme offline queuing LittleFS pada ESP32 mampu menjaga integritas 100% data saat koneksi terputus, dan auto-sync berjalan dalam ≤1 menit setelah koneksi pulih.
+Performa backend dan AI
+Memvalidasi bahwa sistem mampu menangani 200 permintaan inferensi AI konkuren dengan response time tetap ≤5 detik, serta memastikan akurasi klasifikasi mutu (F1-Score ≥90%) dan diagnosis patogen (confidence ≥85%) terpenuhi.
+
+2.3.2 Lingkup Pengujian
+Lingkup pengujian mencakup seluruh subsistem, antara lain:
+Subsistem 1 — Sensor & Input (Field Layer): Pembacaan dan validasi data sensor DHT22 (suhu & kelembapan udara), soil moisture sensor (kelembapan tanah), dan pH meter analog V1.1 yang terhubung ke mikrokontroler ESP32.
+Subsistem 2 — Firmware & Edge Intelligence: Logika validasi data lokal pada ESP32 (filter ambang batas, penolakan nilai noise), mekanisme offline queuing via LittleFS, dan transmisi payload JSON via protokol MQTT QoS Level 1.
+Subsistem 3 — Modul Komunikasi (MQTT & REST API): Keandalan pengiriman paket MQTT dari ESP32 ke broker cloud (PDR ≥99%), serta keamanan dan performa komunikasi HTTP/S RESTful API antara frontend dan backend.
+Subsistem 4 — Backend API, AI, dan Database: Performa endpoint FastAPI (response time, load handling), akurasi inferensi model CNN (grading Grade A/B/C dan klasifikasi patogen), integritas penyimpanan log di PostgreSQL, dan ketepatan alur transaksi dengan Payment Gateway.
+Subsistem 5 — Antarmuka Pengguna (Mobile App & Dashboard Web): Kecepatan muat halaman, kebenaran tampilan data sensor real-time, fungsionalitas alur grading dan diagnosis via kamera, penerimaan notifikasi FCM, serta alur transaksi penjualan.
+
+2.3.3 Rencana Skenario dan Validasi Teknis
+Pengujian dilakukan terhadap skenario-skenario berikut untuk menguji performa sistem secara terisolasi dan terintegrasi:
+Validasi Akurasi Sensor
+Uji akurasi pembacaan sensor: 
+Menempatkan sensor DHT22 di ruangan dengan suhu dan RH terukur menggunakan alat referensi (termometer digital dan hygrometer), serta mencelupkan elektroda pH meter ke larutan buffer standar (pH 4.0, 7.0, 10.0). Nilai pembacaan ESP32 dibandingkan dengan nilai referensi untuk menghitung deviasi. Target: deviasi suhu ≤±0.5°C, deviasi RH ≤±2%, deviasi pH ≤±0.1. 
+Uji kestabilan dan konsistensi pembacaan:
+Menjalankan sensor selama 60 menit kontinu dan merekam 20 pembacaan. Menghitung standar deviasi pembacaan untuk memastikan tidak ada drift yang signifikan. Target: standar deviasi pembacaan suhu <0.3°C dan pH <0.08 selama periode pengujian. 
+
+Validasi Latensi Sistem
+Latensi transmisi MQTT:
+Mencatat timestamp pada payload JSON di sisi ESP32 saat data dikirim, dan mencatat timestamp penerimaan di sisi MQTT broker. Selisih keduanya dihitung sebagai latensi transmisi. Target: latensi <10 detik pada kondisi jaringan Wi-Fi normal (kekuatan sinyal ≥-70 dBm), dengan 100 sampel pengiriman. 
+Ketahanan offline dan sinkronisasi:
+Memutus koneksi Wi-Fi ESP32 selama 30 menit saat sensor aktif mengambil data. Setelah koneksi dipulihkan, memverifikasi jumlah rekaman di database dibandingkan jumlah pembacaan sensor selama offline. Target: 100% data tersinkronisasi dalam ≤1 menit setelah koneksi pulih. 
+
+Validasi Performa AI 
+Akurasi klasifikasi mutu (grading CNN): 
+Mengunggah 150 sampel citra sayuran (50 per kelas: Grade A, B, C) dengan variasi pencahayaan (100–500 lux) melalui endpoint inferensi API. Membandingkan label prediksi CNN dengan label ground truth yang telah diverifikasi oleh tenaga ahli pertanian. Target: F1-Score ≥90% dan inference time <5 detik per sampel. 
+Akurasi diagnosis penyakit: 
+Mengunggah 50 sampel citra tanaman bergejala (daun, batang, buah) dengan jenis hama/patogen yang telah diverifikasi secara laboratorium. Mengukur confidence score dan ketepatan identifikasi patogen. Target: confidence score ≥85% dan rekomendasi penanganan relevan pada ≥85% sampel. 
+
+Integrasi Data dan Alur Transaksi
+Sinkronisasi data IoT ke dashboard: 
+Memverifikasi bahwa data sensor yang dikirim dari ESP32 muncul di antarmuka dashboard web dan mobile app dalam waktu yang sesuai dengan latensi sistem (<10 detik dari pengiriman sensor). Memastikan format tampilan (grafik, nilai numerik) sesuai dengan nilai aktual di database. 
+Alur transaksi end-to-end:
+Mensimulasikan skenario lengkap: petani memilih produk di marketplace → pembeli B2B melakukan pembelian → verifikasi Payment Gateway sandbox → konfirmasi transaksi → histori tersimpan di database. Memverifikasi tidak ada transaksi ganda (uji idempotency key) dan settlement tercatat dalam <24 jam. Target: transaction error rate 0%. 
+
+2.3.4 Hasil Pengujian
+Tabel 2.6 - Hasil Pengujian
+Komponen / Subsistem
+Indikator Pengujian
+Target
+Hasil
+Sensor DHT22 
+Deviasi akurasi suhu terhadap termometer referensi 
+≤±0.5°C 
+In Progress 
+Sensor DHT22 
+Deviasi akurasi kelembapan relatif (RH) terhadap hygrometer referensi 
+≤±2% 
+In Progress 
+Sensor pH Meter Analog V1.1 
+Deviasi pembacaan pH terhadap larutan buffer standar (pH 4.0, 7.0, 10.0) 
+≤±0.1 pH 
+In Progress 
+Firmware ESP32 (Edge Intelligence) 
+Penolakan nilai sensor di luar ambang batas (noise filtering) 
+100% nilai noise terfilter 
+In Progress 
+Transmisi MQTT (ESP32 → Broker) 
+Packet Delivery Ratio (PDR) selama 100 siklus pengiriman pada kondisi Wi-Fi normal 
+≥99% 
+In Progress 
+Transmisi MQTT (ESP32 → Broker) 
+Latensi pengiriman data dari ESP32 ke broker cloud 
+<10 detik 
+In Progress 
+Offline Queuing (LittleFS) 
+Persentase data tersinkronisasi setelah 30 menit offline 
+100% 
+In Progress 
+Offline Queuing (LittleFS) 
+Waktu sinkronisasi setelah koneksi pulih 
+≤1 menit 
+In Progress 
+Model CNN : Grading 
+F1-Score klasifikasi mutu sayuran (Grade A/B/C) pada 150 sampel citra 
+≥90% 
+In Progress 
+Model CNN : Grading 
+Inference time per sampel citra 
+<5 detik 
+In Progress 
+Model AI : Diagnosis Penyakit 
+Confidence score identifikasi patogen pada 50 sampel bergejala 
+≥85% 
+In Progress 
+Backend API (FastAPI) 
+Response time endpoint inferensi AI pada kondisi normal 
+<5 detik 
+In Progress 
+Backend API : Load Testing 
+Response time endpoint inferensi AI saat 200 permintaan konkuren (Locust) 
+<5 detik 
+In Progress 
+Alur Transaksi 
+Transaction error rate pada 20 simulasi transaksi sandbox 
+0% 
+In Progress 
+Dashboard Web / Mobile App 
+Waktu muat halaman dashboard pada jaringan 4G (simulasi) 
+<3 detik 
+In Progress 
+Notifikasi FCM 
+Waktu pengiriman push notification anomali setelah deteksi sensor 
+<10 detik 
+In Progress 
+
+
+Catatan: Seluruh skenario pengujian berstatus In Progress sesuai dengan status pengembangan sistem Agri pada tahap ini. Hasil aktual akan diisi setelah eksekusi pengujian dilakukan pada fase implementasi dan field testing. Bukti pengujian berupa foto, screenshot log, dan data mentah akan dilampirkan pada versi final dokumen. 
+
+2.3.5 Analisis dan Kesimpulan
+Berdasarkan rancangan skenario pengujian yang telah disusun, sistem Agri diproyeksikan mampu memenuhi seluruh standar teknis yang ditetapkan apabila implementasi berjalan sesuai spesifikasi desain. Beberapa pertimbangan analitis yang perlu diperhatikan:
+Kekuatan Desain yang Mendukung Kelulusan Pengujian: Arsitektur Edge Intelligence pada ESP32 memberikan lapisan validasi pertama yang mencegah data noise mencapai cloud, sehingga mengurangi beban pemrosesan backend dan meningkatkan integritas data di database. Mekanisme LittleFS offline queuing secara langsung mengatasi risiko terbesar operasional di lahan pertanian — yaitu ketidakstabilan koneksi internet — tanpa memerlukan intervensi manual dari petani. Penggunaan MQTT QoS Level 1 memberikan garansi pengiriman at-least-once yang memadai untuk data sensor periodik.
+
+Potensi Deviasi yang Perlu Diantisipasi: Sensor pH meter analog V1.1 merupakan komponen paling berisiko mengalami deviasi akurasi, terutama setelah paparan tanah yang lama akibat sifat korosif elektroda. Diperlukan prosedur kalibrasi berkala (setiap 2–4 minggu) dan penggantian elektroda preventif untuk menjaga akurasi dalam batas ±0.1 pH. Selain itu, performa model CNN sangat bergantung pada kualitas dataset pelatihan — variasi pencahayaan di lahan nyata yang melebihi rentang pengujian (100–500 lux) berpotensi menurunkan F1-Score di bawah target 90%, sehingga augmentasi data dan fine-tuning model dalam kondisi lapangan nyata menjadi langkah mitigasi yang kritis.
+
+Kesiapan untuk Tahap Selanjutnya: Apabila seluruh skenario pengujian developmental terpenuhi, sistem Agri dinyatakan layak untuk dilanjutkan ke tahap evaluasi operasional (operational test & evaluation) yang melibatkan pengguna nyata (petani dan pembeli B2B) dalam kondisi lapangan sesungguhnya. Jika terdapat komponen yang gagal memenuhi kriteria penerimaan minimum, iterasi perbaikan akan dilakukan sebelum eskalasi ke fase berikutnya, mengikuti prosedur change request yang telah ditetapkan dalam Configuration Management (Bagian 1.8).
+
+2.4 Evaluasi Operasional (Operational Test & Evaluation)
+2.4.1 Tujuan Evaluasi Operasional
+Evaluasi operasional bertujuan untuk menilai tingkat pemenuhan sistem Agri terhadap kebutuhan pengguna nyata dalam kondisi operasional sesungguhnya, setelah seluruh komponen dinyatakan lulus pada tahap developmental system testing. Berbeda dengan pengujian developmental yang berfokus pada verifikasi spesifikasi teknis secara terisolasi, evaluasi operasional berfokus pada tiga dimensi penilaian:
+Keandalan fungsional end-to-end : memastikan seluruh alur sistem berjalan secara mulus dari input sensor lapangan hingga tampilan antarmuka pengguna, termasuk skenario peringatan dini, grading AI, dan transaksi finansial, dalam kondisi nyata dengan variabel lingkungan yang tidak sepenuhnya terkontrol.
+Kemudahan penggunaan (usability) : menilai apakah petani dengan literasi digital terbatas dapat mengoperasikan aplikasi mobile secara mandiri — mulai dari scan sayuran untuk grading, membaca notifikasi anomali lahan, hingga menyelesaikan alur transaksi penjualan — tanpa bantuan teknis dari tim pengembang.
+Ketahanan sistem terhadap gangguan : memverifikasi bahwa mekanisme fallback (offline queuing LittleFS, pencatatan manual) berfungsi sebagaimana mestinya saat terjadi gangguan jaringan, kegagalan sensor, atau beban sistem yang tinggi, sehingga kesinambungan operasional petani tidak terganggu secara signifikan.
+
+2.4.2 Skenario Pengujian
+Pengujian operasional dilakukan dengan pendekatan berbasis peran (role-based scenario), mensimulasikan alur penggunaan harian yang paling umum dilakukan oleh masing-masing aktor sistem: 
+Skenario 1 : Aktivasi Sistem dan Verifikasi Komponen Aktif Menghidupkan node IoT ESP32 di area simulasi lahan, memastikan seluruh sensor (DHT22, soil moisture, pH meter) mulai membaca data, koneksi Wi-Fi berhasil terhubung, dan data pertama berhasil diterima oleh dashboard dalam waktu ≤15 menit setelah aktivasi. Petani juga melakukan login ke aplikasi mobile dan memverifikasi tampilan data sensor pada halaman Monitor.
+Skenario 2 : Simulasi Kondisi Anomali Lahan dan Respons Peringatan Dini Mensimulasikan kondisi anomali dengan mengekspos elektroda pH meter ke larutan asam encer (pH ~4.5) selama dua siklus pengiriman berturut-turut untuk memicu rule engine backend. Memverifikasi bahwa push notification FCM diterima di perangkat mobile petani dalam waktu <10 detik sejak anomali terdeteksi, dengan konten notifikasi yang informatif (parameter yang anomali, nilai terukur, rekomendasi singkat).
+Skenario 3 : Grading Kualitas Sayuran dan Diagnosis Penyakit via Aplikasi Mobile Petani (atau representasi petani) menggunakan fitur kamera pada aplikasi mobile untuk: (a) memindai sampel sayuran (tomat/cabai/bayam) di bawah pencahayaan normal dan menerima hasil klasifikasi Grade A/B/C beserta confidence score; (b) mengunggah foto bagian tanaman bergejala dan menerima hasil diagnosis patogen beserta rekomendasi penanganan. Mengukur waktu pemrosesan dan menilai relevansi rekomendasi.
+Skenario 4 : Gangguan Jaringan dan Pengujian Mode Offline Memutus koneksi Wi-Fi node IoT ESP32 secara paksa selama 20 menit saat sensor sedang aktif merekam data. Memverifikasi bahwa: (a) data tersimpan di LittleFS tanpa kehilangan; (b) setelah koneksi dipulihkan, seluruh backlog data tersinkronisasi otomatis ke cloud; (c) dashboard menampilkan data yang lengkap dan berurutan tanpa gap. Selama periode offline, memastikan aplikasi mobile masih dapat digunakan untuk fungsi-fungsi yang tidak memerlukan koneksi (seperti melihat histori grading lokal).
+Skenario 5 : Pemantauan Data Sensor Real-time di Dashboard Petani membuka halaman Monitor di aplikasi mobile dan pembeli B2B membuka dashboard web secara bersamaan. Memverifikasi bahwa data sensor terbaru (suhu, RH, pH, soil moisture) tampil secara real-time dengan delay yang sesuai target latensi sistem, grafik historis dapat diakses dan difilter berdasarkan rentang waktu, dan tidak ada perbedaan signifikan antara data yang ditampilkan di mobile app dan dashboard web.
+Skenario 6 : Alur Transaksi Lengkap (Petani dan Pembeli B2B) Mensimulasikan siklus transaksi penuh: petani mendaftarkan hasil panen dengan data grading AI sebagai bukti mutu di marketplace web → pembeli B2B melihat katalog, memeriksa traceability log, dan menambahkan produk ke keranjang → pembeli melakukan checkout dan pembayaran via Payment Gateway sandbox → petani menerima konfirmasi pesanan → petani mengajukan penarikan dana. Memverifikasi akurasi pencatatan transaksi, tidak ada transaksi ganda, dan histori tersimpan dengan lengkap.
+2.4.3 Metode Pelaksanaan
+Evaluasi operasional dilaksanakan dalam satu sesi terpadu selama ±3 jam yang terbagi menjadi dua tahap:
+Tahap 1 : Pengujian Terkontrol oleh Tim Pengembang (Internal OT&E) 
+Keenam skenario dijalankan secara berurutan oleh anggota tim pengembang yang berperan sebagai proxy pengguna, menggunakan checklist terstandar. Tahap ini bertujuan untuk memverifikasi bahwa semua fungsionalitas berjalan benar sebelum melibatkan pengguna eksternal. Pengamatan dilakukan oleh satu anggota tim yang ditugaskan sebagai observer (tidak ikut mengoperasikan sistem) untuk mencatat waktu respons, kesalahan tampilan, atau kegagalan fungsi secara objektif.
+Tahap 2 : Pengujian dengan Representasi Pengguna (Pilot UAT) 
+Satu atau dua representasi pengguna (petani lokal atau mahasiswa yang memahami konteks pertanian sebagai proxy) diminta menjalankan Skenario 1, 3, dan 5 secara mandiri menggunakan aplikasi mobile, dengan panduan minimal dari tim. Tim pengembang mengamati tanpa memberikan instruksi teknis, mencatat titik-titik kesulitan penggunaan (pain points), dan mengumpulkan feedback kualitatif melalui wawancara singkat pasca-pengujian. Khusus Skenario 6, representasi pembeli B2B (anggota tim lain atau mahasiswa lain) turut berpartisipasi untuk menguji alur transaksi dari sisi pembeli.
+Seluruh sesi pengujian direkam (screen recording pada aplikasi mobile dan dashboard web, serta foto kondisi fisik node IoT) sebagai dokumentasi bukti evaluasi. Berdasarkan rancangan skenario dan parameter evaluasi yang telah ditetapkan, berikut adalah hasil observasi yang diproyeksikan berdasarkan arsitektur dan spesifikasi sistem yang telah dibangun. Hasil aktual akan diperbarui setelah pelaksanaan sesi evaluasi operasional 
+2.4.4 Parameter Evaluasi
+Tabel 2.7 - Parameter Evaluasi
+
+Aspek Evaluasi
+Indikator
+Target
+Hasil
+Aktivasi Sistem
+Seluruh sensor aktif dan data pertama diterima di dashboard setelah node dihidupkan
+≤15 menit sejak power-on
+In Progress
+Keterbacaan Data di Mobile
+Data sensor (suhu, RH, pH, soil moisture) tampil akurat di halaman Monitor aplikasi mobile
+Nilai sesuai ± toleransi sensor
+In Progress
+Peringatan Dini Anomali
+Push notification FCM diterima di perangkat mobile petani setelah kondisi anomali pH terdeteksi selama 2 siklus berturut-turut
+<10 detik sejak deteksi anomali
+In Progress
+Konten Notifikasi
+Notifikasi memuat informasi parameter anomali, nilai terukur, dan rekomendasi singkat
+Konten lengkap dan relevan
+In Progress
+Grading AI : Kecepatan
+Waktu dari foto sayuran diunggah hingga hasil Grade A/B/C tampil di aplikasi mobile
+<5 detik
+In Progress
+Grading AI : Keterbacaan Hasil
+Pengguna dapat memahami hasil grading (grade, confidence score, keterangan) tanpa bantuan teknis
+≥80% pengguna proxy memahami tanpa bantuan
+In Progress
+Diagnosis Penyakit
+Sistem mengidentifikasi patogen dari foto tanaman bergejala dengan rekomendasi penanganan yang relevan
+Confidence score ≥85%, rekomendasi relevan
+In Progress
+Ketahanan Offline : Integritas Data
+Tidak ada data sensor yang hilang setelah 20 menit offline dan koneksi dipulihkan
+100% data tersinkronisasi
+In Progress
+Ketahanan Offline : Waktu Sinkronisasi
+Seluruh backlog data LittleFS tersinkronisasi ke cloud setelah koneksi pulih
+≤1 menit
+In Progress
+Data Real-time : Konsistensi
+Nilai data sensor yang ditampilkan di mobile app dan dashboard web identik dalam satu waktu pengamatan yang sama
+Perbedaan nilai 0% (data dari database yang sama)
+In Progress
+Data Real-time : Delay Tampilan
+Delay antara data dikirim sensor dan tampil di dashboard
+<10 detik
+In Progress
+Alur Transaksi : Akurasi
+Tidak ada transaksi ganda dan nilai yang tercatat di database sesuai dengan nilai yang diinput
+Transaction error rate 0%
+In Progress
+Alur Transaksi : Traceability
+Pembeli B2B dapat mengakses traceability log (data sensor historis + hasil grading) untuk produk yang akan dibeli
+Log tersedia dan dapat diakses <3 detik
+In Progress
+Penarikan Dana
+Petani berhasil mengajukan penarikan dana dan status tercatat di histori keuangan 
+Berhasil tercatat, settlement <24 jam
+In Progress
+Usability : Kemudahan Penggunaan
+Pengguna proxy (petani) dapat menyelesaikan alur grading + transaksi tanpa bantuan teknis dari tim
+≥80% skenario diselesaikan mandiri
+In Progress
+Ketersediaan Sistem
+Sistem tetap aktif dan tidak mengalami crash selama seluruh sesi pengujian (±3 jam)
+Uptime 100% selama sesi pengujian
+In Progress
+Waktu Muat Antarmuka
+Waktu muat halaman dashboard web dan mobile app pada jaringan Wi-Fi standar
+<3 detik
+In Progress
+
+
+
+2.4.5 Hasil Observasi
+ Berdasarkan rancangan skenario dan parameter evaluasi yang telah ditetapkan, berikut adalah hasil observasi yang diproyeksikan berdasarkan arsitektur dan spesifikasi sistem yang telah dibangun. Hasil aktual akan diperbarui setelah pelaksanaan sesi evaluasi operasional.
+Aktivasi dan konektivitas sistem : 
+Node IoT ESP32 diproyeksikan dapat terhubung ke jaringan Wi-Fi dan mulai mengirim data dalam waktu <5 menit setelah dihidupkan, jauh di bawah target 15 menit, berkat konfigurasi koneksi otomatis pada firmware.
+Peringatan dini anomali : 
+Mekanisme rule engine yang mensyaratkan pelanggaran threshold selama dua siklus berturut-turut (bukan satu kali) terbukti efektif mencegah false alarm akibat noise sensor sementara, sambil tetap menjamin notifikasi dikirim dalam target <10 detik.
+Grading AI dan diagnosis : 
+Performa model CNN diproyeksikan memenuhi target pada kondisi pencahayaan normal (100–500 lux). Potensi penurunan performa diantisipasi pada kondisi cahaya sangat rendah (<50 lux) atau sangat terang (>1000 lux), yang akan dicatat sebagai temuan dan rekomendasi perbaikan dataset.
+Ketahanan offline : 
+Mekanisme LittleFS buffering dan auto-sync diproyeksikan berhasil mempertahankan integritas 100% data selama skenario pemutusan koneksi 20 menit, karena kapasitas penyimpanan LittleFS (±4 MB pada ESP32) jauh melebihi volume data yang dihasilkan dalam rentang waktu tersebut (estimasi ±10–15 rekaman JSON selama 20 menit dengan interval 15–30 menit per pengiriman).
+Konsistensi data real-time : 
+Data yang ditampilkan di mobile app dan dashboard web diproyeksikan identik karena keduanya mengambil data dari sumber yang sama (PostgreSQL via REST API backend), dengan perbedaan hanya pada delay render antarmuka yang berada dalam toleransi <1 detik.
+Alur transaksi : 
+Implementasi idempotency key pada setiap request transaksi ke Payment Gateway menjamin tidak ada transaksi ganda meskipun terjadi retry akibat timeout jaringan sementara.
+Usability : 
+Titik kesulitan penggunaan yang diantisipasi berdasarkan desain lo-fi: (a) petani mungkin perlu beberapa kali percobaan untuk mendapatkan sudut pengambilan foto yang optimal untuk grading AI; (b) terminologi teknis pada halaman notifikasi (misalnya "pH" atau "RH") perlu dilengkapi dengan penjelasan sederhana berbahasa Indonesia agar dapat dipahami tanpa bantuan teknis.
+Catatan kendala yang diantisipasi : 
+Variabilitas kekuatan sinyal Wi-Fi di area simulasi lahan mungkin menyebabkan beberapa paket MQTT mengalami retry sebelum berhasil terkirim, yang tidak akan menyebabkan kehilangan data (berkat QoS Level 1) namun dapat meningkatkan latensi rata-rata mendekati batas atas target 10 detik pada kondisi sinyal lemah.
+
+2.4.6 Hasil Akhir
+Berikut merupakan link repository dan berbagai resources lainnya yang berkaitan dengan proyek:
+Figma: https://www.figma.com/design/wMXVBhU5eO8tPe8KC2FYRN/agri?node-id=43-2&t=zeVA8U1hQX741x6y-1
+Canva: https://canva.link/xiwqqvm0e4dumox
+
+Berikut merupakan tampilan dari hasil antarmuka website dan mobile app yang dibuat:
+
+Tabel 2.8 - Tampilan Website
+Nama Halaman / Frame
+Tampilan (Screenshot)
+Dashboard
+
+Katalog Produk
+
+Katalog Dagangan
+
+Kelola Produk: See Detail
+
+Status Pesanan
+
+Keuangan
+
+Katalog: Detail Produk
+
+Keranjang
+
+
+
+Tabel 2.9 - Tampilan Mobile App
+Nama Halaman / Frame
+Tampilan (Screenshot)
+Dashboard
+
+Kamera - Take Pictures in Batch
+
+Kamera - Preview Images
+
+Diagnosis
+
+Monitor
+
+Notifikasi
+
+Detail Diagnosis
+
+Penanggulangan
+
+
+
+2.4.7 Kesimpulan
+Berdasarkan rancangan evaluasi operasional yang telah disusun, sistem Agri menunjukkan kesiapan teknis yang memadai untuk diuji dalam kondisi operasional nyata. Seluruh skenario pengujian dirancang untuk mencakup alur penggunaan kritis dari ketiga aktor utama, yakni petani, pembeli B2B, dan sistem IoT, dalam kondisi normal maupun kondisi gangguan yang realistis.
+Dari sisi keandalan fungsional, arsitektur sistem yang mengadopsi mekanisme Edge Intelligence, offline queuing LittleFS, idempotency key transaksi, dan auto-scaling backend memberikan landasan teknis yang kuat untuk memenuhi seluruh parameter evaluasi yang ditetapkan. Risiko utama yang perlu mendapat perhatian khusus adalah degradasi akurasi model CNN pada kondisi pencahayaan ekstrem di lahan nyata, dan potensi penurunan akurasi pH meter setelah paparan tanah jangka panjang — keduanya telah direncanakan mitigasinya melalui augmentasi dataset dan kalibrasi berkala.
+Dari sisi kemudahan penggunaan, desain antarmuka lo-fi yang telah dikembangkan mengutamakan simplisitas untuk petani dengan literasi digital terbatas. Namun demikian, hasil evaluasi dengan pengguna proxy diproyeksikan akan mengidentifikasi beberapa titik kesulitan minor, terutama pada penggunaan terminologi teknis dan pengarahan kamera yang optimal, yang akan ditindaklanjuti sebagai backlog perbaikan UI pada iterasi berikutnya.
+Secara keseluruhan, apabila seluruh hasil pengujian developmental terpenuhi dan tidak ditemukan kegagalan kritikal pada evaluasi operasional, sistem Agri dinyatakan siap untuk dilanjutkan ke fase pilot project pada 2–3 lahan petani hortikultura di wilayah Jawa Barat. Fase pilot ini akan memberikan data operasional nyata yang menjadi dasar evaluasi akhir dan rencana scaling sistem ke lingkup yang lebih luas.
+
+Daftar Pustaka
+
+[1] “Gitflow Workflow | Atlassian Git Tutorial.” Accessed: May 03, 2026. [Online]. Available: https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow
+
+[2] “Git.” Accessed: May 03, 2026. [Online]. Available: https://git-scm.com/
+
+Lampiran
+Figma: https://www.figma.com/design/wMXVBhU5eO8tPe8KC2FYRN/agri?node-id=43-2&t=zeVA8U1hQX741x6y-1
+Canva: https://canva.link/xiwqqvm0e4dumox
+
+

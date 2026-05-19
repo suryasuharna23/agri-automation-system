@@ -40,6 +40,47 @@ export const aiApi = {
     });
     return res.data;
   },
+  /** Get LLM-generated insight for a disease diagnosis result */
+  getDiseaseInsight: async (
+    diseaseName: string,
+    confidence: number,
+    isHealthy: boolean,
+    sensorData?: { temperature?: number; humidity?: number; soil_moisture?: number; ph?: number },
+  ): Promise<string> => {
+    try {
+      const res = await api.post("/ai/insight/disease", null, {
+        params: { disease_name: diseaseName, confidence, is_healthy: isHealthy },
+      });
+      return res.data.insight;
+    } catch {
+      return "";
+    }
+  },
+  /** Get LLM-generated insight for grading result */
+  getGradingInsight: async (grade: string, confidence: number): Promise<string> => {
+    try {
+      const res = await api.post("/ai/insight/grading", null, {
+        params: { grade, confidence },
+      });
+      return res.data.insight;
+    } catch {
+      return "";
+    }
+  },
+  /** Get LLM-generated insight for sensor readings */
+  getSensorInsight: async (sensorData: {
+    temperature?: number | null;
+    humidity?: number | null;
+    soil_moisture?: number | null;
+    ph?: number | null;
+  }): Promise<string> => {
+    try {
+      const res = await api.post("/ai/insight/sensor", sensorData);
+      return res.data.insight;
+    } catch {
+      return "";
+    }
+  },
 };
 
 export const sensorApi = {

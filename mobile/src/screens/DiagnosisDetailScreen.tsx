@@ -225,6 +225,7 @@ export default function DiagnosisDetailScreen() {
 
   const result: DiagnosisResult = route.params?.result;
   const imageUri: string = route.params?.imageUri ?? '';
+  const llmInsight: string = route.params?.insight ?? '';
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -360,6 +361,17 @@ export default function DiagnosisDetailScreen() {
               </View>
             );
           })}
+
+          {/* ── LLM AI Insight card ── */}
+          {llmInsight.length > 0 && (
+            <View style={styles.insightCard}>
+              <View style={styles.insightHeader}>
+                <Ionicons name="sparkles-outline" size={18} color="#0e4719" />
+                <Text style={styles.insightTitle}>AI Insight</Text>
+              </View>
+              <Text style={styles.insightText}>{llmInsight}</Text>
+            </View>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -585,5 +597,31 @@ const styles = StyleSheet.create({
     fontFamily: 'FacultyGlyphic_400Regular',
     color: '#5a1e1e',
     lineHeight: 17,
+  },
+
+  /* AI Insight card */
+  insightCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    backgroundColor: '#f0f7f1',
+    padding: 14,
+    gap: 8,
+  },
+  insightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  insightTitle: {
+    fontSize: 16,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+  },
+  insightText: {
+    fontSize: 13,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#1a3d1f',
+    lineHeight: 19,
   },
 });

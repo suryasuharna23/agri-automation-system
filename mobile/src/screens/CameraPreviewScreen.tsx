@@ -45,10 +45,24 @@ export default function CameraPreviewScreen() {
       if (mode === 'grading') {
         const id = cropId ?? '00000000-0000-0000-0000-000000000000';
         const result = await aiApi.gradeCrop(id, current);
-        navigation.replace('DiagnosisDetail', { result, mode, imageUri: current });
+        // Fetch LLM insight for grading (non-blocking enhancement)
+        let insight = '';
+        try {
+          insight = await aiApi.getGradingInsight(result.grade, result.confidence);
+        } catch {}
+        navigation.replace('DiagnosisDetail', { result, mode, imageUri: current, insight });
       } else {
         const result = await aiApi.diagnose(current);
-        navigation.replace('DiagnosisDetail', { result, mode, imageUri: current });
+        // Fetch LLM insight for disease (non-blocking enhancement)
+        let insight = '';
+        try {
+          insight = await aiApi.getDiseaseInsight(
+            result.disease_name,
+            result.confidence,
+            result.is_healthy,
+          );
+        } catch {}
+        navigation.replace('DiagnosisDetail', { result, mode, imageUri: current, insight });
       }
     } catch {
       Alert.alert('Gagal', 'Analisis tidak dapat dilakukan. Periksa koneksi dan coba lagi.');

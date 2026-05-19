@@ -89,3 +89,7 @@ export interface DiagnosisResult {
   recommendation: string;
   is_healthy: boolean;
 }
+
+export interface InsightResponse {
+  insight: string;
+}

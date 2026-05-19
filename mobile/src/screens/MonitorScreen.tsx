@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { sensorApi } from '../services/api';
+import { sensorApi, aiApi } from '../services/api';
 import type { SensorNode, SensorReading } from '../types';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -48,11 +48,24 @@ export default function MonitorScreen() {
   const [period,      setPeriod]      = useState<Period>('1h');
   const [nodeModal,   setNodeModal]   = useState(false);
   const [refreshing,  setRefreshing]  = useState(false);
+  const [aiInsight,   setAiInsight]   = useState<string>('');
 
   const load = useCallback(async (node: SensorNode) => {
     try {
       const r = await sensorApi.getReadings(node.id, 24);
-      if (r.length > 0) setAllReadings(r);
+      if (r.length > 0) {
+        setAllReadings(r);
+        // Fetch AI insight based on latest reading (non-blocking)
+        const latest = r[0];
+        aiApi.getSensorInsight({
+          temperature: latest.temperature,
+          humidity: latest.humidity,
+          soil_moisture: latest.soil_moisture,
+          ph: latest.ph,
+        }).then((insight) => {
+          if (insight) setAiInsight(insight);
+        }).catch(() => {});
+      }
     } catch {}
   }, []);
 
@@ -218,6 +231,15 @@ export default function MonitorScreen() {
               ? 'Kondisi lahan saat ini dalam batas normal. Suhu, kelembapan, dan pH tanah berada pada rentang optimal untuk pertumbuhan tanaman.'
               : `Terdeteksi ${anomalyCount} anomali pada pembacaan sensor. Segera periksa kondisi lahan dan ambil tindakan yang diperlukan.`}
           </Text>
+          {aiInsight.length > 0 && (
+            <View style={styles.aiInsightBox}>
+              <View style={styles.aiInsightHeader}>
+                <Ionicons name="sparkles-outline" size={14} color="#0e4719" />
+                <Text style={styles.aiInsightLabel}>AI Insight</Text>
+              </View>
+              <Text style={styles.aiInsightText}>{aiInsight}</Text>
+            </View>
+          )}
         </View>
 
         {/* ── Tindakan section ── */}
@@ -452,6 +474,30 @@ const styles = StyleSheet.create({
     fontFamily: 'FacultyGlyphic_400Regular',
     color: '#0e4719',
     lineHeight: 18,
+  },
+  aiInsightBox: {
+    marginTop: 8,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: '#eef6f0',
+    gap: 4,
+  },
+  aiInsightHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  aiInsightLabel: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#0e4719',
+    fontWeight: '600',
+  },
+  aiInsightText: {
+    fontSize: 12,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#1a3d1f',
+    lineHeight: 17,
   },
 
   /* ── Tindakan ── */
