@@ -40,3 +40,4 @@ Thumbs.db
 # Development
 agri_dev.db
 _test_*.py
+*.tsbuildinfo

@@ -29,7 +29,7 @@ export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
       await SecureStore.setItemAsync('user', JSON.stringify(data.user));
       console.log("🔧 [LoginScreen] Login successful — calling onLogin");
       onLogin?.();
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      // Navigation reset not needed — AppNavigator re-renders with auth stack
     } catch {
       setError('Email atau password salah. Silakan coba lagi.');
     } finally {

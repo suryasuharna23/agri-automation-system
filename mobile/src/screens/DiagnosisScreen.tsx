@@ -126,9 +126,12 @@ export default function DiagnosisScreen() {
             item={item}
             onPress={() => {
               if (item.status === 'Selesai') {
-                const parsedTemp = parseFloat(item.sensors.suhuUdara.replace(/[^\d.]/g, ''));
-                const parsedPh = parseFloat(item.sensors.phTanah.replace(/[^\d.]/g, ''));
-                const parsedHumidity = parseFloat(item.sensors.kelembapan.replace(/[^\d.]/g, ''));
+                const rawTemp = item.sensors?.suhuUdara?.replace(/[^\d.]/g, '') ?? '';
+                const rawPh = item.sensors?.phTanah?.replace(/[^\d.]/g, '') ?? '';
+                const rawHumidity = item.sensors?.kelembapan?.replace(/[^\d.]/g, '') ?? '';
+                const parsedTemp = parseFloat(rawTemp);
+                const parsedPh = parseFloat(rawPh);
+                const parsedHumidity = parseFloat(rawHumidity);
                 navigation.navigate('DiagnosisDetail', {
                   result: item.result ?? { disease_name: 'Healthy', confidence: 1, is_healthy: true, recommendation: '' },
                   imageUri: item.imageUri ?? '',

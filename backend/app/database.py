@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 from app.config import settings
 
 # SQLite needs check_same_thread=False for async access.
-# PostgreSQL drivers ignore this parameter, so it's safe for both.
+# PostgreSQL drivers (asyncpg) ignore unknown connect_args.
 engine = create_async_engine(
     settings.database_url,
     echo=False,

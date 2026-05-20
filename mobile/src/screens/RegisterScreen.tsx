@@ -46,7 +46,7 @@ export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
       await SecureStore.setItemAsync('user', JSON.stringify(data.user));
       console.log("🔧 [RegisterScreen] Registration successful — calling onLogin");
       onLogin?.();
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      // Navigation reset not needed — AppNavigator re-renders with auth stack
     } catch {
       setErrors({ email: 'Email sudah terdaftar atau terjadi kesalahan.' });
     } finally {
