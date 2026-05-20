@@ -353,6 +353,46 @@ def t_ai(tokens: dict):
         log("AI-05: Diagnose no file", "FAIL", str(e)[:150])
 
 
+def t_grading(tokens: dict, crop_id):
+    """Grading tests — requires a crop to grade."""
+    section("AI — Grading")
+    ft, bt = tokens.get("farmer"), tokens.get("buyer")
+    if not ft:
+        log("GRADE-*", "SKIP", "No farmer token")
+        return
+    if not crop_id:
+        log("GRADE-*", "SKIP", "No crop_id — create crop first")
+        return
+
+    # GRADE-01: Grade own crop as farmer
+    try:
+        r = api(f"/ai/grade/{crop_id}", files={"file": ("img.jpg", img("Tomato___healthy.jpg"), "image/jpeg")},
+                headers=auth(ft))
+        ok = r.status_code == 200 and r.json().get("grade") in ("A", "B", "C")
+        log("GRADE-01: Grade own crop (farmer)", "PASS" if ok else "FAIL",
+            f"Got {r.status_code}: grade={r.json().get('grade') if ok else r.text[:80]}")
+    except Exception as e:
+        log("GRADE-01: Grade own crop (farmer)", "FAIL", str(e)[:150])
+
+    # GRADE-03: Grade as buyer — forbidden
+    if bt:
+        try:
+            r = api(f"/ai/grade/{crop_id}", files={"file": ("img.jpg", b"fake", "image/jpeg")},
+                    headers=auth(bt))
+            log("GRADE-03: Grade as buyer", "PASS" if r.status_code == 403 else "FAIL",
+                f"Expected 403, got {r.status_code}")
+        except Exception as e:
+            log("GRADE-03: Grade as buyer", "FAIL", str(e)[:150])
+
+    # GRADE-04: Grade non-existent crop
+    try:
+        r = api("/ai/grade/00000000-0000-0000-0000-000000000000",
+                files={"file": ("img.jpg", b"fake", "image/jpeg")},
+                headers=auth(ft))
+        log("GRADE-04: Non-existent crop", "PASS" if r.status_code == 404 else "FAIL",
+            f"Expected 404, got {r.status_code}")
+    except Exception as e:
+        log("GRADE-04: Non-existent crop", "FAIL", str(e)[:150])
 def t_marketplace(tokens: dict):
     section("Marketplace")
     ft, bt = tokens.get("farmer"), tokens.get("buyer")
@@ -755,6 +795,7 @@ def main():
                 t_sensors(tokens)
                 t_ai(tokens)
                 crop_id = t_marketplace(tokens)
+                t_grading(tokens, crop_id)
                 t_transactions(tokens, crop_id)
                 t_regression(tokens, crop_id)
             t_ai_direct()

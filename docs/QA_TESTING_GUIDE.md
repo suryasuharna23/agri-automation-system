@@ -1,1440 +1,732 @@
-# Agri Platform — QA Testing Guide
+# Agri Platform — Definitive QA Testing Guide
 
-Fully enumerated test plan for all components: backend API, AI service, mobile app, frontend web, and IoT.
+## Project Goal
 
----
+Agri is an **Agriculture Intelligence of Things (AIoT)** platform connecting **three user groups**:
 
-# Table of Contents
+- **Farmers** (mobile app) — Monitor IoT sensor data, diagnose plant diseases via AI, grade crop quality, list products for sale
+- **B2B Buyers** (web app) — Browse crops, place orders, track purchases
+- **Admins** (web app) — Oversee all users, transactions, and system health
 
-1. [Prerequisites & Environment](#1-prerequisites--environment)
-2. [Backend API Tests](#2-backend-api-tests)
-   - 2.1 Health
-   - 2.2 Auth
-   - 2.3 Sensors
-   - 2.4 AI
-   - 2.5 Marketplace
-   - 2.6 Transactions
-3. [AI Service Tests](#3-ai-service-tests)
-   - 3.1 Health
-   - 3.2 Grading
-   - 3.3 Diagnosis
-   - 3.4 LLM Insight
-4. [Mobile App Tests](#4-mobile-app-tests)
-   - 4.1 Auth Flow
-   - 4.2 Navigation
-   - 4.3 Camera & Diagnosis
-   - 4.4 Dashboard
-   - 4.5 Sensor Monitoring
-5. [Frontend Web Tests](#5-frontend-web-tests)
-   - 5.1 Auth Flow
-   - 5.2 Dashboard
-   - 5.3 Marketplace
-   - 5.4 Transactions
-6. [IoT Integration Tests](#6-iot-integration-tests)
-7. [Security Tests](#7-security-tests)
-8. [Regression Test Matrix](#8-regression-test-matrix)
+The platform integrates **ESP32 IoT sensors** (temperature, humidity, soil moisture, pH) with **AI/ML models** (EfficientNet-B0 for grading, MobileNetV2 for disease detection, Gemini LLM for farming insights) and a **marketplace** for B2B transactions.
 
 ---
 
-# 1. Prerequisites & Environment
+## How to Use This Guide
 
-## 1.1 Required Services Running
-
-| Service | Port | How to Start |
-|---------|------|-------------|
-| Backend API | 8000 | `uvicorn app.main:app --reload` (from `backend/`) |
-| AI Service | 8001 | `uvicorn ai.api.inference_server:app --port 8001 --reload` (from repo root) |
-| Frontend Web | 3000 | `npm run dev` (from `frontend-web/`) |
-| Mobile Expo | 8081 | `npx expo start -c` (from `mobile/`) |
-
-Backend and AI service must be running for all API tests and mobile/web integration tests.
-
-## 1.2 Test Accounts
-
-| Role | Email | Password | Created By |
-|------|-------|----------|------------|
-| Farmer | `farmer@test.com` | `test123` | TC-AUTH-01 |
-| Buyer | `buyer@test.com` | `test123` | TC-AUTH-01 |
-| Admin | `admin@test.com` | `test123` | TC-AUTH-01 |
-
-## 1.3 Test Data Files
-
-- Healthy leaf: `ai/test_images/Tomato___healthy.jpg`
-- Diseased leaf: `ai/test_images/Tomato___Late_blight.jpg`
-- Grading test: `ai/test_images/Tomato___Early_blight.jpg`
-
-## 1.4 Test Tools
-
-- Backend: curl, httpie, or Python requests
-- Mobile: Expo Go on physical device or emulator
-- Frontend: any modern browser
-- IoT: serial monitor or MQTT client (mosquitto_pub)
+| Icon | Meaning |
+|------|---------|
+| ✅ **AUTO** | Test is automated in `scripts/run_tests.py`. Run with: `cd backend && source .venv/Scripts/activate && python ../scripts/run_tests.py` |
+| 📝 **MANUAL** | Test must be done by hand. Follow the instructions. |
+| ⚠️ **PARTIAL** | Partially automated, needs manual verification |
 
 ---
 
-# 2. Backend API Tests
+# 1. PROJECT GOAL & FEATURE INVENTORY
 
-All endpoints are prefixed with `/api/v1`. Base URL: `http://localhost:8000`
+## 1.1 Complete Component Map
+
+```
+┌──────────────────────────────────────────────────────────────────────┐
+│                         AGRI PLATFORM                                │
+├──────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌──────────────────────┐     ┌──────────────────────────┐          │
+│  │  MOBILE APP (Expo)   │     │  WEB DASHBOARD (Next.js) │          │
+│  │  Port 8081           │     │  Port 3000               │          │
+│  │                      │     │                          │          │
+│  │  Auth:               │     │  Auth:                   │          │
+│  │   • Login/Register   │     │   • Login/Register       │          │
+│  │   • JWT + SecureStore│     │   • JWT + localStorage   │          │
+│  │   • Logout button    │     │                          │          │
+│  │                      │     │  Features (mock data):   │          │
+│  │  Features:           │     │   • Landing page         │          │
+│  │   • Take photo       │     │   • Dashboard            │          │
+│  │   • AI diagnosis     │     │   • Marketplace catalog  │          │
+│  │   • AI grading       │     │   • Product detail       │          │
+│  │   • LLM insights     │     │   • Shopping cart        │          │
+│  │   • Live sensor data │     │   • Order status         │          │
+│  │   • Price charts     │     │   • Financial reports    │          │
+│  │   • Diagnosis history│     │   • Manage products      │          │
+│  │   • Push notifs      │     │                          │          │
+│  └──────────┬───────────┘     └──────────┬───────────────┘          │
+│             │ HTTP                          │ HTTP                    │
+│             ▼                               ▼                        │
+│  ┌──────────────────────────────────────────────────────────────┐   │
+│  │              BACKEND API (FastAPI)                           │   │
+│  │              Port 8000                                       │   │
+│  │                                                              │   │
+│  │  Endpoints:                                                  │   │
+│  │  Auth: /auth/register, /auth/login, /auth/me, /auth/me(PATCH)│   │
+│  │  Sensors: /sensors/nodes, /sensors/nodes/{id}/readings,      │   │
+│  │           /sensors/ingest                                    │   │
+│  │  AI: /ai/diagnose, /ai/grade/{crop_id}, /ai/insight/{disease│   │
+│  │      /grading/sensor}                                        │   │
+│  │  Marketplace: /marketplace/crops, /marketplace/prices        │   │
+│  │  Transactions: /transactions/orders, /transactions/orders/   │   │
+│  │               {id}/status                                    │   │
+│  │  Health: /health                                             │   │
+│  └──────────┬───────────────────────────────────────────────────┘   │
+│             │ HTTP (httpx)           │ MQTT                        │
+│             ▼                        ▼                             │
+│  ┌──────────────────────┐  ┌────────────────────┐                 │
+│  │  AI SERVICE (PyTorch)│  │  MQTT BROKER       │                 │
+│  │  Port 8001           │  │  Port 1883         │                 │
+│  │                      │  │                    │                 │
+│  │  • Grading (Efficient │  │  ◄── ESP32 IoT    │                 │
+│  │    Net-B0)           │  │      Node          │                 │
+│  │  • Disease (MobileNet│  │      (DHT22, Soil, │                 │
+│  │    V2, 38 classes)   │  │      pH)           │                 │
+│  │  • LLM (Gemini)      │  │                    │                 │
+│  └──────────────────────┘  └────────────────────┘                 │
+│                                                                      │
+│  DATABASE: SQLite (dev) / PostgreSQL 16 (Docker)                    │
+│  Tables: users, sensor_nodes, sensor_readings, crops,               │
+│          diagnosis_records, traceability_logs, transactions         │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+# 2. AUTOMATED TESTS (61 tests, 100% pass rate)
+
+All automated tests are in **`scripts/run_tests.py`**. They require:
+- Backend running on `http://localhost:8000`
+- AI service running on `http://localhost:8001`
+- Test images in `ai/test_images/`
+
+```bash
+cd backend && source .venv/Scripts/activate
+python ../scripts/run_tests.py
+```
 
 ## 2.1 Health
 
-### TC-HEALTH-01: Basic health check
-```
-GET /health
-→ 200 {"status":"ok"}
+| ID | Test | Automation | Command |
+|----|------|-----------|---------|
+| HEALTH-01 | Backend `/health` returns `{"status":"ok"}` | ✅ AUTO | `curl localhost:8000/health` |
+
+## 2.2 Auth (10 tests)
+
+| ID | Test | Expected | Automation |
+|----|------|----------|-----------|
+| AUTH-01 | Register farmer | 201 + JWT token | ✅ AUTO |
+| AUTH-01 | Register buyer | 201 + JWT token | ✅ AUTO |
+| AUTH-01 | Register admin | 201 + JWT token | ✅ AUTO |
+| AUTH-04 | Register duplicate email | 409 Conflict | ✅ AUTO |
+| AUTH-05 | Login valid credentials | 200 + JWT token | ✅ AUTO |
+| AUTH-06 | Login wrong password | 401 Unauthorized | ✅ AUTO |
+| AUTH-07 | Login non-existent user | 401 Unauthorized | ✅ AUTO |
+| AUTH-08 | Login missing fields | 422 Validation error | ✅ AUTO |
+| AUTH-09 | Get current user (valid token) | 200 + user email | ✅ AUTO |
+| AUTH-10 | Get current user (no token) | 403 Not authenticated | ✅ AUTO |
+
+**Manual supplement for AUTH:**
+
+| ID | Test | Instructions |
+|----|------|-------------|
+| AUTH-11 | Register with invalid email | Send `{"email":"not-an-email","password":"123","full_name":"X","role":"farmer"}` → expect 422 |
+| AUTH-12 | Update profile all fields | `PATCH /auth/me` with `full_name`, `phone`, `bank_account`, `bank_name`, `fcm_token` → verify all updated |
+
+## 2.3 Sensors (13 tests)
+
+| ID | Test | Expected | Automation |
+|----|------|----------|-----------|
+| SENSOR-01 | Register node (farmer) | 201 + node object | ✅ AUTO |
+| SENSOR-02 | Register node (buyer — forbidden) | 403 | ✅ AUTO |
+| SENSOR-04 | List nodes (farmer sees own) | 200 + non-empty list | ✅ AUTO |
+| SENSOR-05 | List nodes (buyer — empty) | 200 + empty list `[]` | ✅ AUTO |
+| SENSOR-06 | List nodes no auth | 403 | ✅ AUTO |
+| SENSOR-07 | Ingest full reading | 204 | ✅ AUTO |
+| SENSOR-08 | Ingest unknown device | 204 (silent drop) | ✅ AUTO |
+| SENSOR-09 | Ingest partial (temp only) | 204 | ✅ AUTO |
+| SENSOR-10 | Ingest anomaly (high temp) | 204 — `is_anomaly` set to true | ✅ AUTO |
+| SENSOR-11 | Ingest invalid (temp="bad") | 422 | ✅ AUTO |
+| SENSOR-12 | Get readings with limit | 200 + ordered list | ✅ AUTO |
+| SENSOR-13 | Get readings default limit | 200 + ≤50 items | ✅ AUTO |
+| SENSOR-14 | Get readings for other's node | 404 | ✅ AUTO |
+
+**Manual supplement:**
+
+| ID | Test | Instructions |
+|----|------|-------------|
+| SENSOR-15 | Register node with duplicate device_id | Register same `device_id` twice → expect 500/409 (unique constraint) |
+| SENSOR-16 | Register node missing required fields | POST without `name` → expect 422 |
+| SENSOR-17 | Get readings for non-existent node with valid UUID | `GET /sensors/nodes/{random-uuid}/readings` with valid auth → expect 404 |
+
+## 2.4 AI — Diagnosis (7 tests)
+
+| ID | Test | Expected | Automation |
+|----|------|----------|-----------|
+| AI-01 | Diagnose healthy tomato leaf | 200, `is_healthy: true`, `disease_name: "Healthy"` | ✅ AUTO |
+| AI-02 | Diagnose late blight | 200, `is_healthy: false`, `disease_name` contains "Late Blight" | ✅ AUTO |
+| AI-03 | Diagnose early blight | 200, `is_healthy: false`, `disease_name` contains "Early Blight" | ✅ AUTO |
+| AI-04 | Diagnose pepper bacterial spot | 200, `disease_name` contains "Bacterial Spot" | ✅ AUTO |
+| AI-05 | Diagnose as buyer (should work) | 200 (any auth user) | ✅ AUTO |
+| AI-06 | Diagnose no auth | 403 | ✅ AUTO |
+| AI-07 | Diagnose no file | 422 | ✅ AUTO |
+
+**Manual supplement:**
+
+| ID | Test | Instructions |
+|----|------|-------------|
+| AI-08 | Diagnose leaf mold | Upload `Tomato___Leaf_Mold.jpg` → verify `disease_name` contains "Leaf Mold" |
+| AI-09 | Diagnose healthy pepper | Upload `Pepper_bell___healthy.jpg` → verify `is_healthy: true` |
+| AI-10 | Diagnose blank image | Upload a solid-white/black JPEG → verify backend returns 503 gracefully |
+
+## 2.5 AI — Grading (not in automated suite)
+
+| ID | Test | Instructions |
+|----|------|-------------|
+| GRADE-01 | Grade crop as farmer | POST `/ai/grade/{crop_id}` with image → expect 200 + `{grade, confidence, grade_a/b/c_prob}` |
+| GRADE-02 | Grade crop not owned by user | POST `/ai/grade/{other_farmer_crop_id}` → expect 404 |
+| GRADE-03 | Grade as buyer | POST `/ai/grade/{crop_id}` with buyer token → expect 403 |
+| GRADE-04 | Grade non-existent crop | POST `/ai/grade/{random-uuid}` → expect 404 |
+
+**How to test manually:**
+```bash
+# 1. Login as farmer → get TOKEN
+# 2. Create a crop → get CROP_ID
+curl -s -X POST http://localhost:8000/api/v1/marketplace/crops \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Tomat Test","quantity_kg":10,"price_per_kg":5000}'
+
+# 3. Grade it
+curl -s -X POST "http://localhost:8000/api/v1/ai/grade/$CROP_ID" \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@ai/test_images/Tomato___healthy.jpg"
 ```
 
-### TC-HEALTH-02: Health with services down
-Stop the AI service, then:
-```
-GET /health
-→ 200 {"status":"ok"}    (backend health is independent of AI)
-```
+## 2.6 Marketplace (8 tests)
 
----
+| ID | Test | Expected | Automation |
+|----|------|----------|-----------|
+| MKT-01 | Create crop (farmer) | 201 + crop object | ✅ AUTO |
+| MKT-02 | Create crop (buyer — forbidden) | 403 | ✅ AUTO |
+| MKT-03 | Create crop missing required fields | 422 | ✅ AUTO |
+| MKT-04 | List available crops | 200 + list (available only) | ✅ AUTO |
+| MKT-06 | Get single crop | 200 + matching crop | ✅ AUTO |
+| MKT-08 | Update crop (price, quantity) | 200 + updated values | ✅ AUTO |
+| MKT-07 | Get non-existent crop | 404 | ✅ AUTO |
+| MKT-10 | Get commodity prices | 200 + `{status, prices[]}` | ✅ AUTO |
 
-## 2.2 Auth
+**Manual supplement:**
 
-### TC-AUTH-01: Register as farmer
-```
-POST /api/v1/auth/register
-{
-  "email": "farmer@test.com",
-  "password": "test123",
-  "full_name": "Petani Surya",
-  "role": "farmer"
-}
-→ 201 TokenResponse {access_token, refresh_token, user{role:"farmer"}}
-```
-Verify: access_token is a valid JWT (3 base64 segments)
+| ID | Test | Instructions |
+|----|------|-------------|
+| MKT-09 | Update crop not owned by user | Get another farmer's crop_id → PATCH with your token → expect 404 |
+| MKT-11 | List all crops (including unavailable) | `GET /marketplace/crops?available_only=false` → verify unavailable crops appear |
 
-### TC-AUTH-02: Register as buyer
-```
-POST /api/v1/auth/register
-{
-  "email": "buyer@test.com",
-  "password": "test123",
-  "full_name": "Pembeli Dewi",
-  "role": "buyer"
-}
-→ 201 TokenResponse {user{role:"buyer"}}
-```
+## 2.7 Transactions (9 tests)
 
-### TC-AUTH-03: Register as admin
-```
-POST /api/v1/auth/register
-{
-  "email": "admin@test.com",
-  "password": "test123",
-  "full_name": "Admin Satu",
-  "role": "admin"
-}
-→ 201 TokenResponse {user{role:"admin"}}
-```
+| ID | Test | Expected | Automation |
+|----|------|----------|-----------|
+| TXN-01 | Create order (buyer) | 201 + `status: "pending"` | ✅ AUTO |
+| TXN-02 | Create order (farmer — forbidden) | 403 | ✅ AUTO |
+| TXN-03 | Idempotent order (same Idempotency-Key) | 200/201 + same order ID | ✅ AUTO |
+| TXN-04 | Insufficient stock | 400 | ✅ AUTO |
+| TXN-06 | List orders (buyer sees purchases) | 200 + list | ✅ AUTO |
+| TXN-07 | List orders (farmer sees sales) | 200 + list | ✅ AUTO |
+| TXN-09 | Update order status (farmer) | 200 + `status: "confirmed"` | ✅ AUTO |
+| TXN-11 | Update status (buyer — forbidden) | 403 | ✅ AUTO |
+| TXN-13 | Missing Idempotency-Key header | 422 | ✅ AUTO |
 
-### TC-AUTH-04: Register duplicate email
-```
-POST /api/v1/auth/register
-{
-  "email": "farmer@test.com",
-  "password": "test123",
-  "full_name": "Petani Dua",
-  "role": "farmer"
-}
-→ 409 {"detail":"Email already registered"}
-```
+**Manual supplement:**
 
-### TC-AUTH-05: Login valid credentials
-```
-POST /api/v1/auth/login
-{
-  "email": "farmer@test.com",
-  "password": "test123"
-}
-→ 200 TokenResponse {access_token, refresh_token, user{email:"farmer@test.com"}}
-```
+| ID | Test | Instructions |
+|----|------|-------------|
+| TXN-10 | Full order lifecycle | Create order → confirmed → processing → completed. Verify each transition: `PATCH /transactions/orders/{id}/status?new_status={status}` |
+| TXN-12 | Cancel order | Create order → PATCH with `?new_status=cancelled` → verify `status: "cancelled"` |
+| TXN-14 | Create order for unavailable crop | First PATCH crop to `is_available: false`, then create order → expect 404 |
 
-### TC-AUTH-06: Login wrong password
-```
-POST /api/v1/auth/login
-{
-  "email": "farmer@test.com",
-  "password": "wrongpass"
-}
-→ 401 {"detail":"Invalid credentials"}
-```
+## 2.8 AI Service Direct (6 tests)
 
-### TC-AUTH-07: Login non-existent user
-```
-POST /api/v1/auth/login
-{
-  "email": "nobody@test.com",
-  "password": "test123"
-}
-→ 401 {"detail":"Invalid credentials"}
-```
+| ID | Test | Expected | Automation |
+|----|------|----------|-----------|
+| AIHEALTH-01 | AI service health | 200 + `{status:"ok", grading_model:"loaded", disease_model:"loaded"}` | ✅ AUTO |
+| AIDIAG-01 | Direct diagnose (healthy) | 200 + `disease_name: "Healthy"` | ✅ AUTO |
+| AIGRADE-01 | Direct grade | 200 + `{grade, confidence}` | ✅ AUTO |
+| AILLM-01 | Disease LLM insight | 200 + non-empty `insight` | ✅ AUTO |
+| AILLM-03 | Grading LLM insight | 200 + non-empty `insight` | ✅ AUTO |
+| AILLM-05 | Sensor LLM insight | 200 + non-empty `insight` | ✅ AUTO |
 
-### TC-AUTH-08: Login missing fields
-```
-POST /api/v1/auth/login
-{}
-→ 422 Validation error (FastAPI auto-validation)
-```
+**Manual supplement:**
 
-### TC-AUTH-09: Get current user (valid token)
-```
-GET /api/v1/auth/me
-Authorization: Bearer <farmer_token>
-→ 200 UserResponse {email:"farmer@test.com", role:"farmer"}
-```
+| ID | Test | Instructions |
+|----|------|-------------|
+| AILLM-02 | Disease insight with sensor data | Include `sensor_data: {temperature:35, humidity:90}` — verify insight warns about conditions |
+| AILLM-04 | Grade C insight | POST `{"grade":"C","confidence":0.6,...}` — verify insight mentions improvement |
+| AILLM-06 | Extreme sensor insight | POST `{temperature:40, humidity:10, soil_moisture:5, ph:4.0}` — verify all warnings |
 
-### TC-AUTH-10: Get current user (no token)
-```
-GET /api/v1/auth/me
-→ 403 {"detail":"Not authenticated"}
-```
+## 2.9 Security (4 tests)
 
-### TC-AUTH-11: Get current user (expired token)
-```
-GET /api/v1/auth/me
-Authorization: Bearer <jwt_with_past_exp>
-→ 401 {"detail":"Invalid token"}
-```
+| ID | Test | Expected | Automation |
+|----|------|----------|-----------|
+| SEC-07 | CORS preflight headers | 200 + `Access-Control-Allow-Origin: *` + `Access-Control-Allow-Methods: *` | ✅ AUTO |
+| SEC-09 | SQL injection in device_id | 204 (safe, not 500) + DB still functional | ✅ AUTO |
+| SEC-03a | `/sensors/nodes` requires auth | 403 | ✅ AUTO |
+| SEC-03b | `/marketplace/crops` requires auth | 403 | ✅ AUTO |
 
-### TC-AUTH-12: Update profile
-```
-PATCH /api/v1/auth/me
-Authorization: Bearer <farmer_token>
-{
-  "full_name": "Petani Surya Updated",
-  "phone": "08123456789"
-}
-→ 200 UserResponse {full_name:"Petani Surya Updated", phone:"08123456789"}
-```
+**Manual supplement:**
 
-### TC-AUTH-13: Update profile partial
-```
-PATCH /api/v1/auth/me
-Authorization: Bearer <farmer_token>
-{
-  "bank_account": "1234567890",
-  "bank_name": "Bank BRI"
-}
-→ 200 UserResponse {bank_account:"1234567890", bank_name:"Bank BRI"}
-```
-Verify: other fields (full_name, phone) unchanged from previous value.
-
----
-
-## 2.3 Sensors
-
-### TC-SENSOR-01: Register sensor node (farmer)
-```
-POST /api/v1/sensors/nodes
-Authorization: Bearer <farmer_token>
-{
-  "device_id": "esp32-lab-a",
-  "name": "Lahan Cabai A",
-  "location": "Bandung"
-}
-→ 201 SensorNodeResponse {device_id:"esp32-lab-a", name:"Lahan Cabai A", is_active:true}
-```
-Save the returned `id` for subsequent tests.
-
-### TC-SENSOR-02: Register sensor node (buyer — forbidden)
-```
-POST /api/v1/sensors/nodes
-Authorization: Bearer <buyer_token>
-{
-  "device_id": "esp32-lab-b",
-  "name": "Lahan B",
-  "location": "Jakarta"
-}
-→ 403 {"detail":"Insufficient permissions"}
-```
-
-### TC-SENSOR-03: Register sensor node (admin)
-```
-POST /api/v1/sensors/nodes
-Authorization: Bearer <admin_token>
-{
-  "device_id": "esp32-lab-c",
-  "name": "Lahan Admin",
-  "location": "Bogor"
-}
-→ 201 SensorNodeResponse
-```
-
-### TC-SENSOR-04: List sensor nodes (farmer sees own)
-```
-GET /api/v1/sensors/nodes
-Authorization: Bearer <farmer_token>
-→ 200 [SensorNodeResponse]
-```
-Verify: only returns nodes owned by farmer (device_id: "esp32-lab-a").
-Does NOT return admin's node (device_id: "esp32-lab-c").
-
-### TC-SENSOR-05: List sensor nodes (buyer — empty)
-```
-GET /api/v1/sensors/nodes
-Authorization: Bearer <buyer_token>
-→ 200 []
-```
-Buyer has no sensor nodes, returns empty list.
-
-### TC-SENSOR-06: List sensor nodes (no auth)
-```
-GET /api/v1/sensors/nodes
-→ 403 {"detail":"Not authenticated"}
-```
-
-### TC-SENSOR-07: Ingest sensor reading (no auth required — IoT endpoint)
-```
-POST /api/v1/sensors/ingest
-{
-  "device_id": "esp32-lab-a",
-  "temperature": 28.5,
-  "humidity": 65.0,
-  "soil_moisture": 45.0,
-  "ph": 6.2
-}
-→ 204 (No Content)
-```
-
-### TC-SENSOR-08: Ingest reading for unknown device
-```
-POST /api/v1/sensors/ingest
-{
-  "device_id": "nonexistent-device",
-  "temperature": 30.0
-}
-→ 204 (No Content)
-```
-Logs warning but returns 204 (silently dropped).
-
-### TC-SENSOR-09: Ingest reading partial data
-```
-POST /api/v1/sensors/ingest
-{
-  "device_id": "esp32-lab-a",
-  "temperature": 35.5
-}
-→ 204
-```
-Verify: reading stored with temperature=35.5, other fields null.
-
-### TC-SENSOR-10: Ingest anomaly detection
-```
-POST /api/v1/sensors/ingest
-{
-  "device_id": "esp32-lab-a",
-  "temperature": 42.0,
-  "humidity": 95.0
-}
-→ 204
-```
-Verify: reading stored with is_anomaly=true, anomaly_description contains warning.
-
-### TC-SENSOR-11: Ingest reading invalid body
-```
-POST /api/v1/sensors/ingest
-{
-  "device_id": "esp32-lab-a",
-  "temperature": "not-a-number"
-}
-→ 422 Validation error
-```
-
-### TC-SENSOR-12: Get readings for own node
-```
-GET /api/v1/sensors/nodes/{node_id}/readings?limit=10
-Authorization: Bearer <farmer_token>
-→ 200 [SensorReadingResponse, ...]
-```
-Verify: returns readings ordered by recorded_at DESC.
-Verify: each reading has node_id matching requested node.
-
-### TC-SENSOR-13: Get readings with default limit
-```
-GET /api/v1/sensors/nodes/{node_id}/readings
-Authorization: Bearer <farmer_token>
-→ 200 [...]
-```
-Verify: returns up to 50 readings (default limit).
-
-### TC-SENSOR-14: Get readings for another user's node
-```
-GET /api/v1/sensors/nodes/{admin_node_id}/readings
-Authorization: Bearer <farmer_token>
-→ 404 {"detail":"Node not found"}
-```
-
-### TC-SENSOR-15: Get readings for non-existent node
-```
-GET /api/v1/sensors/nodes/00000000-0000-0000-0000-000000000000/readings
-Authorization: Bearer <farmer_token>
-→ 404 {"detail":"Node not found"}
-```
+| ID | Test | Instructions |
+|----|------|-------------|
+| SEC-01 | Hardcoded secrets scan | Run: `git diff main..HEAD \| grep "^+" \| grep -iE "(api_key|secret|password|token)\s*=\s*['\"][^'\"]{6,}['\"]"` — should find nothing |
+| SEC-02 | SQL injection in crop name | Create crop with name `'; DELETE FROM crops; --` → verify no data loss |
+| SEC-05 | Token expiry | Set `ACCESS_TOKEN_EXPIRE_MINUTES=1`, wait 70s, use token → expect 401 |
+| SEC-06 | JWT tampering | Base64 decode JWT payload, modify `sub` to another user's ID, re-encode → expect 401 |
+| SEC-08 | XSS in name | Register with `full_name: "<script>alert(1)</script>"` → verify stored safely (no script execution) |
 
 ---
 
-## 2.4 AI
+# 3. MANUAL TESTS — Detailed Instructions
 
-### TC-AI-01: Diagnose healthy leaf (farmer)
-```
-POST /api/v1/ai/diagnose
-Authorization: Bearer <farmer_token>
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-→ 200 DiagnosisResult
-{
-  "disease_name": "Healthy",
-  "confidence": 0.99-1.0,
-  "recommendation": "Tanaman dalam kondisi sehat...",
-  "is_healthy": true
-}
-```
+## 3.1 Mobile App — Auth Flow
 
-### TC-AI-02: Diagnose diseased leaf
-```
-POST /api/v1/ai/diagnose
-Authorization: Bearer <farmer_token>
-Content-Type: multipart/form-data
-file: Tomato___Late_blight.jpg
-→ 200 DiagnosisResult
-{
-  "disease_name": "Late Blight (Tomat)",
-  "confidence": > 0.5,
-  "recommendation": includes "fungisida",
-  "is_healthy": false
-}
-```
-
-### TC-AI-03: Diagnose as buyer (should work — any auth user)
-```
-POST /api/v1/ai/diagnose
-Authorization: Bearer <buyer_token>
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-→ 200 DiagnosisResult
-```
-Verify: buyer can diagnose. Response same as farmer.
-
-### TC-AI-04: Diagnose without auth
-```
-POST /api/v1/ai/diagnose
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-→ 403 {"detail":"Not authenticated"}
-```
-
-### TC-AI-05: Diagnose without file
-```
-POST /api/v1/ai/diagnose
-Authorization: Bearer <farmer_token>
-→ 422 Validation error (missing file field)
-```
-
-### TC-AI-06: Diagnose invalid file type
-```
-POST /api/v1/ai/diagnose
-Authorization: Bearer <farmer_token>
-Content-Type: multipart/form-data
-file: test.txt (text file)
-→ 500 or error (AI service expects image)
-```
-Verify: backend returns 503 "Layanan AI tidak tersedia saat ini."
-
-### TC-AI-07: Grade crop (farmer)
-```
-POST /api/v1/ai/grade/{crop_id}
-Authorization: Bearer <farmer_token>
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-→ 200 GradingResult
-{
-  "crop_id": "...",
-  "grade": "A" | "B" | "C",
-  "confidence": float,
-  "grade_a_prob": float,
-  "grade_b_prob": float,
-  "grade_c_prob": float
-}
-```
-
-### TC-AI-08: Grade crop not owned by user
-```
-POST /api/v1/ai/grade/{crop_id_belonging_to_other_user}
-Authorization: Bearer <farmer_token>
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-→ 404 {"detail":"Crop not found"}
-```
-
-### TC-AI-09: Grade crop non-existent crop_id
-```
-POST /api/v1/ai/grade/00000000-0000-0000-0000-000000000000
-Authorization: Bearer <farmer_token>
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-→ 404 {"detail":"Crop not found"}
-```
-
-### TC-AI-10: Grade crop as buyer (forbidden)
-```
-POST /api/v1/ai/grade/{crop_id}
-Authorization: Bearer <buyer_token>
-→ 403 {"detail":"Insufficient permissions"}
-```
-
-### TC-AI-11: Disease LLM insight
-```
-POST /api/v1/ai/insight/disease
-Authorization: Bearer <farmer_token>
-{
-  "disease_name": "Late Blight (Tomat)",
-  "confidence": 0.87,
-  "is_healthy": false,
-  "sensor_data": {"temperature": 28.0, "humidity": 72.0}
-}
-→ 200 InsightResponse {insight: string}
-```
-Verify: insight is non-empty, in Bahasa Indonesia.
-Without GEMINI_API_KEY: returns static fallback.
-
-### TC-AI-12: Grading LLM insight
-```
-POST /api/v1/ai/insight/grading
-Authorization: Bearer <farmer_token>
-{
-  "grade": "A",
-  "confidence": 0.92,
-  "grade_a_prob": 0.92,
-  "grade_b_prob": 0.05,
-  "grade_c_prob": 0.03
-}
-→ 200 InsightResponse {insight: string}
-```
-
-### TC-AI-13: Sensor LLM insight
-```
-POST /api/v1/ai/insight/sensor
-Authorization: Bearer <farmer_token>
-{
-  "temperature": 32.0,
-  "humidity": 85.0,
-  "soil_moisture": 60.0,
-  "ph": 6.5
-}
-→ 200 InsightResponse {insight: string}
-```
-Verify: for high temperature + high humidity, insight mentions risk of fungal disease.
-
----
-
-## 2.5 Marketplace
-
-### TC-MKT-01: Create crop listing (farmer)
-```
-POST /api/v1/marketplace/crops
-Authorization: Bearer <farmer_token>
-{
-  "name": "Tomat Cerry",
-  "variety": "Cherry",
-  "quantity_kg": 100,
-  "price_per_kg": 15000,
-  "description": "Tomat cerry segar dari Bandung"
-}
-→ 201 CropResponse
-{
-  "name": "Tomat Cerry",
-  "quantity_kg": 100,
-  "price_per_kg": 15000,
-  "grade": "ungraded",
-  "is_available": true
-}
-```
-Save returned `id`.
-
-### TC-MKT-02: Create crop as buyer (forbidden)
-```
-POST /api/v1/marketplace/crops
-Authorization: Bearer <buyer_token>
-{...}
-→ 403 {"detail":"Insufficient permissions"}
-```
-
-### TC-MKT-03: Create crop missing required fields
-```
-POST /api/v1/marketplace/crops
-Authorization: Bearer <farmer_token>
-{
-  "name": "Test"
-}
-→ 422 Validation error (quantity_kg and price_per_kg required)
-```
-
-### TC-MKT-04: List all available crops
-```
-GET /api/v1/marketplace/crops?available_only=true
-Authorization: Bearer <farmer_token>
-→ 200 [CropResponse, ...]
-```
-Verify: only crops with is_available=true returned.
-
-### TC-MKT-05: List all crops (including unavailable)
-```
-GET /api/v1/marketplace/crops?available_only=false
-Authorization: Bearer <farmer_token>
-→ 200 [CropResponse, ...]
-```
-Verify: includes both available and unavailable crops.
-
-### TC-MKT-06: Get single crop
-```
-GET /api/v1/marketplace/crops/{crop_id}
-Authorization: Bearer <farmer_token>
-→ 200 CropResponse {id, name, ...}
-```
-
-### TC-MKT-07: Get non-existent crop
-```
-GET /api/v1/marketplace/crops/00000000-0000-0000-0000-000000000000
-Authorization: Bearer <farmer_token>
-→ 404 {"detail":"Crop not found"}
-```
-
-### TC-MKT-08: Update crop listing
-```
-PATCH /api/v1/marketplace/crops/{crop_id}
-Authorization: Bearer <farmer_token>
-{
-  "price_per_kg": 18000,
-  "quantity_kg": 80
-}
-→ 200 CropResponse {price_per_kg:18000, quantity_kg:80}
-```
-
-### TC-MKT-09: Update crop not owned by user
-```
-PATCH /api/v1/marketplace/crops/{other_farmers_crop_id}
-Authorization: Bearer <farmer_token>
-{
-  "price_per_kg": 9999
-}
-→ 404 {"detail":"Crop not found"}
-```
-
-### TC-MKT-10: Get commodity prices
-```
-GET /api/v1/marketplace/prices
-Authorization: Bearer <farmer_token>
-→ 200 {
-  "status": "fallback" | "ok",
-  "prices": [
-    {"commodity": "Tomat", "price_per_kg": 12000, "unit": "Rp/kg"},
-    ...
-  ]
-}
-```
-Verify: returns fallback data if external API is down.
-
----
-
-## 2.6 Transactions
-
-### TC-TXN-01: Create order (buyer)
-```
-POST /api/v1/transactions/orders
-Authorization: Bearer <buyer_token>
-Idempotency-Key: uuid-unique-001
-{
-  "crop_id": "{crop_id_from_TC-MKT-01}",
-  "quantity_kg": 10,
-  "notes": "Pesan untuk minggu ini"
-}
-→ 201 OrderResponse
-{
-  "crop_id": "...",
-  "quantity_kg": 10,
-  "total_amount": 180000,
-  "status": "pending"
-}
-```
-Verify: total_amount = quantity_kg * price_per_kg (10 * 18000 = 180000).
-
-### TC-TXN-02: Create order as farmer (forbidden)
-```
-POST /api/v1/transactions/orders
-Authorization: Bearer <farmer_token>
-Idempotency-Key: uuid-unique-002
-{...}
-→ 403 {"detail":"Insufficient permissions"}
-```
-Buyers-only endpoint.
-
-### TC-TXN-03: Idempotent order creation (same Idempotency-Key)
-```
-POST /api/v1/transactions/orders
-Authorization: Bearer <buyer_token>
-Idempotency-Key: uuid-unique-001    ← same key
-{
-  "crop_id": "{same_crop_id}",
-  "quantity_kg": 999
-}
-→ 200 OrderResponse (NOT 201)
-```
-Verify: returns existing order, does NOT create duplicate.
-
-### TC-TXN-04: Order with insufficient stock
-```
-POST /api/v1/transactions/orders
-Authorization: Bearer <buyer_token>
-Idempotency-Key: uuid-unique-003
-{
-  "crop_id": "{crop_id}",
-  "quantity_kg": 99999
-}
-→ 400 {"detail":"Insufficient stock"}
-```
-
-### TC-TXN-05: Order for unavailable crop
-First mark crop as unavailable:
-```
-PATCH /api/v1/marketplace/crops/{crop_id}
-Authorization: Bearer <farmer_token>
-{"is_available": false}
-```
-Then:
-```
-POST /api/v1/transactions/orders
-Authorization: Bearer <buyer_token>
-Idempotency-Key: uuid-unique-004
-{
-  "crop_id": "{crop_id}",
-  "quantity_kg": 5
-}
-→ 404 {"detail":"Crop not available"}
-```
-Restore availability for subsequent tests:
-```
-PATCH /api/v1/marketplace/crops/{crop_id}
-Authorization: Bearer <farmer_token>
-{"is_available": true}
-```
-
-### TC-TXN-06: List orders (buyer sees own purchases)
-```
-GET /api/v1/transactions/orders
-Authorization: Bearer <buyer_token>
-→ 200 [OrderResponse]
-```
-Verify: each order has buyer_id matching current user.
-
-### TC-TXN-07: List orders (farmer sees own sales)
-```
-GET /api/v1/transactions/orders
-Authorization: Bearer <farmer_token>
-→ 200 [OrderResponse]
-```
-Verify: each order has seller_id matching current user.
-
-### TC-TXN-08: List orders (admin sees all)
-```
-GET /api/v1/transactions/orders
-Authorization: Bearer <admin_token>
-→ 200 [OrderResponse]
-```
-Verify: returns ALL orders across all users.
-
-### TC-TXN-09: Update order status (farmer)
-```
-PATCH /api/v1/transactions/orders/{order_id}/status?new_status=confirmed
-Authorization: Bearer <farmer_token>
-→ 200 OrderResponse {status:"confirmed"}
-```
-
-### TC-TXN-10: Update order status full lifecycle
-```
-PATCH /.../status?new_status=confirmed  → 200
-PATCH /.../status?new_status=processing → 200
-PATCH /.../status?new_status=completed  → 200
-PATCH /.../status?new_status=cancelled  → 200 (if still pending)
-```
-Verify: status transitions work correctly.
-
-### TC-TXN-11: Update order status as buyer (forbidden)
-```
-PATCH /api/v1/transactions/orders/{order_id}/status?new_status=confirmed
-Authorization: Bearer <buyer_token>
-→ 403 {"detail":"Insufficient permissions"}
-```
-
-### TC-TXN-12: Update non-existent order
-```
-PATCH /api/v1/transactions/orders/00000000-0000-0000-0000-000000000000/status?new_status=completed
-Authorization: Bearer <farmer_token>
-→ 404 {"detail":"Order not found"}
-```
-
-### TC-TXN-13: Order without Idempotency-Key header
-```
-POST /api/v1/transactions/orders
-Authorization: Bearer <buyer_token>
-{
-  "crop_id": "{crop_id}",
-  "quantity_kg": 1
-}
-→ 422 Validation error (missing required header)
-```
-
----
-
-# 3. AI Service Tests
-
-Direct AI service calls (bypassing backend). Base URL: `http://localhost:8001`
-
-## 3.1 Health
-
-### TC-AIHEALTH-01: AI service health
-```
-GET http://localhost:8001/health
-→ 200 {
-  "status": "ok",
-  "grading_model": "loaded" | "unavailable",
-  "disease_model": "loaded" | "unavailable"
-}
-```
-
-### TC-AIHEALTH-02: Models loading state
-If running for first time, verify models download and load.
-Expected: both models show "loaded" after startup completes.
-
----
-
-## 3.2 Grading
-
-### TC-AIGRADE-01: Grade healthy tomato
-```
-POST http://localhost:8001/grade
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-crop_id: "00000000-0000-0000-0000-000000000000"
-→ 200
-{
-  "crop_id": "00000000-0000-0000-0000-000000000000",
-  "grade": "A" | "B" | "C",
-  "confidence": float,
-  "grade_a_prob": float,
-  "grade_b_prob": float,
-  "grade_c_prob": float
-}
-```
-
-### TC-AIGRADE-02: Grade with missing file
-```
-POST http://localhost:8001/grade
-→ 422 Validation error
-```
-
----
-
-## 3.3 Diagnosis
-
-### TC-AIDIAG-01: Diagnose healthy leaf
-```
-POST http://localhost:8001/diagnose
-Content-Type: multipart/form-data
-file: Tomato___healthy.jpg
-→ 200
-{
-  "disease_name": "Healthy",
-  "confidence": 0.99-1.0,
-  "recommendation": string,
-  "is_healthy": true
-}
-```
-
-### TC-AIDIAG-02: Diagnose diseased leaf
-```
-POST http://localhost:8001/diagnose
-Content-Type: multipart/form-data
-file: Tomato___Late_blight.jpg
-→ 200
-{
-  "disease_name": "Late Blight (Tomat)",
-  "confidence": > 0.5,
-  "is_healthy": false
-}
-```
-Verify: confidence is reasonable (> 0.5).
-Verify: recommendation is non-empty and in Indonesian.
-
-### TC-AIDIAG-03: Diagnose pepper leaf
-```
-POST http://localhost:8001/diagnose
-Content-Type: multipart/form-data
-file: Pepper_bell___Bacterial_spot.jpg
-→ 200
-```
-Verify: disease_name contains "Bacterial Spot".
-
-### TC-AIDIAG-04: Diagnose healthy pepper
-```
-POST http://localhost:8001/diagnose
-Content-Type: multipart/form-data
-file: Pepper_bell___healthy.jpg
-→ 200
-```
-Verify: is_healthy = true.
-
-### TC-AIDIAG-05: Diagnose early blight
-```
-POST http://localhost:8001/diagnose
-Content-Type: multipart/form-data
-file: Tomato___Early_blight.jpg
-→ 200
-```
-Verify: disease_name contains "Early Blight".
-
-### TC-AIDIAG-06: Diagnose leaf mold
-```
-POST http://localhost:8001/diagnose
-Content-Type: multipart/form-data
-file: Tomato___Leaf_Mold.jpg
-→ 200
-```
-Verify: disease_name contains "Leaf Mold".
-
----
-
-## 3.4 LLM Insight
-
-### TC-AILLM-01: Disease insight (with sensor data)
-```
-POST http://localhost:8001/insight/disease
-{
-  "disease_name": "Late Blight (Tomat)",
-  "confidence": 0.87,
-  "is_healthy": false,
-  "sensor_data": {"temperature": 28.0, "humidity": 85.0}
-}
-→ 200 {"insight": "..."}
-```
-Verify: insight is non-empty.
-Verify: mentions the disease name and environmental conditions.
-Note: without GEMINI_API_KEY, returns static fallback in Indonesian.
-
-### TC-AILLM-02: Disease insight (healthy)
-```
-POST http://localhost:8001/insight/disease
-{
-  "disease_name": "Healthy",
-  "confidence": 0.99,
-  "is_healthy": true
-}
-→ 200 {"insight": "..."}
-```
-Verify: insight suggests maintaining current conditions.
-
-### TC-AILLM-03: Grading insight (Grade A)
-```
-POST http://localhost:8001/insight/grading
-{
-  "grade": "A",
-  "confidence": 0.92,
-  "grade_a_prob": 0.92,
-  "grade_b_prob": 0.05,
-  "grade_c_prob": 0.03
-}
-→ 200 {"insight": "..."}
-```
-Verify: insight mentions premium quality.
-
-### TC-AILLM-04: Grading insight (Grade C)
-```
-POST http://localhost:8001/insight/grading
-{
-  "grade": "C",
-  "confidence": 0.65,
-  "grade_a_prob": 0.1,
-  "grade_b_prob": 0.25,
-  "grade_c_prob": 0.65
-}
-→ 200 {"insight": "..."}
-```
-Verify: insight mentions evaluation/recommendation for improvement.
-
-### TC-AILLM-05: Sensor insight (normal conditions)
-```
-POST http://localhost:8001/insight/sensor
-{
-  "temperature": 25.0,
-  "humidity": 60.0,
-  "soil_moisture": 50.0,
-  "ph": 6.5
-}
-→ 200 {"insight": "..."}
-```
-Verify: insight confirms optimal conditions.
-
-### TC-AILLM-06: Sensor insight (extreme conditions)
-```
-POST http://localhost:8001/insight/sensor
-{
-  "temperature": 38.0,
-  "humidity": 95.0,
-  "soil_moisture": 10.0,
-  "ph": 4.5
-}
-→ 200 {"insight": "..."}
-```
-Verify: insight warns about each out-of-range parameter.
-
----
-
-# 4. Mobile App Tests
-
-Test on physical device via Expo Go. App loads from `http://<PC_IP>:8081`.
-
-## 4.1 Auth Flow
-
-### TC-MOB-AUTH-01: First launch shows login screen
+### MOB-AUTH-01: First launch shows login
+**Prerequisites:** App installed via Expo Go, no existing token
 **Steps:**
-1. Clear app data (Settings → Apps → Agri → Clear data)
-2. Launch app
-**Expected:** Login screen displayed with "Masuk ke Akun" title.
-**Verify:** No automatic navigation to main screen.
+1. Clear app data: Android Settings → Apps → Agri → Storage → Clear data
+2. Launch app from Expo Go
+3. ✅ **Verify:** Login screen displays with "Masuk ke Akun" title, email field, password field, "Masuk" button
+4. ✅ **Verify:** "Daftar Sekarang" link visible below form
 
-### TC-MOB-AUTH-02: Navigate to register
+### MOB-AUTH-02: Register as farmer (happy path)
 **Steps:**
-1. On login screen, tap "Daftar Sekarang" link
-**Expected:** Register screen displayed with "Buat Akun Baru" title.
-**Verify:** Role selector has "Petani" and "Pembeli B2B" options.
+1. On login screen, tap "Daftar Sekarang"
+2. ✅ **Verify:** Register screen shows: role selector (Petani / Pembeli B2B), Nama Lengkap, Email, Nomor Telepon (opsional), Password, Konfirmasi Password fields
+3. Select "Petani" role (should be default)
+4. Fill all fields:
+   - Nama: `Test Farmer`
+   - Email: `test.farmer@example.com`
+   - Password: `password123`
+   - Confirm: `password123`
+5. Tap "Daftar Sekarang"
+6. ✅ **Verify:** Navigates to main dashboard. No error alerts.
 
-### TC-MOB-AUTH-03: Register as farmer
+### MOB-AUTH-03: Register form validation
 **Steps:**
-1. Select "Petani" role
-2. Fill: Nama Lengkap, Email, Password (min 8 chars), Konfirmasi Password
-3. Tap "Daftar Sekarang"
-**Expected:** Navigates to main dashboard. Console shows token saved.
+1. Tap "Daftar Sekarang" with all fields empty
+2. ✅ **Verify:** Error shown: "Nama lengkap wajib diisi."
+3. Fill name only, tap again → ✅ Verify: "Email wajib diisi."
+4. Fill email, tap again → ✅ Verify: "Password wajib diisi."
+5. Enter password of 3 chars → ✅ Verify: "Password minimal 8 karakter."
+6. Enter mismatching confirm password → ✅ Verify: "Konfirmasi password tidak cocok."
 
-### TC-MOB-AUTH-04: Register validation
+### MOB-AUTH-04: Login valid
 **Steps:**
-1. Tap "Daftar Sekarang" with empty fields
-**Expected:** Validation errors shown for required fields.
-2. Enter password < 8 characters
-**Expected:** "Password minimal 8 karakter" shown.
-3. Enter mismatching confirm password
-**Expected:** "Konfirmasi password tidak cocok" shown.
-4. Enter invalid email format
-**Expected:** Validation error or API returns error.
-
-### TC-MOB-AUTH-05: Login valid credentials
-**Steps:**
-1. Navigate to login screen
-2. Enter registered email + password
+1. Navigate to Login
+2. Enter email + password of registered account
 3. Tap "Masuk"
-**Expected:** Navigates to main dashboard.
-**Verify console:** `🔧 [LoginScreen] Login successful — calling onLogin`
+4. ✅ **Verify:** Navigates to main dashboard
+5. ✅ **Verify (console):** `🔧 [LoginScreen] Login successful — calling onLogin`
 
-### TC-MOB-AUTH-06: Login invalid credentials
+### MOB-AUTH-05: Login invalid
 **Steps:**
 1. Enter wrong email or password
 2. Tap "Masuk"
-**Expected:** Error message "Email atau password salah. Silakan coba lagi."
+3. ✅ **Verify:** Error "Email atau password salah. Silakan coba lagi."
 
-### TC-MOB-AUTH-07: Login empty fields
+### MOB-AUTH-06: Empty login
 **Steps:**
-1. Tap "Masuk" with empty email and password
-**Expected:** "Email dan password wajib diisi." shown.
+1. Tap "Masuk" with empty fields
+2. ✅ **Verify:** "Email dan password wajib diisi."
 
-### TC-MOB-AUTH-08: Logout
+### MOB-AUTH-07: Logout
 **Steps:**
-1. Tap logout icon (top-right of bottom navbar, rotated icon)
-2. Tap "Keluar" in confirmation dialog
-**Expected:** Returns to login screen.
-**Verify console:** `🔧 [AuthContext] logout() called`
+1. While logged in, find the logout icon in the bottom navbar (right side, small rotated icon)
+2. Tap it
+3. ✅ **Verify:** Confirmation dialog: "Apakah Anda yakin ingin keluar?" with "Batal" and "Keluar"
+4. Tap "Keluar"
+5. ✅ **Verify:** Returns to login screen
+6. ✅ **Verify (console):** `🔧 [AuthContext] logout() called`
 
-### TC-MOB-AUTH-09: Auto-login with stored token
+### MOB-AUTH-08: Auto-login with stored token
 **Steps:**
 1. Login successfully
-2. Close and reopen app (or reload Expo)
-**Expected:** App shows main screen (not login), because token is in SecureStore.
-**Verify console:** `🔧 [AuthContext] Checking auth — token found: true`
+2. Close the app (swipe away or press home)
+3. Reopen the Expo QR and scan
+4. ✅ **Verify:** App shows main screen (not login) — token persisted
+5. ✅ **Verify (console):** `🔧 [AuthContext] Checking auth — token found: true`
 
-### TC-MOB-AUTH-10: No token shows login
+### MOB-AUTH-09: No token → login screen
 **Steps:**
 1. Logout (clears token)
 2. Reload app
-**Expected:** Login screen shown.
-**Verify console:** `🔧 [AuthContext] Checking auth — token found: false`
+3. ✅ **Verify:** Login screen shown
+4. ✅ **Verify (console):** `🔧 [AuthContext] Checking auth — token found: false`
 
----
+## 3.2 Mobile App — Navigation
 
-## 4.2 Navigation
-
-### TC-MOB-NAV-01: Bottom tab navigation
+### MOB-NAV-01: Bottom tab bar
+**Prerequisites:** Logged in
 **Steps:**
-1. After login, tap each tab icon: Dashboard, Notifications, Diagnosis, Monitor
-**Expected:** Each tab shows its respective screen.
+1. The bottom tab bar shows 5 elements: Dashboard, Notifications, [Camera button], Diagnosis, Monitor
+2. ✅ **Verify:** Current tab is highlighted (Dashboard by default)
+3. Tap each tab
+4. ✅ **Verify:** Each screen renders without error
 
-### TC-MOB-NAV-02: Camera button
+### MOB-NAV-02: Camera button
 **Steps:**
-1. Tap center camera button in navbar
-**Expected:** Camera screen opens with viewfinder overlay.
+1. Tap the center camera button
+2. ✅ **Verify:** Camera viewfinder opens with transparent guide overlay
+3. ✅ **Verify (console):** `🔧 [CameraScreen] Mounted`
 
-### TC-MOB-NAV-03: Back navigation
+### MOB-NAV-03: Back navigation
 **Steps:**
-1. Open camera
-2. Tap back arrow
-**Expected:** Returns to previous screen.
+1. From any non-home screen, tap the back arrow (top-left)
+2. ✅ **Verify:** Returns to the screen you came from
 
----
+## 3.3 Mobile App — Camera & Diagnosis
 
-## 4.3 Camera & Diagnosis
-
-### TC-MOB-CAM-01: Camera permissions
+### MOB-CAM-01: Camera permissions
 **Steps:**
-1. Open camera screen
-2. If permission not granted, allow camera access
-**Expected:** Camera viewfinder appears.
-**Verify console:** `🔧 [CameraScreen] Permission status: {"granted":true}`
+1. Tap camera button
+2. If prompted for camera permission, grant it
+3. ✅ **Verify:** Camera view appears with green guide frame
+4. ✅ **Verify (console):** `🔧 [CameraScreen] Permission status: {"granted":true}`
 
-### TC-MOB-CAM-02: Take photo
+### MOB-CAM-02: Take photo
 **Steps:**
-1. Point camera at any object
-2. Tap shutter button
-**Expected:** Photo captured, navigates to preview screen.
-**Verify console:** `🔧 [CameraScreen] ✅ Photo captured. Full photo object: {uri, width, height}`
+1. Point camera at a plant leaf
+2. Tap the large shutter button (center-bottom)
+3. ✅ **Verify:** Brief capture, navigates to preview screen
+4. ✅ **Verify:** Photo fills the preview area
+5. ✅ **Verify (console):** `🔧 [CameraScreen] ✅ Photo captured. Full photo object: {uri, width, height}`
 
-### TC-MOB-CAM-03: Photo preview screen
+### MOB-CAM-03: Photo preview actions
 **Steps:**
-1. After taking photo, verify photo displays correctly
-**Expected:** Image preview takes most of the screen.
-**Verify console:** `🔧 [CameraPreview] Route params: {uri, mode}`
+1. On preview screen, verify three action buttons at bottom:
+   - **Trash** (left) — delete photo, return to camera
+   - **Camera** (center) — retake photo, return to camera
+   - **Checkmark** (right) — analyze photo
+2. ✅ **Verify:** Tap trash → returns to camera
+3. ✅ **Verify:** Take another photo → tap camera icon → returns to camera
 
-### TC-MOB-CAM-04: Analyze photo (diagnosis)
+### MOB-CAM-04: Analyze — Healthy plant
 **Steps:**
-1. Take a photo of a plant leaf
+1. Take photo of a healthy green leaf
 2. Tap checkmark button
-**Expected:** Loading indicator appears, then navigates to DiagnosisDetail.
-**Verify console:** 
-```
-🔧 [CameraPreview] DIAGNOSE mode — calling aiApi.diagnose
-🔧 [api.ts] Request: POST /ai/diagnose
-🔧 [aiApi.diagnose] Success — status: 200
-🔧 [aiApi.diagnose] Result: {disease_name, confidence, recommendation, is_healthy}
-```
+3. ✅ **Verify:** Loading indicator appears (spinner on button)
+4. ✅ **Verify:** Navigates to DiagnosisDetail screen after ~2-5 seconds
+5. ✅ **Verify:** Shows:
+   - Disease name: "Healthy"
+   - Confidence: ~99.98%
+   - Recommendation in Indonesian
+   - Sensor data cards (temperature, pH, humidity)
+6. ✅ **Verify (console):**
+   ```
+   🔧 [aiApi.diagnose] Success — status: 200
+   🔧 [aiApi.diagnose] Result: {disease_name:"Healthy", confidence:0.9998, ...}
+   ```
 
-### TC-MOB-CAM-05: Analyze failure (no token)
+### MOB-CAM-05: Analyze — Diseased plant
 **Steps:**
-1. Logout → clear token
+1. Take photo showing leaf spots/discoloration (or use printed image of diseased leaf)
+2. Tap checkmark
+3. ✅ **Verify:** Returns diagnosis result with disease name, confidence, treatment recommendation in Indonesian
+
+### MOB-CAM-06: Analyze failure (no token)
+**Steps:**
+1. Logout first
 2. Take a photo
 3. Tap checkmark
-**Expected:** "Analisis tidak dapat dilakukan. Periksa koneksi dan coba lagi." alert.
-**Verify console:** `🔧 [api.ts]   Has token in SecureStore: false`
+4. ✅ **Verify:** Alert: "Analisis tidak dapat dilakukan. Periksa koneksi dan coba lagi."
+5. ✅ **Verify (console):** `🔧 [api.ts]   Has token in SecureStore: false`
 
-### TC-MOB-CAM-06: Delete photo
+### MOB-CAM-07: Analysis with AI service down
 **Steps:**
-1. Take a photo
-2. Tap trash icon
-**Expected:** Returns to camera screen.
+1. Stop the AI service (`tskill <PID>` or Ctrl+C)
+2. Take photo and analyze
+3. ✅ **Verify:** Alert: "Analisis tidak dapat dilakukan. Periksa koneksi dan coba lagi."
+4. ✅ **Verify (console):** Error response from backend (503)
+5. Restart AI service after test
 
-### TC-MOB-CAM-07: Retake photo
+## 3.4 Mobile App — Diagnosis History
+
+### MOB-DIAG-01: History screen loads
 **Steps:**
-1. Take a photo
-2. Tap camera icon
-**Expected:** Returns to camera viewfinder.
+1. Tap "Diagnosis" tab
+2. ✅ **Verify:** Screen shows "Riwayat" title with filter button
+3. ✅ **Verify:** Mock diagnosis cards displayed (Kangkung, Bayam, Tomat) with status badges
 
-### TC-MOB-CAM-08: Diagnosis result details
+### MOB-DIAG-02: View completed diagnosis detail
 **Steps:**
-1. Complete a diagnosis (healthy or diseased leaf)
-2. View DiagnosisDetail screen
-**Expected:** Shows:
-   - Disease name (e.g., "Healthy" or "Late Blight (Tomat)")
-   - Confidence percentage
-   - Recommendation text in Indonesian
-   - Sensor data cards (temperature, pH, humidity)
-**Verify console:** `🔧 [DiagnosisDetail] Route params: {result, mode, imageUri, insight, sensorData}`
+1. Tap a card with "Selesai" status badge
+2. ✅ **Verify:** Navigates to DiagnosisDetail screen with full result
 
----
-
-## 4.4 Dashboard
-
-### TC-MOB-DASH-01: Dashboard loads
+### MOB-DIAG-03: Treatment screen
 **Steps:**
-1. Login and tap Dashboard tab
-**Expected:** Dashboard displays with:
-   - Greeting text
-   - Balance card
-   - Sensor readings (or "Belum ada data sensor")
-   - Commodity price dropdown
-   - Price chart
+1. From DiagnosisDetail, navigate to Treatment (if available)
+2. ✅ **Verify:** Treatment instructions screen renders
 
-### TC-MOB-DASH-02: Commodity selector
+## 3.5 Mobile App — Dashboard
+
+### MOB-DASH-01: Dashboard loads
+**Steps:**
+1. Tap "Dashboard" tab
+2. ✅ **Verify:** Greeting text "Siang! Sobat Petani"
+3. ✅ **Verify:** Balance card with "Rp20.140.340"
+4. ✅ **Verify:** Sensor cards (Suhu, pH, Humidity)
+5. ✅ **Verify:** Commodity price dropdown
+6. ✅ **Verify:** Price chart area
+
+### MOB-DASH-02: Commodity price chart
 **Steps:**
 1. Tap the commodity dropdown
-**Expected:** Modal shows list of commodities.
-2. Select a commodity
-**Expected:** Price chart updates for selected commodity.
+2. ✅ **Verify:** Modal shows list of commodities
+3. Select a commodity
+4. ✅ **Verify:** Price chart updates with line graph
 
----
-
-## 4.5 Sensor Monitoring
-
-### TC-MOB-MON-01: Monitor screen loads
+### MOB-DASH-03: Refresh on pull-down
 **Steps:**
-1. Tap Monitor tab
-**Expected:** Monitor screen displays sensor data interface.
+1. Pull down on dashboard (if implemented)
+2. ✅ **Verify:** Refresh indicator appears
+
+## 3.6 Mobile App — Sensor Monitoring
+
+### MOB-MON-01: Monitor screen
+**Steps:**
+1. Tap "Monitor" tab
+2. ✅ **Verify:** Screen renders without error
+3. ✅ **Verify:** Shows sensor data interface
+
+## 3.7 Mobile App — Notifications
+
+### MOB-NOTIF-01: Notification screen
+**Steps:**
+1. Tap "Notifications" tab (locate — might be labeled "Notifikasi")
+2. ✅ **Verify:** Screen renders without error
+
+## 3.8 Mobile App — Treatment Screen
+
+### MOB-TREAT-01: Treatment screen from diagnosis
+**Steps:**
+1. Complete a diagnosis
+2. Navigate to Treatment screen
+3. ✅ **Verify:** Shows:
+   - Disease name
+   - Temperature and pH sensor values
+   - Treatment section with expandable items
+   - Temperature, humidity, and pest action categories
+
+## 3.9 Mobile App — Navigation Types
+
+### MOB-NAV-04: Navigation parameter types
+**Steps:**
+1. Launch camera in "diagnosis" mode (from Diagnosis tab)
+2. ✅ **Verify:** Route params contain `mode: "diagnosis"`
+3. Launch camera in "grading" mode (from Dashboard → Grading Panen)
+4. ✅ **Verify:** Route params contain `mode: "grading"`
+5. Navigate to DiagnosisDetail with a result
+6. ✅ **Verify:** All params (result, mode, imageUri, insight, sensorData) properly received
 
 ---
 
-# 5. Frontend Web Tests
+## 3.10 Frontend Web
 
-Test in a browser. Base URL: `http://localhost:3000`
-
-### TC-WEB-01: Landing page loads
+### WEB-01: Landing page
 **Steps:**
 1. Open `http://localhost:3000`
-**Expected:** Landing page with "Agri" heading, "Masuk" and "Lihat Marketplace" buttons.
+2. ✅ **Verify:** "Agri" heading with green styling
+3. ✅ **Verify:** Description: "Platform Agriculture Intelligence of Things — menghubungkan petani hortikultura dengan pembeli B2B"
+4. ✅ **Verify:** "Masuk" button links to `/login`
+5. ✅ **Verify:** "Lihat Marketplace" button links to `/marketplace`
 
-### TC-WEB-02: Navigation to login
+### WEB-02: Navigation bar
 **Steps:**
-1. Click "Masuk"
-**Expected:** Login page with email/password form.
+1. ✅ **Verify:** Top navbar with Agri logo, Beranda, Masuk/Daftar links
+2. ✅ **Verify:** Navbar is sticky at top
+3. ✅ **Verify:** Mobile hamburger menu works (resize browser < 768px)
 
-### TC-WEB-03: Navigation to register
+### WEB-03: Auth pages
 **Steps:**
-1. Click register link from login page
-**Expected:** Register form with name, email, password, role fields.
+1. Navigate to `/login`
+2. ✅ **Verify:** Login form with email + password fields
+3. Navigate to `/register`
+4. ✅ **Verify:** Register form with name, email, password, role fields
 
-### TC-WEB-04: Dashboard page
+### WEB-04: Dashboard (mock data)
 **Steps:**
 1. Navigate to `/dashboard`
-**Expected:** Static dashboard with stat cards and mock data.
+2. ✅ **Verify:** Stat cards: Terjual (39), Pesanan Masuk (240), Barang Dikirim (225)
+3. ✅ **Verify:** Money cards: Pemasukan (Rp20.000.000), Pengeluaran (Rp5.000.000)
+4. ✅ **Verify:** Product cards with images, prices, grades
 
-### TC-WEB-05: Marketplace page
+### WEB-05: Marketplace pages
 **Steps:**
 1. Navigate to `/marketplace`
-**Expected:** Product listing grid with mock product data.
+2. ✅ **Verify:** Product grid layout with search and filter
+3. Navigate to `/katalog-dagangan`
+4. ✅ **Verify:** Product catalog grid
+5. Navigate to `/katalog-detail`
+6. ✅ **Verify:** Single product detail with quantity selector (±) and "Tambah ke Keranjang" button
 
-### TC-WEB-06: All routes accessible
-Navigate to each of:
-- `/`
-- `/login`
-- `/register`
-- `/dashboard`
-- `/marketplace`
-- `/katalog-dagangan`
-- `/katalog-detail`
-- `/kelola-produk`
-- `/keranjang`
-- `/status-pesanan`
-- `/keuangan`
+### WEB-06: Cart and checkout
+**Steps:**
+1. Navigate to `/keranjang`
+2. ✅ **Verify:** Cart items with remove (trash) button
+3. ✅ **Verify:** Total amount summary
 
-**Expected:** Each page renders without crashing. 404 pages for non-existent routes.
+### WEB-07: Product management
+**Steps:**
+1. Navigate to `/kelola-produk`
+2. ✅ **Verify:** Product edit form with fields: Nama Produk, Deskripsi, Harga, etc.
+
+### WEB-08: Order status
+**Steps:**
+1. Navigate to `/status-pesanan`
+2. ✅ **Verify:** Order timeline with status icons (Clock, Package, Truck, CheckCircle)
+
+### WEB-09: Finance
+**Steps:**
+1. Navigate to `/keuangan`
+2. ✅ **Verify:** Income/expense cards and transaction list
+
+### WEB-10: 404 handling
+**Steps:**
+1. Navigate to `/nonexistent-page`
+2. ✅ **Verify:** Next.js 404 page or falls through gracefully
 
 ---
 
-# 6. IoT Integration Tests
+# 4. IOT (ESP32) — Manual Tests
 
-### TC-IOT-01: MQTT connection (if Mosquitto running)
+Requires physical ESP32 hardware, PlatformIO, and running Mosquitto broker + backend.
+
+## 4.1 Hardware Setup
+
+**Prerequisites:**
+- ESP32 dev board
+- DHT22 sensor (GPIO 4)
+- Capacitive soil moisture sensor (GPIO 34)
+- Analog pH sensor (GPIO 35)
+- PlatformIO installed
+- MQTT broker accessible from ESP32's network
+
+### IOT-01: Flash firmware
 **Steps:**
-1. Start Mosquitto broker on port 1883
-2. Ensure backend MQTT listener is running
-3. Publish test message:
-```bash
-mosquitto_pub -h localhost -p 1883 -t "agri/sensor/ESP32_NODE_001" \
-  -m '{"device_id":"ESP32_NODE_001","temperature":25.0,"humidity":60.0,"soil_moisture":50.0,"ph":6.5}'
-```
-**Expected:** Backend logs "MQTT subscribed to agri/sensor/#"
-**Verify:** Reading stored via `GET /api/v1/sensors/nodes/{node_id}/readings`
+1. Edit `iot/src/config.h`:
+   - Set `WIFI_SSID` and `WIFI_PASSWORD`
+   - Set `MQTT_BROKER` to your broker's IP/hostname
+   - Set `DEVICE_ID` to unique ID per ESP32
+2. Run: `cd iot && pio run --target upload`
+3. Open serial monitor: `pio device monitor`
+4. ✅ **Verify:** ESP32 connects to WiFi (serial shows IP address)
+5. ✅ **Verify:** ESP32 connects to MQTT broker
+6. ✅ **Verify:** Sensor readings printed to serial every 10 seconds
 
-### TC-IOT-02: Ingest known sensor node MQTT
-Same as TC-IOT-01 but with a device_id that matches a registered sensor node.
-**Expected:** Reading processed and stored under that node.
-
-### TC-IOT-03: Ingest unknown device MQTT
-```
-mosquitto_pub ... -m '{"device_id":"unknown-device","temperature":25.0}'
-```
-**Expected:** Backend logs warning "Unknown device_id: unknown-device". No crash.
-
-### TC-IOT-04: JSON parsing error MQTT
-```
-mosquitto_pub ... -m 'not-valid-json'
-```
-**Expected:** Backend logs error "Error processing MQTT message". No crash.
-
-### TC-IOT-05: ESP32 offline storage
+### IOT-02: MQTT data flow
 **Steps:**
-1. ESP32 cannot connect to WiFi
-**Expected:** ESP32 stores readings in LittleFS.
-2. WiFi reconnects
-**Expected:** Stored readings published via MQTT.
+1. Register a sensor node via backend API:
+   ```bash
+   curl -X POST http://localhost:8000/api/v1/sensors/nodes \
+     -H "Authorization: Bearer $TOKEN" \
+     -H "Content-Type: application/json" \
+     -d '{"device_id":"ESP32_NODE_001","name":"Test Node","location":"Lab"}'
+   ```
+2. Wait for ESP32 to publish data
+3. ✅ **Verify:** Backend logs: `MQTT subscribed to agri/sensor/#`
+4. ✅ **Verify:** Data appears in backend API:
+   ```bash
+   curl http://localhost:8000/api/v1/sensors/nodes/{node_id}/readings
+   ```
+5. ✅ **Verify:** Readings show temperature, humidity, soil_moisture, pH values
+
+### IOT-03: Offline storage
+**Steps:**
+1. Disconnect WiFi (unplug router or move ESP32 out of range)
+2. ✅ **Verify:** ESP32 continues reading sensors, stores in LittleFS
+3. ✅ **Verify:** Serial shows: "WiFi disconnected. Storing offline..."
+4. Reconnect WiFi
+5. ✅ **Verify:** ESP32 publishes stored readings in sequence
+6. ✅ **Verify:** Serial shows: "Publishing stored readings..."
+
+### IOT-04: Anomaly detection
+**Steps:**
+1. Trigger an anomaly (e.g., heat the DHT22 or wet the soil sensor)
+2. ✅ **Verify:** Backend detects anomaly based on thresholds
+3. ✅ **Verify:** Reading stored with `is_anomaly: true`
+4. ✅ **Verify:** `anomaly_description` contains human-readable warning in Indonesian
+
+### IOT-05: Sensor failure handling
+**Steps:**
+1. Disconnect DHT22 sensor
+2. ✅ **Verify:** ESP32 handles failed read gracefully (no crash)
+3. ✅ **Verify:** Serial shows: "Failed to read DHT22 sensor"
+4. Reconnect sensor
 
 ---
 
-# 7. Security Tests
+# 5. REGRESSION TEST MATRIX
 
-### TC-SEC-01: No hardcoded secrets
-Search codebase for:
-```bash
-grep -r "api_key\|secret\|password\|token" --include="*.py" --include="*.ts" --include="*.tsx" \
-  --exclude-dir=node_modules --exclude-dir=.venv \
-  | grep -v ".env.example\|env\|settings\|import\|config\|test" \
-  | grep -E "=['\"][^'\"]{8,}['\"]"
-```
-**Expected:** No secrets found. Config values reference env vars, not hardcoded strings.
+Run these after ANY code change to verify core flows still work.
 
-### TC-SEC-02: SQL injection resistance
-```python
-# Verify all DB queries use parameterized statements:
-grep -r "execute(f" backend/app/  # Should find nothing
-grep -r "\.format.*SELECT\|\.format.*INSERT\|\.format.*DELETE" backend/app/  # Should find nothing
-grep -r "execute(" backend/app/models/ backend/app/services/ backend/app/routers/ | grep -v "await db.execute" | grep -v "session.execute"
-```
-**Expected:** All SQL queries use SQLAlchemy ORM or parameterized statements.
-
-### TC-SEC-03: Auth header required for protected endpoints
-**Steps:**
-Test each protected endpoint without Authorization header:
-```bash
-for endpoint in "GET /sensors/nodes" "GET /marketplace/crops" "POST /ai/diagnose"; do
-  echo "Testing $endpoint without auth..."
-  # Each should return 403
-done
-```
-**Expected:** All protected endpoints return 403 without token.
-
-### TC-SEC-04: Role enforcement
-**Steps:**
-Test each role-restricted endpoint with wrong role:
-- Farmer endpoints with buyer token → 403
-- Buyer endpoints with farmer token → 403
-- Admin endpoints with farmer token → 403 (if admin-only)
-
-### TC-SEC-05: Token expiry
-**Steps:**
-1. Generate token with `ACCESS_TOKEN_EXPIRE_MINUTES=1`
-2. Wait 1+ minutes
-3. Use expired token for authenticated request
-**Expected:** 401 "Invalid token"
-
-### TC-SEC-06: JWT tampering
-**Steps:**
-1. Modify a valid JWT (change one character in payload segment)
-2. Send request with tampered token
-**Expected:** 401 "Invalid token"
-
-### TC-SEC-07: CORS headers
-```
-curl -I -X OPTIONS http://localhost:8000/health \
-  -H "Origin: http://localhost:3000" \
-  -H "Access-Control-Request-Method: GET"
-→ 200
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Methods: *
-Access-Control-Allow-Headers: *
-```
-
-### TC-SEC-08: Input validation (XSS)
-```
-POST /api/v1/auth/register
-{
-  "email": "<script>alert(1)</script>@test.com",
-  "password": "test123",
-  "full_name": "<img src=x onerror=alert(1)>",
-  "role": "farmer"
-}
-→ 422 or stored with HTML escaped
-```
-If 201: fetch the user and verify the stored full_name does NOT execute as HTML.
-
-### TC-SEC-09: Input validation (SQL special chars)
-```
-POST /api/v1/sensors/nodes
-Authorization: Bearer <farmer_token>
-{
-  "device_id": "'; DROP TABLE users; --",
-  "name": "SQL Injection Test"
-}
-→ 201 (successful creation) or 422
-```
-Verify: tables not dropped. GET /health still returns 200.
+| Flow ID | Description | Automated | Manual Steps |
+|---------|-------------|-----------|-------------|
+| **R01** | Auth cycle: Register → Login → Get Me | ✅ AUTO | — |
+| **R02** | Sensor pipeline: Register node → Ingest → Get readings | ✅ AUTO | — |
+| **R03** | AI diagnosis: Upload image → Get result → Verify disease | ⚠️ PARTIAL | Test with all 6 test images |
+| **R04** | Marketplace: Create crop → List → Verify visible | ✅ AUTO | — |
+| **R05** | Full buy cycle: Create crop → Create order → Update status | ✅ AUTO | — |
+| **R06** | AI + LLM: Diagnose → Get LLM insight | ⚠️ PARTIAL | Verify insight is coherent Indonesian |
+| **R07** | Mobile: Camera → Preview → Analyze → Result | 📝 MANUAL | See MOB-CAM-04/05 |
+| **R08** | IoT: ESP32 reads → MQTT publish → Backend stores | 📝 MANUAL | See IOT-01/02 |
+| **R09** | Auth enforcement: All protected endpoints reject no-auth | ✅ AUTO | — |
+| **R10** | CORS: Web app can access backend from different origin | ✅ AUTO | — |
 
 ---
 
-# 8. Regression Test Matrix
+# 6. RUN COMMANDS CHEAT SHEET
 
-Use this matrix to verify no regressions after any code change.
-
-## Core Data Flow
-
-| ID | Flow | Depends On | Expected |
-|----|------|-----------|----------|
-| R01 | Register → Login → Get Me | TC-AUTH-01, 05, 09 | Full auth cycle works |
-| R02 | Register Node → Ingest → Get Readings | TC-SENSOR-01, 07, 12 | End-to-end sensor pipeline |
-| R03 | Create Crop → Grade → Verify Grade | TC-MKT-01, TC-AI-07, GET crop | AI grading updates crop record |
-| R04 | Create Crop → List Marketplace | TC-MKT-01, TC-MKT-04 | Crop visible to buyers |
-| R05 | Create Crop → Create Order → Check Status | TC-MKT-01, TC-TXN-01, TC-TXN-09 | Full buy transaction cycle |
-| R06 | Diagnose → Get Insight → View Detail | TC-AI-01, TC-AI-11 | AI → LLM pipeline |
-| R07 | Mobile Photo → Diagnose → View Result | TC-MOB-CAM-02, 04, 08 | Full mobile → backend → AI pipeline |
-
-## Quick Smoke Test (single script)
-
+## Run automated tests
 ```bash
-#!/bin/bash
-# Quick smoke test — run all core endpoints
-
-BASE="http://localhost:8000/api/v1"
-
-# 1. Register
-echo "=== Register ==="
-curl -s -X POST "$BASE/auth/register" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"smoke@test.com","password":"test123","full_name":"Smoke Test","role":"farmer"}'
-echo
-
-# 2. Login (get token)
-TOKEN=$(curl -s -X POST "$BASE/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"email":"smoke@test.com","password":"test123"}' | python -c "import sys,json;print(json.load(sys.stdin)['access_token'])")
-
-echo "=== Health ==="
-curl -s "$BASE/../health"
-echo
-
-echo "=== Sensor Nodes ==="
-curl -s "$BASE/sensors/nodes" -H "Authorization: Bearer $TOKEN"
-echo
-
-echo "=== Marketplace Crops ==="
-curl -s "$BASE/marketplace/crops" -H "Authorization: Bearer $TOKEN"
-echo
-
-echo "=== AI Health ==="
-curl -s "http://localhost:8001/health"
-echo
+cd backend && source .venv/Scripts/activate
+python ../scripts/run_tests.py          # Full suite (61 tests)
+python ../scripts/run_tests.py --smoke-only  # Quick check (1 test)
 ```
 
-## Test Environment Cleanup
-
-To reset test data:
+## Start all services from scratch
 ```bash
-# Stop backend, delete SQLite DB, restart
-rm backend/agri_dev.db
-# Backend auto-creates fresh DB on next startup
+# Terminal 1: Backend
+cd backend && source .venv/Scripts/activate && rm -f agri_dev.db && uvicorn app.main:app --reload
+
+# Terminal 2: AI Service (from repo root)
+source ai/.venv/Scripts/activate && uvicorn ai.api.inference_server:app --port 8001 --reload
+
+# Terminal 3: Frontend Web
+cd frontend-web && npm run dev
+
+# Terminal 4: Mobile (optional)
+cd mobile && npx expo start -c
 ```
 
-## Reporting Test Results
-
-For each test case, record:
-```
-TC-XXX-XX: [PASS | FAIL | BLOCKED]
-Notes: any observations
-Bug: link to issue if failed
+## Quick smoke test (any shell)
+```bash
+curl -s http://localhost:8000/health                    # Backend
+curl -s http://localhost:8001/health                    # AI Service
+curl -s http://localhost:3000 | head -c 100             # Frontend Web
 ```
 
-Run priority: **P0** (critical path) → **P1** (major features) → **P2** (edge cases)
+## Clean up test data
+```bash
+rm -f backend/agri_dev.db    # Delete SQLite DB (auto-recreated on restart)
+```
+
+---
+
+# 7. TEST ENVIRONMENT REFERENCE
+
+| Resource | Default Value |
+|----------|--------------|
+| Backend URL | `http://localhost:8000` |
+| API Base | `http://localhost:8000/api/v1` |
+| AI Service | `http://localhost:8001` |
+| Frontend Web | `http://localhost:3000` |
+| Mobile Expo | `http://<PC_LAN_IP>:8081` |
+| MQTT Broker | `localhost:1883` |
+| PostgreSQL | `localhost:5432` (Docker only) |
+| Test Images | `ai/test_images/` |
+| Test DB | `backend/agri_dev.db` |
+| Test User PW | `test123` (auto-generated emails) |
