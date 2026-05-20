@@ -48,7 +48,13 @@ export default function CameraPreviewScreen() {
         // Fetch LLM insight for grading (non-blocking enhancement)
         let insight = '';
         try {
-          insight = await aiApi.getGradingInsight(result.grade, result.confidence);
+          insight = await aiApi.getGradingInsight(
+            result.grade,
+            result.confidence,
+            result.grade_a_prob,
+            result.grade_b_prob,
+            result.grade_c_prob,
+          );
         } catch {}
         navigation.replace('DiagnosisDetail', { result, mode, imageUri: current, insight });
       } else {
