@@ -3,6 +3,7 @@ import { View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, FacultyGlyphic_400Regular } from '@expo-google-fonts/faculty-glyphic';
 import AppNavigator from './src/navigation/AppNavigator';
+import { AuthProvider } from './src/services/AuthContext';
 
 export default function App() {
   const [fontsLoaded] = useFonts({ FacultyGlyphic_400Regular });
@@ -17,7 +18,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <AppNavigator />
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

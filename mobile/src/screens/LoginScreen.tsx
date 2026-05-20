@@ -10,7 +10,7 @@ import { Theme } from '../theme';
 import { authApi } from '../services/api';
 import * as SecureStore from 'expo-secure-store';
 
-export default function LoginScreen() {
+export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
@@ -27,6 +27,8 @@ export default function LoginScreen() {
     try {
       const data = await authApi.login(email.trim(), password);
       await SecureStore.setItemAsync('user', JSON.stringify(data.user));
+      console.log("🔧 [LoginScreen] Login successful — calling onLogin");
+      onLogin?.();
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch {
       setError('Email atau password salah. Silakan coba lagi.');

@@ -1,21 +1,23 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import React from "react";
+import { View, ActivityIndicator } from "react-native";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
 
-import LoginScreen from '../screens/LoginScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import DashboardScreen from '../screens/DashboardScreen';
-import CameraScreen from '../screens/CameraScreen';
-import CameraPreviewScreen from '../screens/CameraPreviewScreen';
-import DiagnosisScreen from '../screens/DiagnosisScreen';
-import DiagnosisDetailScreen from '../screens/DiagnosisDetailScreen';
-import TreatmentScreen from '../screens/TreatmentScreen';
-import MonitorScreen from '../screens/MonitorScreen';
-import NotificationScreen from '../screens/NotificationScreen';
-import Navbar2 from '../components/Navbar2';
+import LoginScreen from "../screens/LoginScreen";
+import RegisterScreen from "../screens/RegisterScreen";
+import DashboardScreen from "../screens/DashboardScreen";
+import CameraScreen from "../screens/CameraScreen";
+import CameraPreviewScreen from "../screens/CameraPreviewScreen";
+import DiagnosisScreen from "../screens/DiagnosisScreen";
+import DiagnosisDetailScreen from "../screens/DiagnosisDetailScreen";
+import TreatmentScreen from "../screens/TreatmentScreen";
+import MonitorScreen from "../screens/MonitorScreen";
+import NotificationScreen from "../screens/NotificationScreen";
+import Navbar2 from "../components/Navbar2";
+import { useAuth } from "../services/AuthContext";
 
-const Tab   = createBottomTabNavigator();
+const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 function MainTabs() {
@@ -24,46 +26,51 @@ function MainTabs() {
       tabBar={(props) => <Navbar2 {...props} />}
       screenOptions={{ headerShown: false }}
     >
-      <Tab.Screen name="Dashboard"     component={DashboardScreen} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
-      <Tab.Screen name="Diagnosis"     component={DiagnosisScreen} />
-      <Tab.Screen name="Monitor"       component={MonitorScreen} />
+      <Tab.Screen name="Diagnosis" component={DiagnosisScreen} />
+      <Tab.Screen name="Monitor" component={MonitorScreen} />
     </Tab.Navigator>
   );
 }
 
-function AuthStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login"    component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-    </Stack.Navigator>
-  );
-}
-
-function AppStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Main"            component={MainTabs} />
-      <Stack.Screen name="Camera"          component={CameraScreen} />
-      <Stack.Screen name="CameraPreview"   component={CameraPreviewScreen} />
-      <Stack.Screen name="DiagnosisDetail" component={DiagnosisDetailScreen} />
-      <Stack.Screen name="Treatment"       component={TreatmentScreen} />
-    </Stack.Navigator>
-  );
-}
-
 export default function AppNavigator() {
-  const isAuthenticated = true;
+  const { isAuthenticated, isLoading, login } = useAuth();
+
+  console.log("🔧 [AppNavigator] isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#fefbf2" }}>
+        <ActivityIndicator size="large" color="#0e4719" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <AppStack /> : (
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Auth" component={AuthStack} />
-          <Stack.Screen name="Main" component={AppStack} />
-        </Stack.Navigator>
-      )}
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {isAuthenticated ? (
+          <>
+            <Stack.Screen name="Main">
+              {() => <MainTabs />}
+            </Stack.Screen>
+            <Stack.Screen name="Camera" component={CameraScreen} />
+            <Stack.Screen name="CameraPreview" component={CameraPreviewScreen} />
+            <Stack.Screen name="DiagnosisDetail" component={DiagnosisDetailScreen} />
+            <Stack.Screen name="Treatment" component={TreatmentScreen} />
+          </>
+        ) : (
+          <>
+            <Stack.Screen name="Login">
+              {() => <LoginScreen onLogin={login} />}
+            </Stack.Screen>
+            <Stack.Screen name="Register">
+              {() => <RegisterScreen onLogin={login} />}
+            </Stack.Screen>
+          </>
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }

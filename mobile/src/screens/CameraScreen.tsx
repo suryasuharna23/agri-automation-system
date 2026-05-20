@@ -23,13 +23,26 @@ export default function CameraScreen() {
   const mode: CameraMode = route.params?.mode ?? 'diagnosis';
   const cropId: string | undefined = route.params?.cropId;
 
+  // ── DEBUG ──────────────────────────────────────────
+  console.log("🔧 [CameraScreen] Mounted");
+  console.log("🔧 [CameraScreen] Route params:", JSON.stringify(route.params));
+  console.log("🔧 [CameraScreen] Mode:", mode);
+  console.log("🔧 [CameraScreen] CropId:", cropId);
+  // ───────────────────────────────────────────────────
+
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
   const [lastPhoto, setLastPhoto] = useState<string | null>(null);
   const cameraRef = useRef<any>(null);
 
   useEffect(() => {
-    if (permission && !permission.granted) requestPermission();
+    // ── DEBUG ────────────────────────────────────────
+    console.log("🔧 [CameraScreen] Permission status:", JSON.stringify(permission));
+    if (permission && !permission.granted && permission.canAskAgain) {
+      console.log("🔧 [CameraScreen] Requesting camera permission...");
+      requestPermission();
+    }
+    // ─────────────────────────────────────────────────
   }, [permission]);
 
   if (!permission) return <View style={styles.container} />;
@@ -48,12 +61,32 @@ export default function CameraScreen() {
   }
 
   const takePicture = async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current) {
+      console.error("🔧 [CameraScreen] ❌ cameraRef.current is null — cannot take picture");
+      return;
+    }
     try {
+      console.log("🔧 [CameraScreen] 👆 Shutter pressed — taking picture...");
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, base64: false });
+
+      // ── DEBUG ──────────────────────────────────────
+      console.log("🔧 [CameraScreen] ✅ Photo captured. Full photo object:");
+      console.log("🔧 [CameraScreen]   uri:", photo.uri);
+      console.log("🔧 [CameraScreen]   width:", photo.width);
+      console.log("🔧 [CameraScreen]   height:", photo.height);
+      if ('exif' in photo) console.log("🔧 [CameraScreen]   exif:", JSON.stringify((photo as any).exif));
+      // ───────────────────────────────────────────────
+
       setLastPhoto(photo.uri);
+      console.log("🔧 [CameraScreen] Navigating to CameraPreview with:", JSON.stringify({
+        uri: photo.uri,
+        mode,
+        cropId,
+      }));
       navigation.navigate('CameraPreview', { uri: photo.uri, mode, cropId });
-    } catch {
+    } catch (err: any) {
+      console.error("🔧 [CameraScreen] ❌ takePictureAsync failed:", err.message);
+      console.error("🔧 [CameraScreen] ❌ Full error:", JSON.stringify(err));
       Alert.alert('Gagal', 'Tidak dapat mengambil foto. Coba lagi.');
     }
   };
@@ -74,7 +107,10 @@ export default function CameraScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.flipBtn}
-          onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
+          onPress={() => {
+            console.log("🔧 [CameraScreen] Flipping camera — was:", facing, "→", facing === 'back' ? 'front' : 'back');
+            setFacing((f) => (f === 'back' ? 'front' : 'back'));
+          }}
         >
           <Ionicons name="camera-reverse-outline" size={24} color="#0e4719" />
         </TouchableOpacity>
@@ -151,9 +187,12 @@ export default function CameraScreen() {
           <TouchableOpacity
             style={[styles.checklistBtn, !lastPhoto && styles.checklistBtnDisabled]}
             activeOpacity={0.8}
-            onPress={() =>
-              lastPhoto && navigation.navigate('CameraPreview', { uri: lastPhoto, mode, cropId })
-            }
+            onPress={() => {
+              if (lastPhoto) {
+                console.log("🔧 [CameraScreen] Using last photo from thumbnail:", lastPhoto);
+                navigation.navigate('CameraPreview', { uri: lastPhoto, mode, cropId });
+              }
+            }}
           >
             <Ionicons name="checkmark" size={36} color={lastPhoto ? '#fbf2d4' : '#44694b'} />
           </TouchableOpacity>

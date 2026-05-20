@@ -2,8 +2,7 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import String, DateTime, Float, Integer, Enum, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, DateTime, Float, Integer, Enum, ForeignKey, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -20,8 +19,8 @@ class CropGrade(str, PyEnum):
 class Crop(Base):
     __tablename__ = "crops"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    farmer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    farmer_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     variety: Mapped[str | None] = mapped_column(String(255))
     quantity_kg: Mapped[float] = mapped_column(Float, nullable=False)
@@ -42,8 +41,8 @@ class Crop(Base):
 class DiagnosisRecord(Base):
     __tablename__ = "diagnosis_records"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    farmer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    farmer_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
     image_url: Mapped[str] = mapped_column(String(512), nullable=False)
     disease_name: Mapped[str | None] = mapped_column(String(255))
     confidence: Mapped[float | None] = mapped_column(Float)
@@ -54,8 +53,8 @@ class DiagnosisRecord(Base):
 class TraceabilityLog(Base):
     __tablename__ = "traceability_logs"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    crop_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("crops.id"), nullable=False)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    crop_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("crops.id"), nullable=False)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
     event_data: Mapped[str | None] = mapped_column(Text)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

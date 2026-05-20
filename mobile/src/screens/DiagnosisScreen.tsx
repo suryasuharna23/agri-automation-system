@@ -126,9 +126,17 @@ export default function DiagnosisScreen() {
             item={item}
             onPress={() => {
               if (item.status === 'Selesai') {
+                const parsedTemp = parseFloat(item.sensors.suhuUdara.replace(/[^\d.]/g, ''));
+                const parsedPh = parseFloat(item.sensors.phTanah.replace(/[^\d.]/g, ''));
+                const parsedHumidity = parseFloat(item.sensors.kelembapan.replace(/[^\d.]/g, ''));
                 navigation.navigate('DiagnosisDetail', {
                   result: item.result ?? { disease_name: 'Healthy', confidence: 1, is_healthy: true, recommendation: '' },
                   imageUri: item.imageUri ?? '',
+                  sensorData: {
+                    temperature: isNaN(parsedTemp) ? undefined : parsedTemp,
+                    ph: isNaN(parsedPh) ? undefined : parsedPh,
+                    humidity: isNaN(parsedHumidity) ? undefined : parsedHumidity,
+                  }
                 });
               }
             }}

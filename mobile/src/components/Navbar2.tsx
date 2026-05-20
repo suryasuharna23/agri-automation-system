@@ -1,7 +1,8 @@
 import * as React from "react";
-import { StyleSheet, Text, View, Image, TouchableOpacity } from "react-native";
+import { StyleSheet, Text, View, Image, TouchableOpacity, Alert } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import { useAuth } from "../services/AuthContext";
 
 const LEFT_ITEMS = [
   { route: "Dashboard",     label: "Dashboard",  icon: require("../../assets/icons/icon-dashboard.png") },
@@ -15,8 +16,29 @@ const RIGHT_ITEMS = [
 
 const Navbar2 = ({ state, navigation }: BottomTabBarProps) => {
   const activeRoute = state.routes[state.index].name;
+  const { logout } = useAuth();
 
   const go = (routeName: string) => navigation.navigate(routeName);
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Keluar",
+      "Apakah Anda yakin ingin keluar?",
+      [
+        { text: "Batal", style: "cancel" },
+        {
+          text: "Keluar",
+          style: "destructive",
+          onPress: async () => {
+            console.log("🔧 [Navbar2] Logging out...");
+            await logout();
+            // Navigate to Login by resetting to a screen the parent stack can handle
+            // The navigation reset will trigger AppNavigator to re-check auth
+          },
+        },
+      ]
+    );
+  };
 
   const renderItem = (item: { route: string; label: string; icon: any }, width?: number) => {
     const active = activeRoute === item.route;
@@ -44,6 +66,18 @@ const Navbar2 = ({ state, navigation }: BottomTabBarProps) => {
             {RIGHT_ITEMS.map((item) => renderItem(item, item.route === "Diagnosis" ? 63 : undefined))}
           </View>
         </View>
+        {/* Logout button */}
+        <TouchableOpacity
+          style={styles.logoutBtn}
+          onPress={handleLogout}
+          activeOpacity={0.7}
+        >
+          <Image
+            style={styles.logoutIcon}
+            resizeMode="cover"
+            source={require("../../assets/icons/icon-notification.png")}
+          />
+        </TouchableOpacity>
       </View>
 
       <LinearGradient
@@ -164,6 +198,23 @@ const styles = StyleSheet.create({
   iconcamera: {
     height: 40,
     width: 40,
+  },
+  logoutBtn: {
+    position: "absolute",
+    right: 4,
+    top: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "rgba(251,242,212,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutIcon: {
+    width: 18,
+    height: 18,
+    tintColor: "#fbf2d4",
+    transform: [{ rotate: "180deg" }],
   },
 });
 

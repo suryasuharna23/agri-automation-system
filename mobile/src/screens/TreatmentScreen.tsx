@@ -225,6 +225,7 @@ export default function TreatmentScreen() {
 
   const result: DiagnosisResult = route.params?.result;
   const imageUri: string = route.params?.imageUri ?? '';
+  const sensorData = route.params?.sensorData;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -278,7 +279,9 @@ export default function TreatmentScreen() {
                   resizeMode="cover"
                   source={require('../../assets/icons/icon-temp.png')}
                 />
-                <Text style={styles.sensorVal}>27°</Text>
+                <Text style={styles.sensorVal}>
+                  {sensorData?.temperature !== undefined ? `${sensorData.temperature.toFixed(0)}°` : '27°'}
+                </Text>
               </View>
               <View style={styles.sensorCard}>
                 <Image
@@ -286,7 +289,9 @@ export default function TreatmentScreen() {
                   resizeMode="cover"
                   source={require('../../assets/icons/icon-ph.png')}
                 />
-                <Text style={styles.sensorVal}>6.2</Text>
+                <Text style={styles.sensorVal}>
+                  {sensorData?.ph !== undefined ? sensorData.ph.toFixed(1) : '6.2'}
+                </Text>
               </View>
             </View>
 

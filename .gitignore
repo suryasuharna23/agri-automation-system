@@ -36,3 +36,7 @@ iot/.vscode/
 # OS
 .DS_Store
 Thumbs.db
+
+# Development
+agri_dev.db
+_test_*.py

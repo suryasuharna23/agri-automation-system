@@ -51,7 +51,7 @@ async def grade_crop(
 @router.post("/diagnose", response_model=DiagnosisResult)
 async def diagnose(
     file: UploadFile = File(...),
-    current_user: User = FarmerUser,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     image_bytes = await file.read()

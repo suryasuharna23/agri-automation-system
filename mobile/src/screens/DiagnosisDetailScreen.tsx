@@ -275,10 +275,16 @@ export default function DiagnosisDetailScreen() {
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
 
+  // ── DEBUG ──────────────────────────────────────────
+  console.log("🔧 [DiagnosisDetail] ====== MOUNTED =====");
+  console.log("🔧 [DiagnosisDetail] Route params:", JSON.stringify(route.params, null, 2));
+  // ───────────────────────────────────────────────────
+
   const result = route.params?.result;
   const mode: 'grading' | 'diagnosis' = route.params?.mode ?? 'diagnosis';
   const imageUri: string = route.params?.imageUri ?? '';
   const llmInsight: string = route.params?.insight ?? '';
+  const sensorData = route.params?.sensorData;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -333,7 +339,9 @@ export default function DiagnosisDetailScreen() {
                   resizeMode="cover"
                   source={require('../../assets/icons/icon-temp.png')}
                 />
-                <Text style={styles.sensorVal}>27°</Text>
+                <Text style={styles.sensorVal}>
+                  {sensorData?.temperature !== undefined ? `${sensorData.temperature.toFixed(0)}°` : '27°'}
+                </Text>
               </View>
               <View style={styles.sensorCard}>
                 <Image
@@ -341,7 +349,9 @@ export default function DiagnosisDetailScreen() {
                   resizeMode="cover"
                   source={require('../../assets/icons/icon-ph.png')}
                 />
-                <Text style={styles.sensorVal}>6.2</Text>
+                <Text style={styles.sensorVal}>
+                  {sensorData?.ph !== undefined ? sensorData.ph.toFixed(1) : '6.2'}
+                </Text>
               </View>
             </View>
 
@@ -389,14 +399,17 @@ export default function DiagnosisDetailScreen() {
                         <Ionicons name="alert-circle-outline" size={20} color="#923333" />
                         <Text style={styles.actionLabel}>PERLU TINDAKAN</Text>
                       </View>
-                      <View style={styles.actionRight}>
+                      <TouchableOpacity
+                        style={styles.actionRight}
+                        onPress={() => navigation.navigate('Treatment', { result, imageUri, sensorData })}
+                      >
                         <Text style={styles.actionLink}>Lihat Penanggulangan</Text>
                         <Ionicons
-                          name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                          name="chevron-forward-outline"
                           size={16}
                           color="#923333"
                         />
-                      </View>
+                      </TouchableOpacity>
                     </TouchableOpacity>
 
                     {isExpanded && cat.steps.length > 0 && (

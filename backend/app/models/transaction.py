@@ -2,8 +2,7 @@ import uuid
 from datetime import datetime
 from enum import Enum as PyEnum
 
-from sqlalchemy import String, DateTime, Float, Enum, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import String, DateTime, Float, Enum, ForeignKey, Text, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -21,11 +20,11 @@ class OrderStatus(str, PyEnum):
 class Transaction(Base):
     __tablename__ = "transactions"
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     idempotency_key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    seller_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    buyer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    crop_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("crops.id"), nullable=False)
+    seller_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
+    buyer_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
+    crop_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("crops.id"), nullable=False)
     quantity_kg: Mapped[float] = mapped_column(Float, nullable=False)
     price_per_kg: Mapped[float] = mapped_column(Float, nullable=False)
     total_amount: Mapped[float] = mapped_column(Float, nullable=False)

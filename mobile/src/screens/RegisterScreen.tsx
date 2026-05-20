@@ -13,7 +13,7 @@ import * as SecureStore from 'expo-secure-store';
 
 type Role = 'farmer' | 'buyer';
 
-export default function RegisterScreen() {
+export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
   const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
 
@@ -44,6 +44,8 @@ export default function RegisterScreen() {
     try {
       const data = await authApi.register({ email: email.trim(), password, full_name: fullName.trim(), role });
       await SecureStore.setItemAsync('user', JSON.stringify(data.user));
+      console.log("🔧 [RegisterScreen] Registration successful — calling onLogin");
+      onLogin?.();
       navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch {
       setErrors({ email: 'Email sudah terdaftar atau terjadi kesalahan.' });

@@ -1,19 +1,17 @@
 from datetime import datetime, timedelta, timezone
 
+from bcrypt import checkpw, gensalt, hashpw
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    return hashpw(password.encode(), gensalt()).decode()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    return checkpw(plain_password.encode(), hashed_password.encode())
 
 
 def create_access_token(subject: str, role: str) -> str:
