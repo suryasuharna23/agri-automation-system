@@ -5,7 +5,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import type { DiagnosisResult } from '../types';
+import type { DiagnosisResult, GradingResult } from '../types';
 
 const DISEASE_INFO: Record<string, {
   tempNote: string;
@@ -23,7 +23,7 @@ const DISEASE_INFO: Record<string, {
     actionCategories: [],
     steps: { suhu: [], kelembapan: [], hama: [] },
   },
-  'Bacterial Blight': {
+  'Bacterial Spot': {
     tempNote: 'Suhu hangat di atas 25°C mempercepat reproduksi bakteri Xanthomonas. Jaga suhu di bawah 28°C dan hindari perubahan mendadak.',
     humidNote: 'Kelembapan di atas 85% menjadi faktor utama perkembangan penyakit ini. Kurangi frekuensi penyiraman dan perbaiki drainase.',
     pestNote: 'Disebabkan oleh bakteri Xanthomonas spp. Penyebaran melalui air irigasi, percik hujan, dan alat pertanian tidak steril.',
@@ -183,8 +183,60 @@ interface Category {
   steps: string[];
 }
 
+function getDiseaseInfo(diseaseName: string) {
+  if (DISEASE_INFO[diseaseName]) return DISEASE_INFO[diseaseName];
+  // Strip plant suffix like "(Tomat)", "(Pepper/Cabai)" and try again
+  const baseName = diseaseName.replace(/\s*\([^)]+\)\s*$/, '').trim();
+  return DISEASE_INFO[baseName] ?? DISEASE_INFO['Leaf Spot'];
+}
+
+function buildGradingCategories(result: GradingResult): Category[] {
+  const gradeInfo: Record<string, { desc: string; needsAction: boolean; steps: string[] }> = {
+    A: {
+      desc: 'Kualitas premium. Produk layak dijual dengan harga tertinggi di pasar.',
+      needsAction: false,
+      steps: [],
+    },
+    B: {
+      desc: 'Kualitas standar. Produk layak jual dengan harga pasar normal.',
+      needsAction: false,
+      steps: [],
+    },
+    C: {
+      desc: 'Kualitas di bawah standar. Perlu evaluasi kondisi budidaya dan penanganan pasca-panen.',
+      needsAction: true,
+      steps: [
+        'Evaluasi kondisi lahan: periksa kecukupan air dan nutrisi tanaman.',
+        'Perhatikan waktu panen yang tepat — jangan terlambat atau terlalu dini.',
+        'Perbaiki penanganan pasca-panen: sortasi dan pengemasan yang hati-hati.',
+        'Konsultasikan dengan penyuluh pertanian untuk rekomendasi lebih lanjut.',
+      ],
+    },
+  };
+
+  const grade = (result.grade ?? 'ungraded').toUpperCase();
+  const info = gradeInfo[grade] ?? { desc: 'Grade tidak dikenali. Coba ulangi analisis.', needsAction: false, steps: [] };
+
+  return [
+    {
+      key: 'kesehatan',
+      title: `Hasil Grade: ${grade}`,
+      description: `${(result.confidence * 100).toFixed(1)}% keyakinan — ${info.desc}`,
+      needsAction: info.needsAction,
+      steps: info.steps,
+    },
+    {
+      key: 'suhu',
+      title: 'Distribusi Grade',
+      description: `Grade A: ${(result.grade_a_prob * 100).toFixed(1)}%  •  Grade B: ${(result.grade_b_prob * 100).toFixed(1)}%  •  Grade C: ${(result.grade_c_prob * 100).toFixed(1)}%`,
+      needsAction: false,
+      steps: [],
+    },
+  ];
+}
+
 function buildCategories(result: DiagnosisResult): Category[] {
-  const info = DISEASE_INFO[result.disease_name] ?? DISEASE_INFO['Leaf Spot'];
+  const info = getDiseaseInfo(result.disease_name);
   const sick = !result.is_healthy;
   return [
     {
@@ -223,7 +275,8 @@ export default function DiagnosisDetailScreen() {
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
 
-  const result: DiagnosisResult = route.params?.result;
+  const result = route.params?.result;
+  const mode: 'grading' | 'diagnosis' = route.params?.mode ?? 'diagnosis';
   const imageUri: string = route.params?.imageUri ?? '';
   const llmInsight: string = route.params?.insight ?? '';
 
@@ -242,7 +295,9 @@ export default function DiagnosisDetailScreen() {
     );
   }
 
-  const categories = buildCategories(result);
+  const categories = mode === 'grading'
+    ? buildGradingCategories(result as GradingResult)
+    : buildCategories(result as DiagnosisResult);
   const toggle = (key: string) =>
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 

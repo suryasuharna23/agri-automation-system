@@ -66,16 +66,16 @@ export const aiApi = {
     gradeAProb: number,
     gradeBProb: number,
     gradeCProb: number,
+    sensorData?: { temperature?: number; humidity?: number; soil_moisture?: number; ph?: number },
   ): Promise<string> => {
     try {
-      const res = await api.post("/ai/insight/grading", null, {
-        params: {
-          grade,
-          confidence,
-          grade_a_prob: gradeAProb,
-          grade_b_prob: gradeBProb,
-          grade_c_prob: gradeCProb,
-        },
+      const res = await api.post("/ai/insight/grading", {
+        grade,
+        confidence,
+        grade_a_prob: gradeAProb,
+        grade_b_prob: gradeBProb,
+        grade_c_prob: gradeCProb,
+        sensor_data: sensorData ?? null,
       });
       return res.data.insight;
     } catch {

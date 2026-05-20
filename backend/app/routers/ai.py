@@ -87,6 +87,16 @@ class DiseaseInsightRequest(BaseModel):
     sensor_data: dict | None = None
 
 
+class GradingInsightRequest(BaseModel):
+    """Request body for grading insight."""
+    grade: str
+    confidence: float
+    grade_a_prob: float = 0.0
+    grade_b_prob: float = 0.0
+    grade_c_prob: float = 0.0
+    sensor_data: dict | None = None
+
+
 class SensorInsightRequest(BaseModel):
     """Request body for sensor insight."""
     temperature: float | None = None
@@ -127,11 +137,7 @@ async def disease_insight_endpoint(
 
 @router.post("/insight/grading", response_model=InsightResponse)
 async def grading_insight_endpoint(
-    grade: str,
-    confidence: float,
-    grade_a_prob: float = 0.0,
-    grade_b_prob: float = 0.0,
-    grade_c_prob: float = 0.0,
+    data: GradingInsightRequest,
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -140,14 +146,15 @@ async def grading_insight_endpoint(
     Provides market value context and tips to improve crop quality.
     """
     grade_probs = {
-        "grade_a_prob": grade_a_prob,
-        "grade_b_prob": grade_b_prob,
-        "grade_c_prob": grade_c_prob,
+        "grade_a_prob": data.grade_a_prob,
+        "grade_b_prob": data.grade_b_prob,
+        "grade_c_prob": data.grade_c_prob,
     }
     insight = await get_grading_insight(
-        grade=grade,
-        confidence=confidence,
+        grade=data.grade,
+        confidence=data.confidence,
         grade_probs=grade_probs,
+        sensor_data=data.sensor_data,
     )
     if not insight:
         raise HTTPException(

@@ -39,6 +39,14 @@ export default function CameraPreviewScreen() {
     setIndex(Math.min(index, next.length - 1));
   };
 
+  // Dummy sensor data — replace with live IoT readings once connected
+  const dummySensorData = {
+    temperature: 28.0,
+    humidity: 72.0,
+    soil_moisture: 58.0,
+    ph: 6.5,
+  };
+
   const handleAnalyze = async () => {
     setLoading(true);
     try {
@@ -54,6 +62,7 @@ export default function CameraPreviewScreen() {
             result.grade_a_prob,
             result.grade_b_prob,
             result.grade_c_prob,
+            dummySensorData,
           );
         } catch {}
         navigation.replace('DiagnosisDetail', { result, mode, imageUri: current, insight });
@@ -66,6 +75,7 @@ export default function CameraPreviewScreen() {
             result.disease_name,
             result.confidence,
             result.is_healthy,
+            dummySensorData,
           );
         } catch {}
         navigation.replace('DiagnosisDetail', { result, mode, imageUri: current, insight });
