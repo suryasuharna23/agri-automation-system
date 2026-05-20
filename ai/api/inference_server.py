@@ -16,6 +16,7 @@ Uses Google Gemini (free tier) for contextual LLM insights.
 
 import io
 import logging
+from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
@@ -33,30 +34,30 @@ from ai.inference.llm_insight import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title="Agri AI Inference Service",
-    description="AI service for crop quality grading and plant disease detection",
-    version="1.0.0",
-)
 
-
-@app.on_event("startup")
-async def load_models():
-    """Pre-load models on startup for faster inference."""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     logger.info("Loading AI models...")
     try:
         get_grading_model()
         logger.info("Grading model loaded.")
     except Exception as e:
         logger.error(f"Failed to load grading model: {e}")
-
     try:
         get_disease_model()
         logger.info("Disease model loaded.")
     except Exception as e:
         logger.error(f"Failed to load disease model: {e}")
-
     logger.info("AI Inference Server ready.")
+    yield
+
+
+app = FastAPI(
+    title="Agri AI Inference Service",
+    description="AI service for crop quality grading and plant disease detection",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 
 @app.post("/grade")

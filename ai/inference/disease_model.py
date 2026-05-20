@@ -104,9 +104,6 @@ DISEASE_DISPLAY_NAMES = {
     "Tomato healthy": "Healthy",
 }
 
-MODEL_ID = "Diginsa/Plant-Disease-Detection-Project"
-
-
 class DiseaseModel:
     """Plant disease detection using pretrained MobileNetV2 from Hugging Face."""
 

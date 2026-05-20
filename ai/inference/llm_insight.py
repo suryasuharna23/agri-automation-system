@@ -6,7 +6,7 @@ Provides contextual, AI-generated farming recommendations by combining:
 - Sensor data from IoT nodes
 - Grading results
 
-Uses Google Gemini (gemini-2.0-flash) free tier for generating
+Uses Google Gemini (gemini-flash-lite-latest) free tier for generating
 detailed, contextual recommendations in Indonesian (Bahasa Indonesia).
 
 Environment variable required:
@@ -92,7 +92,7 @@ Gunakan bahasa yang mudah dipahami petani."""
 
     try:
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-flash-lite-latest",
             contents=prompt,
         )
         result = response.text.strip()
@@ -147,7 +147,7 @@ Gunakan bahasa yang mudah dipahami petani."""
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-flash-lite-latest",
             contents=prompt,
         )
         result = response.text.strip()
@@ -189,7 +189,7 @@ Gunakan bahasa sederhana yang mudah dipahami petani."""
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-flash-lite-latest",
             contents=prompt,
         )
         result = response.text.strip()
