@@ -48,8 +48,11 @@ export const aiApi = {
     sensorData?: { temperature?: number; humidity?: number; soil_moisture?: number; ph?: number },
   ): Promise<string> => {
     try {
-      const res = await api.post("/ai/insight/disease", null, {
-        params: { disease_name: diseaseName, confidence, is_healthy: isHealthy },
+      const res = await api.post("/ai/insight/disease", {
+        disease_name: diseaseName,
+        confidence,
+        is_healthy: isHealthy,
+        sensor_data: sensorData ?? null,
       });
       return res.data.insight;
     } catch {
@@ -57,10 +60,22 @@ export const aiApi = {
     }
   },
   /** Get LLM-generated insight for grading result */
-  getGradingInsight: async (grade: string, confidence: number): Promise<string> => {
+  getGradingInsight: async (
+    grade: string,
+    confidence: number,
+    gradeAProb: number,
+    gradeBProb: number,
+    gradeCProb: number,
+  ): Promise<string> => {
     try {
       const res = await api.post("/ai/insight/grading", null, {
-        params: { grade, confidence },
+        params: {
+          grade,
+          confidence,
+          grade_a_prob: gradeAProb,
+          grade_b_prob: gradeBProb,
+          grade_c_prob: gradeCProb,
+        },
       });
       return res.data.insight;
     } catch {
