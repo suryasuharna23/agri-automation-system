@@ -96,7 +96,9 @@ export default function NotificationScreen() {
       }
       all.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
       if (all.length > 0) setNotifications(all);
-    } catch {}
+    } catch (err) {
+      console.error("🔧 [NotificationScreen] Failed to build notifications:", err);
+    }
   };
 
   useEffect(() => { buildNotifs(); }, []);

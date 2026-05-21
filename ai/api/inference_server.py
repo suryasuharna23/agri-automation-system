@@ -34,20 +34,38 @@ from ai.inference.llm_insight import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+MODEL_STATUS = {
+    "grading_model": {"ready": False, "error": None},
+    "disease_model": {"ready": False, "error": None},
+}
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Loading AI models...")
     try:
         get_grading_model()
+        MODEL_STATUS["grading_model"] = {"ready": True, "error": None}
         logger.info("Grading model loaded.")
     except Exception as e:
+        MODEL_STATUS["grading_model"] = {"ready": False, "error": str(e)}
         logger.error(f"Failed to load grading model: {e}")
     try:
         get_disease_model()
+        MODEL_STATUS["disease_model"] = {"ready": True, "error": None}
         logger.info("Disease model loaded.")
     except Exception as e:
+        MODEL_STATUS["disease_model"] = {"ready": False, "error": str(e)}
         logger.error(f"Failed to load disease model: {e}")
+
+    failed = {
+        name: status["error"]
+        for name, status in MODEL_STATUS.items()
+        if not status["ready"]
+    }
+    if failed:
+        raise RuntimeError(f"AI service startup failed; required models unavailable: {failed}")
+
     logger.info("AI Inference Server ready.")
     yield
 
@@ -107,12 +125,11 @@ async def diagnose(file: UploadFile = File(...)):
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    grading_ok = get_grading_model() is not None
-    disease_ok = get_disease_model() is not None
+    grading_ok = MODEL_STATUS["grading_model"]["ready"]
+    disease_ok = MODEL_STATUS["disease_model"]["ready"]
     return {
-        "status": "ok" if (grading_ok and disease_ok) else "degraded",
-        "grading_model": "loaded" if grading_ok else "unavailable",
-        "disease_model": "loaded" if disease_ok else "unavailable",
+        "status": "ok" if (grading_ok and disease_ok) else "unavailable",
+        "models": MODEL_STATUS,
     }
 
 

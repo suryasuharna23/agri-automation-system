@@ -9,8 +9,10 @@ from app.routers import auth, sensor, ai, marketplace, transaction
 from app.utils.mqtt_client import start_mqtt_listener, register_handler
 from app.schemas.sensor import SensorReadingPayload
 from app.services.sensor_service import process_sensor_reading
+from app.services.notification_service import get_firebase_status
 from app.database import AsyncSessionLocal
 from app.config import settings
+from app.utils.mqtt_client import get_mqtt_status
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -43,6 +45,7 @@ async def _handle_mqtt_sensor(payload: dict):
 
 @app.on_event("startup")
 async def startup():
+    settings.validate_startup()
     await init_db()
     topic = f"{settings.mqtt_topic_prefix}/+"
     register_handler(topic, _handle_mqtt_sensor)
@@ -52,4 +55,10 @@ async def startup():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "optional_services": {
+            "mqtt": get_mqtt_status(),
+            "firebase": get_firebase_status(),
+        },
+    }

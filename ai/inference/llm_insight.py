@@ -15,7 +15,6 @@ Environment variable required:
 
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +28,7 @@ def _get_client():
     if _client is None:
         api_key = os.environ.get("GEMINI_API_KEY", "")
         if not api_key:
-            logger.warning("GEMINI_API_KEY not set. LLM insights will use fallback responses.")
+            logger.warning("GEMINI_API_KEY not set. LLM insight requests will fail explicitly.")
             return None
         try:
             from google import genai
@@ -45,7 +44,7 @@ async def generate_disease_insight(
     disease_name: str,
     confidence: float,
     is_healthy: bool,
-    sensor_data: Optional[dict] = None,
+    sensor_data: dict | None = None,
 ) -> str:
     """
     Generate detailed treatment recommendation using Gemini LLM.
@@ -64,7 +63,10 @@ async def generate_disease_insight(
     """
     client = _get_client()
     if client is None:
-        return _fallback_disease_insight(disease_name, is_healthy)
+        raise RuntimeError(
+            "Gemini API key (GEMINI_API_KEY) not configured. "
+            "LLM insights require a valid API key from https://aistudio.google.com"
+        )
 
     # Build context prompt
     sensor_context = ""
@@ -96,19 +98,19 @@ Gunakan bahasa yang mudah dipahami petani."""
             contents=prompt,
         )
         result = response.text.strip()
-        if result:
-            return result
-        return _fallback_disease_insight(disease_name, is_healthy)
+        if not result:
+            raise RuntimeError("Gemini returned empty response for disease insight")
+        return result
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
-        return _fallback_disease_insight(disease_name, is_healthy)
+        raise
 
 
 async def generate_grading_insight(
     grade: str,
     confidence: float,
     grade_probs: dict,
-    sensor_data: Optional[dict] = None,
+    sensor_data: dict | None = None,
 ) -> str:
     """
     Generate insight about crop quality grading result.
@@ -124,7 +126,10 @@ async def generate_grading_insight(
     """
     client = _get_client()
     if client is None:
-        return _fallback_grading_insight(grade)
+        raise RuntimeError(
+            "Gemini API key (GEMINI_API_KEY) not configured. "
+            "LLM insights require a valid API key from https://aistudio.google.com"
+        )
 
     sensor_context = ""
     if sensor_data:
@@ -151,12 +156,12 @@ Gunakan bahasa yang mudah dipahami petani."""
             contents=prompt,
         )
         result = response.text.strip()
-        if result:
-            return result
-        return _fallback_grading_insight(grade)
+        if not result:
+            raise RuntimeError("Gemini returned empty response for grading insight")
+        return result
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
-        return _fallback_grading_insight(grade)
+        raise
 
 
 async def generate_sensor_insight(sensor_data: dict) -> str:
@@ -173,7 +178,10 @@ async def generate_sensor_insight(sensor_data: dict) -> str:
     """
     client = _get_client()
     if client is None:
-        return _fallback_sensor_insight(sensor_data)
+        raise RuntimeError(
+            "Gemini API key (GEMINI_API_KEY) not configured. "
+            "LLM insights require a valid API key from https://aistudio.google.com"
+        )
 
     prompt = f"""Kamu adalah ahli agronomi Indonesia. Berikut data sensor lahan pertanian hortikultura:
 - Suhu udara: {sensor_data.get('temperature', 'N/A')}°C
@@ -193,85 +201,9 @@ Gunakan bahasa sederhana yang mudah dipahami petani."""
             contents=prompt,
         )
         result = response.text.strip()
-        if result:
-            return result
-        return _fallback_sensor_insight(sensor_data)
+        if not result:
+            raise RuntimeError("Gemini returned empty response for sensor insight")
+        return result
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
-        return _fallback_sensor_insight(sensor_data)
-
-
-# ─── Fallback responses (when Gemini is unavailable) ───────────────────────────
-
-
-def _fallback_disease_insight(disease_name: str, is_healthy: bool) -> str:
-    """Static fallback when LLM is unavailable."""
-    if is_healthy:
-        return (
-            "Tanaman terdeteksi dalam kondisi sehat. "
-            "Pertahankan pola penyiraman dan pemupukan rutin. "
-            "Lakukan monitoring berkala untuk deteksi dini hama dan penyakit."
-        )
-    return (
-        f"Terdeteksi gejala {disease_name}. "
-        "Segera isolasi tanaman yang terinfeksi dari tanaman sehat. "
-        "Konsultasikan dengan petugas penyuluh pertanian setempat untuk penanganan lebih lanjut. "
-        "Pastikan sanitasi alat pertanian setelah menangani tanaman sakit."
-    )
-
-
-def _fallback_grading_insight(grade: str) -> str:
-    """Static fallback for grading insight."""
-    insights = {
-        "A": (
-            "Kualitas premium! Produk ini layak dijual dengan harga tertinggi di pasar. "
-            "Pertahankan kondisi budidaya saat ini untuk hasil panen berikutnya."
-        ),
-        "B": (
-            "Kualitas standar. Produk masih layak jual namun dengan harga pasar normal. "
-            "Perhatikan waktu panen dan penanganan pasca-panen untuk meningkatkan grade."
-        ),
-        "C": (
-            "Kualitas di bawah standar. Produk mungkin perlu diolah atau dijual dengan diskon. "
-            "Evaluasi kondisi lahan, penyiraman, dan pemupukan untuk perbaikan."
-        ),
-    }
-    return insights.get(grade, "Grade tidak dikenali. Silakan coba lagi.")
-
-
-def _fallback_sensor_insight(sensor_data: dict) -> str:
-    """Static fallback for sensor insight."""
-    issues = []
-    temp = sensor_data.get("temperature")
-    humidity = sensor_data.get("humidity")
-    ph = sensor_data.get("ph")
-    soil = sensor_data.get("soil_moisture")
-
-    if temp is not None:
-        if temp > 35:
-            issues.append("Suhu terlalu tinggi, tanaman berisiko stres panas.")
-        elif temp < 15:
-            issues.append("Suhu terlalu rendah, pertumbuhan tanaman bisa terhambat.")
-
-    if humidity is not None:
-        if humidity > 85:
-            issues.append("Kelembapan sangat tinggi, risiko jamur meningkat.")
-        elif humidity < 40:
-            issues.append("Kelembapan rendah, tanaman perlu penyiraman lebih sering.")
-
-    if ph is not None:
-        if ph < 5.5:
-            issues.append("pH tanah terlalu asam, pertimbangkan pengapuran.")
-        elif ph > 7.5:
-            issues.append("pH tanah terlalu basa, tambahkan bahan organik.")
-
-    if soil is not None:
-        if soil < 20:
-            issues.append("Tanah terlalu kering, segera lakukan penyiraman.")
-        elif soil > 80:
-            issues.append("Tanah terlalu basah, perbaiki drainase.")
-
-    if not issues:
-        return "Kondisi lahan dalam rentang optimal untuk tanaman hortikultura. Pertahankan perawatan rutin."
-
-    return " ".join(issues) + " Lakukan penyesuaian segera untuk menjaga kesehatan tanaman."
+        raise

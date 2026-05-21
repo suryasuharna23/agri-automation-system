@@ -71,4 +71,10 @@ async def update_crop(
 
 @router.get("/prices")
 async def commodity_prices(_: User = Depends(get_current_user)):
-    return await get_commodity_prices()
+    try:
+        return await get_commodity_prices()
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Layanan harga pasar tidak tersedia saat ini.",
+        )

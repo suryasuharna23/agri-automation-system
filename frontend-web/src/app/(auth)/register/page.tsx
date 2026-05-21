@@ -31,7 +31,8 @@ export default function RegisterPage() {
       });
       setSession(data.access_token, data.user);
       router.push("/dashboard");
-    } catch {
+    } catch (err: any) {
+      console.error("🔧 [RegisterPage] Registration failed:", err?.response?.status, err?.message ?? err);
       setError("Pendaftaran gagal. Periksa kembali data Anda.");
     } finally {
       setLoading(false);

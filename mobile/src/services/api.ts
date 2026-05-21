@@ -5,7 +5,17 @@ import type { GradingResult, DiagnosisResult, SensorReading } from "../types";
 // ─────────────────────────────────────────────────────
 // DEBUG: Log the resolved BASE_URL at module load time
 // ─────────────────────────────────────────────────────
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.100:8000/api/v1";
+function getRequiredBaseUrl() {
+  const value = process.env.EXPO_PUBLIC_API_URL;
+  if (!value) {
+    throw new Error(
+      "EXPO_PUBLIC_API_URL is required. Set it to the backend API URL using the computer LAN IP, e.g. http://192.168.1.100:8000/api/v1."
+    );
+  }
+  return value;
+}
+
+const BASE_URL = getRequiredBaseUrl();
 console.log("🔧 [api.ts] EXPO_PUBLIC_API_URL =", process.env.EXPO_PUBLIC_API_URL);
 console.log("🔧 [api.ts] Resolved BASE_URL   =", BASE_URL);
 
@@ -16,6 +26,8 @@ const api = axios.create({ baseURL: BASE_URL });
 // ─────────────────────────────────────────────────────
 api.interceptors.request.use(async (config) => {
   const token = await SecureStore.getItemAsync("access_token");
+  config.baseURL = config.baseURL ?? "";
+  config.url = config.url ?? "";
   console.log("🔧 [api.ts] Request:", config.method?.toUpperCase(), config.url);
   console.log("🔧 [api.ts]   Full URL:", config.baseURL + config.url);
   console.log("🔧 [api.ts]   Has token in SecureStore:", !!token);
@@ -166,8 +178,9 @@ export const aiApi = {
         sensor_data: sensorData ?? null,
       });
       return res.data.insight;
-    } catch {
-      return "";
+    } catch (err: any) {
+      console.error("🔧 [aiApi.getDiseaseInsight] Failed:", err?.response?.status, err?.message ?? err);
+      throw err;
     }
   },
   getGradingInsight: async (
@@ -188,8 +201,9 @@ export const aiApi = {
         sensor_data: sensorData ?? null,
       });
       return res.data.insight;
-    } catch {
-      return "";
+    } catch (err: any) {
+      console.error("🔧 [aiApi.getGradingInsight] Failed:", err?.response?.status, err?.message ?? err);
+      throw err;
     }
   },
   getSensorInsight: async (sensorData: {
@@ -201,8 +215,9 @@ export const aiApi = {
     try {
       const res = await api.post("/ai/insight/sensor", sensorData);
       return res.data.insight;
-    } catch {
-      return "";
+    } catch (err: any) {
+      console.error("🔧 [aiApi.getSensorInsight] Failed:", err?.response?.status, err?.message ?? err);
+      throw err;
     }
   },
 };

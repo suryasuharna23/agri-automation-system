@@ -18,7 +18,8 @@ export default function LoginPage() {
     try {
       await login(email, password);
       router.push("/dashboard");
-    } catch {
+    } catch (err: any) {
+      console.error("🔧 [LoginPage] Login failed:", err?.response?.status, err?.message ?? err);
       setError("Email atau password salah.");
     } finally {
       setLoading(false);

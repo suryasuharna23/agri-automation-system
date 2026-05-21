@@ -3,6 +3,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 _firebase_app = None
+_firebase_status = {
+    "enabled": True,
+    "initialized": False,
+    "last_error": None,
+}
 
 
 def _get_firebase():
@@ -14,15 +19,25 @@ def _get_firebase():
             from app.config import settings
             cred = credentials.Certificate(settings.firebase_credentials_path)
             _firebase_app = firebase_admin.initialize_app(cred)
+            _firebase_status["initialized"] = True
+            _firebase_status["last_error"] = None
         except Exception as e:
-            logger.warning(f"Firebase not initialized: {e}")
+            _firebase_status["initialized"] = False
+            _firebase_status["last_error"] = str(e)
+            logger.warning(f"Firebase unavailable; notifications will be skipped: {e}")
     return _firebase_app
+
+
+def get_firebase_status() -> dict:
+    return dict(_firebase_status)
 
 
 async def send_anomaly_notification(fcm_token: str, node_name: str, anomalies: list[str]):
     try:
         from firebase_admin import messaging
-        _get_firebase()
+        if _get_firebase() is None:
+            logger.info("Anomaly notification skipped because Firebase is unavailable")
+            return
         message = messaging.Message(
             notification=messaging.Notification(
                 title=f"Peringatan Lahan: {node_name}",
@@ -39,7 +54,9 @@ async def send_anomaly_notification(fcm_token: str, node_name: str, anomalies: l
 async def send_order_notification(fcm_token: str, order_id: str, status: str):
     try:
         from firebase_admin import messaging
-        _get_firebase()
+        if _get_firebase() is None:
+            logger.info("Order notification skipped because Firebase is unavailable")
+            return
         message = messaging.Message(
             notification=messaging.Notification(
                 title="Update Pesanan",

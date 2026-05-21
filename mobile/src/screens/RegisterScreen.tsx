@@ -47,7 +47,8 @@ export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
       console.log("🔧 [RegisterScreen] Registration successful — calling onLogin");
       onLogin?.();
       // Navigation reset not needed — AppNavigator re-renders with auth stack
-    } catch {
+    } catch (err: any) {
+      console.error("🔧 [RegisterScreen] Registration failed:", err?.response?.status, err?.message ?? err);
       setErrors({ email: 'Email sudah terdaftar atau terjadi kesalahan.' });
     } finally {
       setLoading(false);

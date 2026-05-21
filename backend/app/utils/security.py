@@ -6,6 +6,10 @@ from jose import JWTError, jwt
 from app.config import settings
 
 
+class TokenDecodeError(ValueError):
+    """Raised when a JWT cannot be decoded or trusted."""
+
+
 def hash_password(password: str) -> str:
     return hashpw(password.encode(), gensalt()).decode()
 
@@ -29,5 +33,5 @@ def create_refresh_token(subject: str) -> str:
 def decode_token(token: str) -> dict:
     try:
         return jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
-    except JWTError:
-        return {}
+    except JWTError as exc:
+        raise TokenDecodeError("Invalid token") from exc

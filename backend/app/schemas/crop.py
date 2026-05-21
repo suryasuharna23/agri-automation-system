@@ -54,3 +54,15 @@ class DiagnosisResult(BaseModel):
     confidence: float
     recommendation: str
     is_healthy: bool
+
+
+class DiagnosisRecordResponse(BaseModel):
+    model_config = {"from_attributes": True}
+
+    id: uuid.UUID
+    farmer_id: uuid.UUID
+    image_url: str
+    disease_name: str | None
+    confidence: float | None
+    recommendation: str | None
+    created_at: datetime

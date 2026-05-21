@@ -1,7 +1,15 @@
 import axios from "axios";
 import type { TokenResponse, Crop, SensorNode, SensorReading, Transaction, User } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
+function getRequiredBaseUrl() {
+  const value = process.env.NEXT_PUBLIC_API_URL;
+  if (!value) {
+    throw new Error("NEXT_PUBLIC_API_URL is required. Set it to the backend API URL, e.g. http://localhost:8000/api/v1.");
+  }
+  return value;
+}
+
+const BASE_URL = getRequiredBaseUrl();
 
 const api = axios.create({ baseURL: BASE_URL });
 

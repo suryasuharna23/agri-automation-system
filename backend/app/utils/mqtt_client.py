@@ -10,10 +10,19 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 _message_handlers: dict[str, Callable[[dict], Awaitable[None]]] = {}
+_mqtt_status = {
+    "enabled": True,
+    "connected": False,
+    "last_error": None,
+}
 
 
 def register_handler(topic: str, handler: Callable[[dict], Awaitable[None]]):
     _message_handlers[topic] = handler
+
+
+def get_mqtt_status() -> dict:
+    return dict(_mqtt_status)
 
 
 async def start_mqtt_listener():
@@ -27,6 +36,8 @@ async def start_mqtt_listener():
             ) as client:
                 subscribe_topic = f"{settings.mqtt_topic_prefix}/#"
                 await client.subscribe(subscribe_topic, qos=1)
+                _mqtt_status["connected"] = True
+                _mqtt_status["last_error"] = None
                 logger.info(f"MQTT subscribed to {subscribe_topic}")
 
                 async for message in client.messages:
@@ -41,5 +52,7 @@ async def start_mqtt_listener():
                     except Exception as e:
                         logger.error(f"Error processing MQTT message on {topic}: {e}")
         except Exception as e:
+            _mqtt_status["connected"] = False
+            _mqtt_status["last_error"] = str(e)
             logger.error(f"MQTT connection lost: {e}. Reconnecting in 5s...")
             await asyncio.sleep(5)

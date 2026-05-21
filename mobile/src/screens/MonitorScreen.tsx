@@ -64,9 +64,13 @@ export default function MonitorScreen() {
           ph: latest.ph,
         }).then((insight) => {
           if (insight) setAiInsight(insight);
-        }).catch(() => {});
+        }).catch((err: any) => {
+          console.error("🔧 [MonitorScreen] Sensor insight fetch failed:", err?.message ?? err);
+        });
       }
-    } catch {}
+    } catch (err: any) {
+      console.error("🔧 [MonitorScreen] Failed to load sensor readings:", err);
+    }
   }, []);
 
   useEffect(() => {
@@ -76,7 +80,9 @@ export default function MonitorScreen() {
         setActiveNode(n[0]);
         load(n[0]);
       }
-    }).catch(() => {});
+    }).catch((err: any) => {
+      console.error("🔧 [MonitorScreen] Failed to list sensor nodes:", err?.message ?? err);
+    });
   }, []);
 
   const onRefresh = async () => {

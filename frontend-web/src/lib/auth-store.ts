@@ -59,7 +59,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await authApi.me();
       localStorage.setItem("user", JSON.stringify(user));
       set({ token, user, isAuthenticated: true });
-    } catch {
+    } catch (err) {
+      console.error("🔧 [auth-store] checkAuth failed:", err);
       clearSession();
       set({ token: null, user: null, isAuthenticated: false });
     }

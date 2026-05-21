@@ -81,7 +81,9 @@ export default function DiagnosisScreen() {
   useEffect(() => {
     api.get('/diagnoses').then((res) => {
       if (Array.isArray(res.data) && res.data.length > 0) setItems(res.data);
-    }).catch(() => {});
+    }).catch((err: any) => {
+      console.error("🔧 [DiagnosisScreen] Failed to load diagnosis history:", err?.message ?? err);
+    });
   }, []);
 
   return (

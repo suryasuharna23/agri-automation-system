@@ -8,7 +8,6 @@ Model: Diginsa/Plant-Disease-Detection-Project (MobileNetV2, PlantVillage 38 cla
 """
 
 import logging
-from pathlib import Path
 
 import torch
 from PIL import Image
@@ -117,14 +116,15 @@ class DiseaseModel:
             self.id2label = self.model.config.id2label
             logger.info(f"Disease model loaded successfully. Classes: {len(self.id2label)}")
         except Exception as e:
-            logger.warning(f"Failed to load HF model: {e}. Using fallback.")
-            self.processor = None
-            self.model = None
-            self.id2label = {}
+            raise RuntimeError(f"Failed to load disease model '{MODEL_ID}': {e}") from e
 
     def predict(self, image: Image.Image) -> dict:
         if self.model is None or self.processor is None:
-            return self._fallback_predict()
+            raise RuntimeError(
+                "Disease detection model not loaded. "
+                "Check that HuggingFace model 'Diginsa/Plant-Disease-Detection-Project' "
+                "can be downloaded."
+            )
 
         inputs = self.processor(images=image, return_tensors="pt")
 
@@ -151,16 +151,6 @@ class DiseaseModel:
             "recommendation": recommendation,
             "is_healthy": is_healthy,
         }
-
-    def _fallback_predict(self) -> dict:
-        """Fallback when model is not available."""
-        return {
-            "disease_name": "Model Unavailable",
-            "confidence": 0.0,
-            "recommendation": "Model AI tidak tersedia. Silakan coba lagi nanti.",
-            "is_healthy": False,
-        }
-
 
 _disease_model: DiseaseModel | None = None
 

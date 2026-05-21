@@ -60,7 +60,8 @@ export async function getCommodityList(): Promise<string[]> {
     const res = await api.get<Crop[]>("/marketplace/crops");
     const names = [...new Set(res.data.map((c) => c.name))];
     return names.length > 0 ? names : FALLBACK_COMMODITIES;
-  } catch {
+  } catch (err: any) {
+    console.error("🔧 [commodityService.getCommodityList] Failed:", err?.message ?? err);
     return FALLBACK_COMMODITIES;
   }
 }
@@ -80,7 +81,8 @@ export async function getCommodityPriceHistory(
       history.currentPrice = Math.round(match.price_per_kg);
       return history;
     }
-  } catch {
+  } catch (err: any) {
+    console.error("🔧 [commodityService.getCommodityPriceHistory] Failed:", err?.message ?? err);
     // fall through
   }
 

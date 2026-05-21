@@ -30,7 +30,8 @@ export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
       console.log("🔧 [LoginScreen] Login successful — calling onLogin");
       onLogin?.();
       // Navigation reset not needed — AppNavigator re-renders with auth stack
-    } catch {
+    } catch (err: any) {
+      console.error("🔧 [LoginScreen] Login failed:", err?.response?.status, err?.message ?? err);
       setError('Email atau password salah. Silakan coba lagi.');
     } finally {
       setLoading(false);
