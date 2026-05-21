@@ -54,7 +54,40 @@ agri-automation-system/
 > Windows 10 build 19044+ diperlukan untuk Docker Desktop. Jika tidak tersedia,
 > jalankan secara native dengan SQLite.
 
-### 1. Backend
+### One-command dev
+
+Setelah dependency dan file `.env` dibuat, jalankan semua service aplikasi tanpa Docker:
+
+```bash
+python scripts/run_dev.py
+```
+
+Command ini menjalankan:
+
+| Service | URL |
+|---------|-----|
+| Backend API | http://localhost:8000 |
+| AI Service | http://localhost:8001 |
+| Frontend Web | http://localhost:3000 |
+| Mobile Expo | http://localhost:8081 |
+
+Opsi:
+
+```bash
+python scripts/run_dev.py --no-mobile     # backend + AI + web
+python scripts/run_dev.py --no-web        # backend + AI + mobile
+python scripts/run_dev.py --backend-only  # backend saja
+```
+
+Launcher akan berhenti lebih awal jika `.env`, `.venv`, atau `node_modules`
+yang dibutuhkan belum ada.
+
+### Manual setup
+
+Jalankan langkah berikut satu kali sebelum memakai `python scripts/run_dev.py`,
+atau gunakan command manual ini jika ingin menjalankan service terpisah.
+
+#### 1. Backend
 
 ```bash
 cd backend
@@ -65,7 +98,7 @@ cp .env.example .env                # sudah dikonfigurasi untuk SQLite
 uvicorn app.main:app --reload       # http://localhost:8000
 ```
 
-### 2. AI Service
+#### 2. AI Service
 
 ```bash
 cd ai
@@ -80,7 +113,7 @@ uvicorn ai.api.inference_server:app --port 8001 --reload
 # http://localhost:8001
 ```
 
-### 3. Frontend Web
+#### 3. Frontend Web
 
 ```bash
 cd frontend-web
@@ -89,7 +122,7 @@ cp .env.local.example .env.local
 npm run dev                         # http://localhost:3000
 ```
 
-### 4. Mobile (Expo)
+#### 4. Mobile (Expo)
 
 ```bash
 cd mobile
@@ -101,7 +134,7 @@ npx expo start -c                   # Scan QR code dengan Expo Go
 > **Penting:** `EXPO_PUBLIC_API_URL` harus berisi **IP LAN komputer** (bukan `localhost`),
 > misalnya `http://192.168.0.100:8000/api/v1`. Cek dengan `ipconfig`.
 
-### 5. IoT (ESP32)
+#### 5. IoT (ESP32)
 
 ```bash
 cd iot
