@@ -10,7 +10,7 @@ class SettingsError(RuntimeError):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql+asyncpg://agri_user:agri_pass@localhost:5432/agri_db"
+    database_url: str = "sqlite+aiosqlite:///./agri.db"
     secret_key: str = "change-me"
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080  # 7 days for dev convenience
