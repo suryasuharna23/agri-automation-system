@@ -36,6 +36,10 @@ def test_grading_model():
     model = get_grading_model()
     assert model is not None, "Grading model failed to load"
 
+    if not model.ready:
+        logger.info("Grading checkpoint unavailable; model test skipped.")
+        return True
+
     # Test with a green (healthy-looking) image
     green_image = create_test_image(color=(50, 180, 50))
     result = model.predict(green_image)
@@ -121,7 +125,9 @@ def test_inference_server():
     response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
-    assert data["status"] in ["ok", "degraded"]
+    assert data["status"] in ["ok", "unavailable"]
+    assert "capabilities" in data
+    assert {"diagnosis", "grading", "llm"}.issubset(data["capabilities"])
     logger.info(f"Health check: {data}")
 
     # Test grading endpoint
@@ -135,11 +141,15 @@ def test_inference_server():
         files={"file": ("test.jpg", img_bytes, "image/jpeg")},
         data={"crop_id": "test-crop-123"},
     )
-    assert response.status_code == 200, f"Grade endpoint failed: {response.text}"
-    data = response.json()
-    assert data["crop_id"] == "test-crop-123"
-    assert data["grade"] in ["A", "B", "C"]
-    logger.info(f"Grade endpoint: {data}")
+    assert response.status_code in (200, 503), f"Unexpected grade response: {response.text}"
+    if response.status_code == 200:
+        data = response.json()
+        assert data["crop_id"] == "test-crop-123"
+        assert data["grade"] in ["A", "B", "C"]
+        assert data["mode"] in ["model", "demo_fallback"]
+        logger.info(f"Grade endpoint: {data}")
+    else:
+        logger.info("Grade endpoint unavailable as expected without checkpoint.")
 
     # Test diagnosis endpoint
     leaf_image = create_test_image(color=(60, 140, 40))

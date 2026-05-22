@@ -30,7 +30,7 @@ const Navbar2 = ({ state, navigation }: BottomTabBarProps) => {
           text: "Keluar",
           style: "destructive",
           onPress: async () => {
-            console.log("🔧 [Navbar2] Logging out...");
+            if (__DEV__) console.log("🔧 [Navbar2] Logging out...");
             await logout();
             // Navigate to Login by resetting to a screen the parent stack can handle
             // The navigation reset will trigger AppNavigator to re-check auth

@@ -37,7 +37,7 @@ function MainTabs() {
 export default function AppNavigator() {
   const { isAuthenticated, isLoading, login } = useAuth();
 
-  console.log("🔧 [AppNavigator] isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
+  if (__DEV__) console.log("🔧 [AppNavigator] isAuthenticated:", isAuthenticated, "isLoading:", isLoading);
 
   if (isLoading) {
     return (

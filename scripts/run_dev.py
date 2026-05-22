@@ -12,6 +12,7 @@ import argparse
 import os
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import threading
@@ -30,6 +31,8 @@ class Service:
     command: list[str]
     cwd: Path
     env: dict[str, str]
+    raw_output: bool = False
+    note: str | None = None
 
 
 def command_name(name: str) -> str:
@@ -66,6 +69,27 @@ def merged_env(*env_files: Path, overrides: dict[str, str] | None = None) -> dic
         for key, value in overrides.items():
             env.setdefault(key, value)
     return env
+
+
+def with_env(env: dict[str, str], values: dict[str, str]) -> dict[str, str]:
+    """Return a copy of env with explicit values applied."""
+    next_env = env.copy()
+    next_env.update(values)
+    return next_env
+
+
+def detect_lan_ip() -> str:
+    """Return the local IPv4 address used for outbound LAN traffic."""
+    override = os.environ.get("AGRI_LAN_IP")
+    if override:
+        return override
+
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        try:
+            sock.connect(("8.8.8.8", 80))
+            return sock.getsockname()[0]
+        except OSError:
+            return socket.gethostbyname(socket.gethostname())
 
 
 def require_file(path: Path, label: str, errors: list[str]) -> None:
@@ -114,6 +138,8 @@ def preflight(include_web: bool, include_mobile: bool, backend_only: bool) -> No
 
 
 def build_services(args: argparse.Namespace) -> list[Service]:
+    lan_ip = args.lan_ip or detect_lan_ip()
+    mobile_api_url = args.mobile_api_url or f"http://{lan_ip}:8000/api/v1"
     backend_env = merged_env(ROOT / "backend" / ".env")
     services = [
         Service(
@@ -124,6 +150,8 @@ def build_services(args: argparse.Namespace) -> list[Service]:
                 "uvicorn",
                 "app.main:app",
                 "--reload",
+                "--host",
+                "0.0.0.0",
                 "--port",
                 "8000",
             ],
@@ -143,9 +171,15 @@ def build_services(args: argparse.Namespace) -> list[Service]:
                 "-m",
                 "uvicorn",
                 "ai.api.inference_server:app",
+                "--host",
+                "0.0.0.0",
                 "--port",
                 "8001",
                 "--reload",
+                "--reload-dir",
+                "ai/api",
+                "--reload-dir",
+                "ai/inference",
             ],
             cwd=ROOT,
             env=merged_env(ROOT / "ai" / ".env"),
@@ -169,9 +203,19 @@ def build_services(args: argparse.Namespace) -> list[Service]:
         services.append(
             Service(
                 name="mobile",
-                command=[command_name("npx"), "expo", "start", "-c"],
+                command=[command_name("npx"), "expo", "start", "-c", "--lan"],
                 cwd=ROOT / "mobile",
-                env=merged_env(ROOT / "mobile" / ".env"),
+                env=with_env(
+                    merged_env(ROOT / "mobile" / ".env"),
+                    {
+                        "EXPO_PUBLIC_API_URL": mobile_api_url,
+                        # Expo hides interactive terminal UI, including QR output,
+                        # when CI is truthy in the parent environment.
+                        "CI": "0",
+                    },
+                ),
+                raw_output=True,
+                note=f"Expo API URL: {mobile_api_url}",
             )
         )
 
@@ -209,6 +253,8 @@ def run_services(services: list[Service]) -> int:
     try:
         for service in services:
             print(f"Starting {service.name}: {' '.join(service.command)}")
+            if service.note:
+                print(f"  {service.note}")
             process_options = {}
             if IS_WINDOWS:
                 process_options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
@@ -218,16 +264,17 @@ def run_services(services: list[Service]) -> int:
                 service.command,
                 cwd=service.cwd,
                 env=service.env,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stdout=None if service.raw_output else subprocess.PIPE,
+                stderr=None if service.raw_output else subprocess.STDOUT,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
                 **process_options,
             )
             processes.append((service, process))
-            thread = threading.Thread(target=stream_output, args=(service.name, process), daemon=True)
-            thread.start()
+            if not service.raw_output:
+                thread = threading.Thread(target=stream_output, args=(service.name, process), daemon=True)
+                thread.start()
 
         print("\nServices started. Press Ctrl+C to stop all services.\n")
         while True:
@@ -250,6 +297,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no-mobile", action="store_true", help="Start backend, AI, and web only.")
     parser.add_argument("--no-web", action="store_true", help="Start backend, AI, and mobile only.")
     parser.add_argument("--backend-only", action="store_true", help="Start only the backend service.")
+    parser.add_argument("--lan-ip", help="LAN IPv4 address exposed to mobile devices. Defaults to auto-detect.")
+    parser.add_argument(
+        "--mobile-api-url",
+        help="Full API URL injected into Expo, e.g. http://192.168.1.10:8000/api/v1.",
+    )
     return parser.parse_args()
 
 

@@ -17,7 +17,7 @@ export default function HomeScreen() {
         setLatestReading(readings[0] ?? null);
       }
     } catch (e) {
-      console.error(e);
+      if (__DEV__) console.error(e);
     }
   };
 
@@ -44,7 +44,7 @@ export default function HomeScreen() {
             <Text style={styles.anomalyText}>Peringatan: {latestReading.anomaly_description}</Text>
           )}
           <View style={styles.sensorGrid}>
-            <SensorItem label="Suhu" value={`${latestReading.temperature ?? "-"}°C`} />
+            <SensorItem label="Suhu" value={`${latestReading.temperature ?? "-"}Â°C`} />
             <SensorItem label="Kelembapan" value={`${latestReading.humidity ?? "-"}%`} />
             <SensorItem label="Kelembapan Tanah" value={`${latestReading.soil_moisture ?? "-"}%`} />
             <SensorItem label="pH" value={`${latestReading.ph ?? "-"}`} />

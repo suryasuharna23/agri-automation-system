@@ -54,5 +54,5 @@ async def start_mqtt_listener():
         except Exception as e:
             _mqtt_status["connected"] = False
             _mqtt_status["last_error"] = str(e)
-            logger.error(f"MQTT connection lost: {e}. Reconnecting in 5s...")
+            logger.warning(f"MQTT unavailable: {e}. Retrying in 5s...")
             await asyncio.sleep(5)

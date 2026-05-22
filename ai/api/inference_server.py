@@ -16,6 +16,7 @@ Uses Google Gemini (free tier) for contextual LLM insights.
 
 import io
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -26,45 +27,57 @@ from PIL import Image
 from ai.inference.grading_model import get_grading_model
 from ai.inference.disease_model import get_disease_model
 from ai.inference.llm_insight import (
+    demo_fallback_enabled,
     generate_disease_insight,
     generate_grading_insight,
     generate_sensor_insight,
+    llm_ready,
 )
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 MODEL_STATUS = {
-    "grading_model": {"ready": False, "error": None},
-    "disease_model": {"ready": False, "error": None},
+    "diagnosis": {"ready": False, "mode": "unavailable", "error": None},
+    "grading": {"ready": False, "mode": "unavailable", "error": None},
+    "llm": {"ready": False, "mode": "unavailable", "error": None},
 }
+
+
+def _demo_enabled() -> bool:
+    return os.environ.get("ENABLE_DEMO_AI_FALLBACK", "").lower() in {"1", "true", "yes", "on"}
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Loading AI models...")
     try:
-        get_grading_model()
-        MODEL_STATUS["grading_model"] = {"ready": True, "error": None}
-        logger.info("Grading model loaded.")
+        grading_model = get_grading_model()
+        if grading_model.ready:
+            MODEL_STATUS["grading"] = {"ready": True, "mode": "model", "error": None}
+            logger.info("Grading model loaded.")
+        elif _demo_enabled():
+            MODEL_STATUS["grading"] = {"ready": True, "mode": "demo_fallback", "error": "Grading checkpoint missing"}
+            logger.warning("Grading model unavailable; demo fallback enabled.")
+        else:
+            MODEL_STATUS["grading"] = {"ready": False, "mode": "unavailable", "error": "Grading checkpoint missing"}
     except Exception as e:
-        MODEL_STATUS["grading_model"] = {"ready": False, "error": str(e)}
+        MODEL_STATUS["grading"] = {"ready": False, "mode": "unavailable", "error": str(e)}
         logger.error(f"Failed to load grading model: {e}")
     try:
         get_disease_model()
-        MODEL_STATUS["disease_model"] = {"ready": True, "error": None}
+        MODEL_STATUS["diagnosis"] = {"ready": True, "mode": "model", "error": None}
         logger.info("Disease model loaded.")
     except Exception as e:
-        MODEL_STATUS["disease_model"] = {"ready": False, "error": str(e)}
+        MODEL_STATUS["diagnosis"] = {"ready": False, "mode": "unavailable", "error": str(e)}
         logger.error(f"Failed to load disease model: {e}")
 
-    failed = {
-        name: status["error"]
-        for name, status in MODEL_STATUS.items()
-        if not status["ready"]
-    }
-    if failed:
-        raise RuntimeError(f"AI service startup failed; required models unavailable: {failed}")
+    if llm_ready():
+        MODEL_STATUS["llm"] = {"ready": True, "mode": "model", "error": None}
+    elif demo_fallback_enabled():
+        MODEL_STATUS["llm"] = {"ready": True, "mode": "demo_fallback", "error": "GEMINI_API_KEY not configured"}
+    else:
+        MODEL_STATUS["llm"] = {"ready": False, "mode": "unavailable", "error": "GEMINI_API_KEY not configured"}
 
     logger.info("AI Inference Server ready.")
     yield
@@ -93,8 +106,16 @@ async def grade(file: UploadFile = File(...), crop_id: str = Form(...)):
         raise HTTPException(status_code=400, detail="Gambar tidak valid. Pastikan file adalah gambar yang benar.")
 
     try:
-        result = get_grading_model().predict(image)
-        return {"crop_id": crop_id, **result}
+        model = get_grading_model()
+        if model.ready:
+            result = model.predict(image)
+            return {"crop_id": crop_id, "mode": "model", **result}
+        if _demo_enabled():
+            result = model.predict_demo(image)
+            return {"crop_id": crop_id, "mode": "demo_fallback", **result}
+        raise HTTPException(status_code=503, detail="Model grading belum tersedia.")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Grading inference error: {e}")
         raise HTTPException(status_code=500, detail="Gagal memproses grading. Silakan coba lagi.")
@@ -115,8 +136,12 @@ async def diagnose(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Gambar tidak valid. Pastikan file adalah gambar yang benar.")
 
     try:
+        if not MODEL_STATUS["diagnosis"]["ready"]:
+            raise HTTPException(status_code=503, detail="Model diagnosis belum tersedia.")
         result = get_disease_model().predict(image)
-        return result
+        return {"mode": "model", **result}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Disease diagnosis inference error: {e}")
         raise HTTPException(status_code=500, detail="Gagal memproses diagnosis. Silakan coba lagi.")
@@ -125,11 +150,10 @@ async def diagnose(file: UploadFile = File(...)):
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    grading_ok = MODEL_STATUS["grading_model"]["ready"]
-    disease_ok = MODEL_STATUS["disease_model"]["ready"]
+    ready = any(status["ready"] for status in MODEL_STATUS.values())
     return {
-        "status": "ok" if (grading_ok and disease_ok) else "unavailable",
-        "models": MODEL_STATUS,
+        "status": "ok" if ready else "unavailable",
+        "capabilities": MODEL_STATUS,
     }
 
 
@@ -161,6 +185,7 @@ class SensorInsightRequest(BaseModel):
 
 class InsightResponse(BaseModel):
     insight: str
+    mode: str = "model"
 
 
 @app.post("/insight/disease", response_model=InsightResponse)
@@ -171,6 +196,8 @@ async def disease_insight(request: DiseaseInsightRequest):
     Combines disease detection result with optional sensor data to provide
     contextual, detailed farming advice in Indonesian using Google Gemini.
     """
+    if not MODEL_STATUS["llm"]["ready"]:
+        raise HTTPException(status_code=503, detail="Layanan insight AI belum tersedia.")
     try:
         insight = await generate_disease_insight(
             disease_name=request.disease_name,
@@ -178,7 +205,7 @@ async def disease_insight(request: DiseaseInsightRequest):
             is_healthy=request.is_healthy,
             sensor_data=request.sensor_data,
         )
-        return InsightResponse(insight=insight)
+        return {"insight": insight, "mode": MODEL_STATUS["llm"]["mode"]}
     except Exception as e:
         logger.error(f"Disease insight error: {e}")
         raise HTTPException(status_code=500, detail="Gagal menghasilkan insight.")
@@ -191,6 +218,8 @@ async def grading_insight(request: GradingInsightRequest):
 
     Provides market value context and improvement tips based on the grade.
     """
+    if not MODEL_STATUS["llm"]["ready"]:
+        raise HTTPException(status_code=503, detail="Layanan insight AI belum tersedia.")
     try:
         grade_probs = {
             "grade_a_prob": request.grade_a_prob,
@@ -203,7 +232,7 @@ async def grading_insight(request: GradingInsightRequest):
             grade_probs=grade_probs,
             sensor_data=request.sensor_data,
         )
-        return InsightResponse(insight=insight)
+        return {"insight": insight, "mode": MODEL_STATUS["llm"]["mode"]}
     except Exception as e:
         logger.error(f"Grading insight error: {e}")
         raise HTTPException(status_code=500, detail="Gagal menghasilkan insight.")
@@ -216,6 +245,8 @@ async def sensor_insight(request: SensorInsightRequest):
 
     Analyzes current field conditions and provides actionable farming advice.
     """
+    if not MODEL_STATUS["llm"]["ready"]:
+        raise HTTPException(status_code=503, detail="Layanan insight AI belum tersedia.")
     try:
         sensor_data = {
             "temperature": request.temperature,
@@ -224,7 +255,7 @@ async def sensor_insight(request: SensorInsightRequest):
             "ph": request.ph,
         }
         insight = await generate_sensor_insight(sensor_data)
-        return InsightResponse(insight=insight)
+        return {"insight": insight, "mode": MODEL_STATUS["llm"]["mode"]}
     except Exception as e:
         logger.error(f"Sensor insight error: {e}")
         raise HTTPException(status_code=500, detail="Gagal menghasilkan insight.")

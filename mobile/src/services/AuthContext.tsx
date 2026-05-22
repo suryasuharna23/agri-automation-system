@@ -23,10 +23,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const token = await SecureStore.getItemAsync("access_token");
-        console.log("🔧 [AuthContext] Checking auth — token found:", !!token);
+        if (__DEV__) console.log("🔧 [AuthContext] Checking auth — token found:", !!token);
         setIsAuthenticated(!!token);
       } catch (err) {
-        console.error("🔧 [AuthContext] Error reading token:", err);
+        if (__DEV__) console.error("🔧 [AuthContext] Error reading token:", err);
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -36,12 +36,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = useCallback(() => {
-    console.log("🔧 [AuthContext] login() called");
+    if (__DEV__) console.log("🔧 [AuthContext] login() called");
     setIsAuthenticated(true);
   }, []);
 
   const logout = useCallback(async () => {
-    console.log("🔧 [AuthContext] logout() called");
+    if (__DEV__) console.log("🔧 [AuthContext] logout() called");
     await SecureStore.deleteItemAsync("access_token");
     await SecureStore.deleteItemAsync("user");
     setIsAuthenticated(false);

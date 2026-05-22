@@ -36,10 +36,16 @@ async def grade_crop(
     image_bytes = await file.read()
     try:
         result = await grade_crop_image(image_bytes, file.filename or "image.jpg", str(crop_id))
-    except Exception:
+    except Exception as exc:
+        detail = "Layanan grading AI belum tersedia saat ini."
+        if getattr(exc, "response", None) is not None and exc.response.status_code == 400:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Gambar tidak valid. Pastikan file foto dapat dibaca.",
+            )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan AI tidak tersedia saat ini. Coba beberapa saat lagi.",
+            detail=detail,
         )
 
     crop.grade = CropGrade(result.grade)
@@ -57,10 +63,16 @@ async def diagnose(
     image_bytes = await file.read()
     try:
         result = await diagnose_plant_disease(image_bytes, file.filename or "image.jpg")
-    except Exception:
+    except Exception as exc:
+        detail = "Layanan diagnosis AI belum tersedia saat ini."
+        if getattr(exc, "response", None) is not None and exc.response.status_code == 400:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Gambar tidak valid. Pastikan file foto dapat dibaca.",
+            )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan AI tidak tersedia saat ini. Coba beberapa saat lagi.",
+            detail=detail,
         )
 
     record = DiagnosisRecord(
@@ -148,12 +160,12 @@ async def disease_insight_endpoint(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan insight tidak tersedia saat ini.",
+            detail="Layanan insight AI belum tersedia saat ini.",
         )
     if not insight:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan insight tidak tersedia saat ini.",
+            detail="Layanan insight AI belum tersedia saat ini.",
         )
     return InsightResponse(insight=insight)
 
@@ -183,12 +195,12 @@ async def grading_insight_endpoint(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan insight tidak tersedia saat ini.",
+            detail="Layanan insight AI belum tersedia saat ini.",
         )
     if not insight:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan insight tidak tersedia saat ini.",
+            detail="Layanan insight AI belum tersedia saat ini.",
         )
     return InsightResponse(insight=insight)
 
@@ -215,11 +227,11 @@ async def sensor_insight_endpoint(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan insight tidak tersedia saat ini.",
+            detail="Layanan insight AI belum tersedia saat ini.",
         )
     if not insight:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Layanan insight tidak tersedia saat ini.",
+            detail="Layanan insight AI belum tersedia saat ini.",
         )
     return InsightResponse(insight=insight)

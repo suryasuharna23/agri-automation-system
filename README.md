@@ -71,12 +71,21 @@ Command ini menjalankan:
 | Frontend Web | http://localhost:3000 |
 | Mobile Expo | http://localhost:8081 |
 
+Output Expo ditampilkan langsung di terminal supaya QR code Expo Go tetap
+terlihat. Mobile dijalankan dalam mode LAN, jadi pastikan ponsel dan komputer
+berada di jaringan yang sama. Backend dan AI service dibind ke `0.0.0.0`
+oleh launcher agar aplikasi mobile bisa mengakses API lewat IP LAN komputer.
+Launcher juga mengisi `EXPO_PUBLIC_API_URL` untuk Expo secara otomatis dari
+IP LAN aktif. Jika auto-detect salah, jalankan dengan `--lan-ip <IP>` atau
+`--mobile-api-url http://<IP>:8000/api/v1`.
+
 Opsi:
 
 ```bash
 python scripts/run_dev.py --no-mobile     # backend + AI + web
 python scripts/run_dev.py --no-web        # backend + AI + mobile
 python scripts/run_dev.py --backend-only  # backend saja
+python scripts/run_dev.py --lan-ip 192.168.1.10
 ```
 
 Launcher akan berhenti lebih awal jika `.env`, `.venv`, atau `node_modules`
@@ -235,24 +244,22 @@ SQLAlchemy 2.0+. Untuk beralih ke PostgreSQL, ubah `DATABASE_URL` di
 
 ## Mobile Debugging
 
-Semua request API tercatat di konsol Expo dengan prefix `🔧`:
-```
-🔧 [api.ts] Request: POST /ai/diagnose
-🔧 [api.ts]   Full URL: http://192.168.0.100:8000/api/v1/ai/diagnose
-🔧 [api.ts]   Has token in SecureStore: true
-🔧 [api.ts]   FormData parts: [{name: "file", uri: "...", type: "image/jpeg"}]
-🔧 [CameraPreview] ❌❌❌ ANALYZE FAILED
-🔧 [CameraPreview] Axios response status: 403
-🔧 [CameraPreview] Axios response data: {"detail":"Not authenticated"}
-```
-
+Log debug mobile hanya aktif saat `__DEV__`. Log tidak menampilkan preview
+token, header request penuh, URI foto, atau payload gambar. Error analisis
+ditampilkan ke pengguna sebagai kategori yang lebih jelas: sesi berakhir,
+koneksi gagal, AI belum tersedia, gambar tidak valid, atau error umum.
 ## AI Models
 
-| Model       | Arsitektur        | Source                                    | Fallback                     |
+| Model       | Arsitektur        | Source                                    | Availability                 |
 |-------------|-------------------|-------------------------------------------|------------------------------|
-| Grading     | EfficientNet-B0   | torchvision (ImageNet) + fine-tune opsional | Analisis warna heuristik    |
-| Disease     | MobileNetV2       | HuggingFace `Diginsa/Plant-Disease-Detection-Project` (38 kelas PlantVillage) | Static "Model Unavailable" |
-| LLM Insight | Gemini Flash Lite | `google-genai` (butuh `GEMINI_API_KEY`)    | Static fallback Bahasa Indonesia |
+| Grading     | EfficientNet-B0   | checkpoint `ai/models/checkpoints/grading_model.pth` | `/grade` 503 jika checkpoint tidak ada |
+| Disease     | MobileNetV2       | HuggingFace `Diginsa/Plant-Disease-Detection-Project` (38 kelas PlantVillage) | `/diagnose` 503 jika model tidak tersedia |
+| LLM Insight | Gemini Flash Lite | `google-genai` + `GEMINI_API_KEY`          | `/insight/*` 503 jika LLM tidak tersedia |
+
+AI service memakai readiness per fitur. Cek `GET /health` untuk status
+`diagnosis`, `grading`, dan `llm`. Untuk demo lokal, set
+`ENABLE_DEMO_AI_FALLBACK=true` di `ai/.env`; response fallback akan diberi
+marker `mode: "demo_fallback"`.
 
 ## IoT Data Flow
 

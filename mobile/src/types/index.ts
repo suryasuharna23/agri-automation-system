@@ -81,6 +81,7 @@ export interface GradingResult {
   grade_a_prob: number;
   grade_b_prob: number;
   grade_c_prob: number;
+  mode?: 'model' | 'demo_fallback';
 }
 
 export interface DiagnosisResult {
@@ -88,8 +89,10 @@ export interface DiagnosisResult {
   confidence: number;
   recommendation: string;
   is_healthy: boolean;
+  mode?: 'model' | 'demo_fallback';
 }
 
 export interface InsightResponse {
   insight: string;
+  mode?: 'model' | 'demo_fallback';
 }

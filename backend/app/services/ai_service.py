@@ -4,9 +4,8 @@ AI Service client — communicates with the AI Inference Server.
 The AI service (running on port 8001) provides:
 - /grade: Crop quality grading (Grade A/B/C) using EfficientNet-B0
 - /diagnose: Plant disease detection (38 classes) using MobileNetV2 from PlantVillage
+- /insight/*: Optional Gemini-backed farming insights
 - /health: Health check
-
-Both models are pretrained and require no additional training for deployment.
 """
 
 import logging
@@ -18,6 +17,24 @@ from app.config import settings
 from app.schemas.crop import GradingResult, DiagnosisResult
 
 logger = logging.getLogger(__name__)
+
+
+async def _post_insight(endpoint: str, payload: dict) -> dict:
+    """Post to an AI insight endpoint with feature-specific upstream logging."""
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(endpoint, json=payload)
+            response.raise_for_status()
+            return response.json()
+    except httpx.ConnectError:
+        logger.error(f"AI insight service unavailable for {endpoint}")
+        raise
+    except httpx.HTTPStatusError as e:
+        logger.error(f"AI insight service returned {e.response.status_code} for {endpoint}: {e.response.text}")
+        raise
+    except Exception as e:
+        logger.error(f"AI insight request failed for {endpoint}: {e}")
+        raise
 
 
 async def grade_crop_image(image_bytes: bytes, filename: str, crop_id: str) -> GradingResult:
@@ -108,13 +125,8 @@ async def get_disease_insight(
         "is_healthy": is_healthy,
         "sensor_data": sensor_data,
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            f"{settings.ai_service_url}/insight/disease",
-            json=payload,
-        )
-        response.raise_for_status()
-        return response.json()["insight"]
+    response = await _post_insight(f"{settings.ai_service_url}/insight/disease", payload)
+    return response["insight"]
 
 
 async def get_grading_insight(
@@ -136,13 +148,8 @@ async def get_grading_insight(
         "grade_c_prob": grade_probs.get("grade_c_prob", 0),
         "sensor_data": sensor_data,
     }
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            f"{settings.ai_service_url}/insight/grading",
-            json=payload,
-        )
-        response.raise_for_status()
-        return response.json()["insight"]
+    response = await _post_insight(f"{settings.ai_service_url}/insight/grading", payload)
+    return response["insight"]
 
 
 async def get_sensor_insight(sensor_data: dict) -> str:
@@ -151,10 +158,5 @@ async def get_sensor_insight(sensor_data: dict) -> str:
 
     Analyzes sensor readings and provides actionable farming advice.
     """
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(
-            f"{settings.ai_service_url}/insight/sensor",
-            json=sensor_data,
-        )
-        response.raise_for_status()
-        return response.json()["insight"]
+    response = await _post_insight(f"{settings.ai_service_url}/insight/sensor", sensor_data)
+    return response["insight"]

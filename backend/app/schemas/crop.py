@@ -47,6 +47,7 @@ class GradingResult(BaseModel):
     grade_a_prob: float
     grade_b_prob: float
     grade_c_prob: float
+    mode: str = "model"
 
 
 class DiagnosisResult(BaseModel):
@@ -54,6 +55,7 @@ class DiagnosisResult(BaseModel):
     confidence: float
     recommendation: str
     is_healthy: bool
+    mode: str = "model"
 
 
 class DiagnosisRecordResponse(BaseModel):

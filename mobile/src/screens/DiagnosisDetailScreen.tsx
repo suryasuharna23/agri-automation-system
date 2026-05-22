@@ -270,14 +270,18 @@ function buildCategories(result: DiagnosisResult): Category[] {
   ];
 }
 
+function formatSensorValue(value: number | null | undefined, suffix = '') {
+  if (typeof value !== 'number') return 'N/A';
+  return suffix ? `${value.toFixed(0)}${suffix}` : value.toFixed(1);
+}
+
 export default function DiagnosisDetailScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const insets = useSafeAreaInsets();
 
   // ── DEBUG ──────────────────────────────────────────
-  console.log("🔧 [DiagnosisDetail] ====== MOUNTED =====");
-  console.log("🔧 [DiagnosisDetail] Route params:", JSON.stringify(route.params, null, 2));
+  if (__DEV__) console.log("🔧 [DiagnosisDetail] ====== MOUNTED =====");
   // ───────────────────────────────────────────────────
 
   const result = route.params?.result;
@@ -340,7 +344,7 @@ export default function DiagnosisDetailScreen() {
                   source={require('../../assets/icons/icon-temp.png')}
                 />
                 <Text style={styles.sensorVal}>
-                  {sensorData?.temperature !== undefined ? `${sensorData.temperature.toFixed(0)}°` : '27°'}
+                  {formatSensorValue(sensorData?.temperature, '°')}
                 </Text>
               </View>
               <View style={styles.sensorCard}>
@@ -350,7 +354,7 @@ export default function DiagnosisDetailScreen() {
                   source={require('../../assets/icons/icon-ph.png')}
                 />
                 <Text style={styles.sensorVal}>
-                  {sensorData?.ph !== undefined ? sensorData.ph.toFixed(1) : '6.2'}
+                  {formatSensorValue(sensorData?.ph)}
                 </Text>
               </View>
             </View>
