@@ -1,183 +1,477 @@
-import React, { useState } from 'react';
+import * as React from "react";
+import { useState } from "react";
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import Input from '../components/Input';
-import Button from '../components/Button';
-import Header from '../components/Header';
-import { Theme } from '../theme';
-import { authApi } from '../services/api';
-import * as SecureStore from 'expo-secure-store';
-
-type Role = 'farmer' | 'buyer';
+  StyleSheet, View, Text, Image, TextInput,
+  TouchableOpacity, KeyboardAvoidingView, Platform,
+  ActivityIndicator, ScrollView,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
+import * as Location from "expo-location";
+import { authApi } from "../services/api";
 
 export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
 
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail]       = useState('');
-  const [phone, setPhone]       = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm]   = useState('');
-  const [role, setRole]         = useState<Role>('farmer');
+  const [email, setEmail]       = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone]       = useState("");
+  const [location, setLocation] = useState("");
+  const [locLoading, setLocLoading] = useState(false);
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw]     = useState(false);
   const [loading, setLoading]   = useState(false);
-  const [errors, setErrors]     = useState<Record<string, string>>({});
+  const [emailError, setEmailError] = useState("");
+  const [generalError, setGeneralError] = useState("");
+
+  const pickLocation = async () => {
+    setLocLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        setGeneralError("Izin lokasi ditolak. Aktifkan di pengaturan HP.");
+        return;
+      }
+      const coords = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      const [place] = await Location.reverseGeocodeAsync(coords.coords);
+      if (place) {
+        const parts = [place.street, place.district, place.subregion, place.region]
+          .filter(Boolean);
+        setLocation(parts.join(", "));
+      } else {
+        setLocation(`${coords.coords.latitude.toFixed(5)}, ${coords.coords.longitude.toFixed(5)}`);
+      }
+    } catch {
+      setGeneralError("Gagal mengambil lokasi. Coba lagi.");
+    } finally {
+      setLocLoading(false);
+    }
+  };
 
   const validate = () => {
-    const e: Record<string, string> = {};
-    if (!fullName.trim())  e.fullName = 'Nama lengkap wajib diisi.';
-    if (!email.trim())     e.email    = 'Email wajib diisi.';
-    if (!password)         e.password = 'Password wajib diisi.';
-    if (password.length < 8) e.password = 'Password minimal 8 karakter.';
-    if (password !== confirm) e.confirm = 'Konfirmasi password tidak cocok.';
-    setErrors(e);
-    return Object.keys(e).length === 0;
+    setEmailError("");
+    setGeneralError("");
+    if (!email.trim()) { setEmailError("Email wajib diisi."); return false; }
+    if (!fullName.trim()) { setGeneralError("Nama lengkap wajib diisi."); return false; }
+    if (!password) { setGeneralError("Password wajib diisi."); return false; }
+    if (password.length < 8) { setGeneralError("Password minimal 8 karakter."); return false; }
+    return true;
   };
 
   const handleRegister = async () => {
     if (!validate()) return;
     setLoading(true);
     try {
-      const data = await authApi.register({ email: email.trim(), password, full_name: fullName.trim(), role });
-      await SecureStore.setItemAsync('user', JSON.stringify(data.user));
-      console.log("🔧 [RegisterScreen] Registration successful — calling onLogin");
+      const data = await authApi.register({
+        email: email.trim(),
+        password,
+        full_name: fullName.trim(),
+        phone: phone.trim() || undefined,
+        role: "farmer",
+      });
+      await SecureStore.setItemAsync("user", JSON.stringify(data.user));
       onLogin?.();
-      // Navigation reset not needed — AppNavigator re-renders with auth stack
-    } catch (err: any) {
-      console.error("🔧 [RegisterScreen] Registration failed:", err?.response?.status, err?.message ?? err);
-      setErrors({ email: 'Email sudah terdaftar atau terjadi kesalahan.' });
+    } catch {
+      setEmailError("Email sudah terdaftar atau terjadi kesalahan.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Header title="Buat Akun Baru" onBack={() => navigation.goBack()} />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScrollView
-        contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Role selector */}
-        <Text style={styles.sectionLabel}>Saya adalah</Text>
-        <View style={styles.roleRow}>
-          <RoleCard
-            icon="🌾" label="Petani"
-            selected={role === 'farmer'}
-            onPress={() => setRole('farmer')}
+        <View style={styles.register}>
+          {/* Background gradient */}
+          <LinearGradient
+            style={StyleSheet.absoluteFill}
+            locations={[0, 1]}
+            colors={["rgba(217, 217, 217, 0)", "#fbf2d4"]}
+            start={{ x: 0.5, y: 1 }}
+            end={{ x: 0.5, y: 0 }}
           />
-          <RoleCard
-            icon="🏢" label="Pembeli B2B"
-            selected={role === 'buyer'}
-            onPress={() => setRole('buyer')}
+
+          {/* Decorative top-right assets — sama seperti Dashboard */}
+          <LinearGradient
+            style={styles.decoRight}
+            locations={[0, 1]}
+            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          >
+            <Image
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+              source={require("../../assets/images/deco-right.png")}
+            />
+          </LinearGradient>
+          <LinearGradient
+            style={styles.decoLeft}
+            locations={[0, 1]}
+            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          >
+            <Image
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+              source={require("../../assets/images/deco-left.png")}
+            />
+          </LinearGradient>
+          <Image
+            style={styles.plantImage}
+            resizeMode="cover"
+            source={require("../../assets/images/dashboard-plant.png")}
           />
-        </View>
 
-        {/* Fields */}
-        <Input
-          label="Nama Lengkap"
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="Nama Anda"
-          error={errors.fullName}
-          autoCapitalize="words"
-        />
-        <Input
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          placeholder="contoh@email.com"
-          error={errors.email}
-        />
-        <Input
-          label="Nomor Telepon (opsional)"
-          value={phone}
-          onChangeText={setPhone}
-          keyboardType="phone-pad"
-          placeholder="08xxxxxxxxxx"
-        />
-        <Input
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPw}
-          placeholder="Minimal 8 karakter"
-          error={errors.password}
-          hint="Gunakan kombinasi huruf, angka, dan simbol."
-          rightIcon={<Text style={styles.showPw}>{showPw ? 'Sembunyikan' : 'Tampilkan'}</Text>}
-          onRightIconPress={() => setShowPw((v) => !v)}
-        />
-        <Input
-          label="Konfirmasi Password"
-          value={confirm}
-          onChangeText={setConfirm}
-          secureTextEntry={!showPw}
-          placeholder="Ulangi password"
-          error={errors.confirm}
-        />
+          {/* Title */}
+          <View style={styles.mulaiBertaniLebihPintarParent}>
+            <Text style={[styles.mulaiBertaniLebih, styles.sobatPetaniTypo]}>
+              Mulai bertani lebih pintar,
+            </Text>
+            <Text style={[styles.sobatPetani, styles.sobatPetaniTypo]}>
+              Sobat Petani!
+            </Text>
+          </View>
 
-        <Button label="Daftar Sekarang" onPress={handleRegister} loading={loading} fullWidth size="lg" style={{ marginTop: 8 }} />
+          {/* Form section */}
+          <View style={styles.gabungBersamaAgriUntukAkseParent}>
+            <Text style={[styles.gabungBersamaAgri, styles.gabungBersamaAgriFlexBox]}>
+              Gabung bersama Agri untuk akses grading AI dan langsung terhubung dengan pembeli besar.
+            </Text>
 
-        <View style={styles.loginRow}>
-          <Text style={styles.loginLabel}>Sudah punya akun? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginLink}>Masuk</Text>
-          </TouchableOpacity>
+            <View style={styles.frameParent}>
+              <View style={[styles.frameGroup, styles.frameFlexBox1]}>
+
+                {/* Email */}
+                <View style={[styles.frameContainer, styles.frameFlexBox1]}>
+                  <View style={[styles.fieldWrapper, styles.wrapperBorder]}>
+                    <TextInput
+                      style={[styles.fieldText, { flex: 1 }]}
+                      placeholder="Email"
+                      placeholderTextColor="#55835e"
+                      value={email}
+                      onChangeText={(v) => { setEmail(v); setEmailError(""); }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      editable={!loading}
+                    />
+                  </View>
+                  {emailError ? (
+                    <Text style={styles.fieldError}>{emailError}</Text>
+                  ) : null}
+                </View>
+
+                {/* Nama lengkap */}
+                <View style={[styles.frameFlexBox1]}>
+                  <View style={[styles.fieldWrapper, styles.wrapperBorder]}>
+                    <TextInput
+                      style={[styles.fieldText, { flex: 1 }]}
+                      placeholder="Nama lengkap (sesuai KTP)"
+                      placeholderTextColor="#55835e"
+                      value={fullName}
+                      onChangeText={setFullName}
+                      autoCapitalize="words"
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+
+                {/* Nomor telepon */}
+                <View style={[styles.frameFlexBox1]}>
+                  <View style={[styles.fieldWrapper, styles.wrapperBorder]}>
+                    <TextInput
+                      style={[styles.fieldText, { flex: 1 }]}
+                      placeholder="Nomor telepon"
+                      placeholderTextColor="#55835e"
+                      value={phone}
+                      onChangeText={setPhone}
+                      keyboardType="phone-pad"
+                      editable={!loading}
+                    />
+                  </View>
+                </View>
+
+                {/* Lokasi pertanian — manual (kiri) + GPS (kanan) */}
+                <View style={styles.locationRow}>
+                  <View style={[styles.locationManual, styles.wrapperBorder]}>
+                    <TextInput
+                      style={[styles.fieldText, { flex: 1 }]}
+                      placeholder="Lokasi pertanian"
+                      placeholderTextColor="#55835e"
+                      value={location}
+                      onChangeText={setLocation}
+                      autoCapitalize="words"
+                      editable={!loading && !locLoading}
+                    />
+                    {location ? (
+                      <TouchableOpacity onPress={() => setLocation("")}>
+                        <Text style={styles.clearBtn}>✕</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.locationGps, styles.wrapperBorder]}
+                    onPress={pickLocation}
+                    disabled={locLoading || loading}
+                    activeOpacity={0.8}
+                  >
+                    {locLoading
+                      ? <ActivityIndicator size="small" color="#fbf2d4" />
+                      : <Text style={styles.gpsBtnText}>📍 GPS</Text>
+                    }
+                  </TouchableOpacity>
+                </View>
+
+                {/* Password */}
+                <View style={[styles.frameFlexBox1]}>
+                  <View style={[styles.passwordParent, styles.wrapperBorder]}>
+                    <TextInput
+                      style={[styles.fieldText, { flex: 1 }]}
+                      placeholder="Password"
+                      placeholderTextColor="#55835e"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPw}
+                      editable={!loading}
+                    />
+                    <TouchableOpacity onPress={() => setShowPw((v) => !v)}>
+                      <Text style={styles.eyeToggle}>{showPw ? "🙈" : "👁"}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+              </View>
+
+              {/* Register button + login link */}
+              <View style={[styles.frameParent3, styles.frameFlexBox1]}>
+                {generalError ? (
+                  <Text style={styles.fieldError}>{generalError}</Text>
+                ) : null}
+
+                <TouchableOpacity
+                  style={[styles.registrasiWrapper, styles.wrapperBorder]}
+                  onPress={handleRegister}
+                  disabled={loading}
+                  activeOpacity={0.8}
+                >
+                  {loading
+                    ? <ActivityIndicator color="#fbf2d4" size="small" />
+                    : <Text style={styles.registrasi}>REGISTRASI</Text>
+                  }
+                </TouchableOpacity>
+
+                <Text style={[styles.sudahMemilikiAkunContainer, styles.lupaKataSandiTypo]}>
+                  {"Sudah memiliki akun? "}
+                  <Text
+                    style={styles.loginLink}
+                    onPress={() => navigation.navigate("Login")}
+                  >
+                    Login
+                  </Text>
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-function RoleCard({ icon, label, selected, onPress }: { icon: string; label: string; selected: boolean; onPress: () => void }) {
-  return (
-    <TouchableOpacity
-      style={[styles.roleCard, selected && styles.roleCardSelected]}
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <Text style={styles.roleIcon}>{icon}</Text>
-      <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Theme.colors.bgBase },
-  container: { flexGrow: 1, paddingHorizontal: Theme.spacing.lg, paddingTop: Theme.spacing.lg },
-
-  sectionLabel: {
-    fontSize: Theme.font.sizeSm,
-    fontWeight: Theme.font.weightMedium,
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.spacing.sm,
+  register: {
+    backgroundColor: "#fefdf9",
+    overflow: "hidden",
+    height: 852,
+    width: "100%",
   },
-  roleRow: { flexDirection: 'row', gap: Theme.spacing.sm, marginBottom: Theme.spacing.lg },
-  roleCard: {
+
+  // Deco assets
+  decoRight: {
+    position: "absolute",
+    left: 225,
+    top: -92,
+    width: 180,
+    height: 220,
+  },
+  decoLeft: {
+    position: "absolute",
+    left: 152,
+    top: -150,
+    width: 160,
+    height: 200,
+  },
+  plantImage: {
+    position: "absolute",
+    top: -69,
+    left: 246,
+    width: 203,
+    height: 247,
+  },
+
+  // Title
+  mulaiBertaniLebihPintarParent: {
+    position: "absolute",
+    top: 80,
+    left: 23,
+    width: 243,
+    justifyContent: "flex-end",
+    gap: 12,
+    alignItems: "center",
+  },
+  sobatPetaniTypo: {
+    fontFamily: "FacultyGlyphic_400Regular",
+    textAlign: "left",
+    color: "#0e4719",
+    alignSelf: "stretch",
+  },
+  mulaiBertaniLebih: {
+    fontSize: 32,
+  },
+  sobatPetani: {
+    fontSize: 40,
+  },
+
+  // Form section
+  gabungBersamaAgriUntukAkseParent: {
+    position: "absolute",
+    top: 310,
+    left: 23,
+    right: 23,
+    alignItems: "flex-end",
+    gap: 36,
+  },
+  gabungBersamaAgriFlexBox: {
+    textAlign: "center",
+    alignSelf: "stretch",
+  },
+  gabungBersamaAgri: {
+    fontSize: 16,
+    fontFamily: "FacultyGlyphic_400Regular",
+    color: "#0e4719",
+    textAlign: "center",
+  },
+  frameParent: {
+    gap: 24,
+    alignItems: "center",
+    alignSelf: "stretch",
+  },
+  frameGroup: {
+    gap: 16,
+  },
+  frameFlexBox1: {
+    alignItems: "flex-start",
+    alignSelf: "stretch",
+  },
+  frameContainer: {
+    gap: 4,
+  },
+  wrapperBorder: {
+    padding: 12,
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#0e4719",
+    borderStyle: "solid",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  fieldWrapper: {
+    height: 41,
+    justifyContent: "space-between",
+    backgroundColor: "#dbe3dd",
+    alignSelf: "stretch",
+  },
+  fieldText: {
+    color: "#55835e",
+    fontWeight: "600",
+    fontFamily: "FacultyGlyphic_400Regular",
+    fontSize: 14,
+    textAlign: "left",
+  },
+  fieldError: {
+    fontSize: 10,
+    color: "#923333",
+    fontWeight: "600",
+    fontFamily: "FacultyGlyphic_400Regular",
+    alignSelf: "stretch",
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignSelf: "stretch",
+    gap: 8,
+  },
+  locationManual: {
     flex: 1,
-    paddingVertical: 16, paddingHorizontal: 12,
-    borderRadius: Theme.radius.md,
-    borderWidth: 1.5,
-    borderColor: Theme.colors.border,
-    backgroundColor: Theme.colors.bgCard,
-    alignItems: 'center',
-    gap: 6,
+    height: 41,
+    backgroundColor: "#dbe3dd",
+    justifyContent: "space-between",
   },
-  roleCardSelected: { borderColor: Theme.colors.grass[600], backgroundColor: Theme.colors.grass[50] },
-  roleIcon: { fontSize: 28 },
-  roleLabel: { fontSize: Theme.font.sizeSm, fontWeight: Theme.font.weightMedium, color: Theme.colors.textMuted },
-  roleLabelSelected: { color: Theme.colors.grass[700] },
-
-  showPw: { fontSize: Theme.font.sizeXs, color: Theme.colors.grass[600], fontWeight: Theme.font.weightMedium },
-
-  loginRow: { flexDirection: 'row', justifyContent: 'center', marginTop: Theme.spacing.lg, paddingBottom: Theme.spacing.md },
-  loginLabel: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted },
-  loginLink:  { fontSize: Theme.font.sizeSm, color: Theme.colors.grass[600], fontWeight: Theme.font.weightSemibold },
+  locationGps: {
+    height: 41,
+    backgroundColor: "#0e4719",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 14,
+  },
+  clearBtn: {
+    fontSize: 14,
+    color: "#55835e",
+    paddingHorizontal: 4,
+  },
+  gpsBtnText: {
+    fontSize: 12,
+    fontFamily: "FacultyGlyphic_400Regular",
+    fontWeight: "600",
+    color: "#fbf2d4",
+  },
+  passwordParent: {
+    height: 44,
+    justifyContent: "space-between",
+    backgroundColor: "#dbe3dd",
+    alignSelf: "stretch",
+  },
+  eyeToggle: {
+    fontSize: 18,
+    color: "#0e4719",
+  },
+  lupaKataSandiTypo: {
+    fontSize: 12,
+    fontFamily: "FacultyGlyphic_400Regular",
+    fontWeight: "600",
+    color: "#0e4719",
+  },
+  frameParent3: {
+    gap: 8,
+  },
+  registrasiWrapper: {
+    backgroundColor: "#0e4719",
+    justifyContent: "center",
+    borderColor: "#0e4719",
+    borderRadius: 8,
+    alignSelf: "stretch",
+  },
+  registrasi: {
+    fontWeight: "700",
+    fontFamily: "FacultyGlyphic_400Regular",
+    color: "#fbf2d4",
+    fontSize: 14,
+    textAlign: "left",
+  },
+  sudahMemilikiAkunContainer: {
+    textAlign: "center",
+    alignSelf: "stretch",
+  },
+  loginLink: {
+    textDecorationLine: "underline",
+  },
 });

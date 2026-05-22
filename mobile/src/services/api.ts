@@ -122,7 +122,7 @@ export const authApi = {
     console.log("🔧 [authApi.login] Token stored, user:", res.data.user?.full_name, "role:", res.data.user?.role);
     return res.data;
   },
-  register: async (payload: { email: string; password?: string; full_name: string; role: string }) => {
+  register: async (payload: { email: string; password?: string; full_name: string; phone?: string; role: string }) => {
     console.log("🔧 [authApi.register] Registering:", payload.email, "role:", payload.role);
     const res = await api.post("/auth/register", payload);
     await SecureStore.setItemAsync("access_token", res.data.access_token);

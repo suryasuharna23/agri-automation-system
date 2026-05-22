@@ -1,99 +1,184 @@
-import React, { useState } from 'react';
+import * as React from "react";
+import { useState } from "react";
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Image,
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import Input from '../components/Input';
-import Button from '../components/Button';
-import { Theme } from '../theme';
-import { authApi } from '../services/api';
-import * as SecureStore from 'expo-secure-store';
+  StyleSheet, View, Text, Image, TextInput,
+  TouchableOpacity, KeyboardAvoidingView, Platform,
+  ActivityIndicator, ScrollView,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
+import { authApi } from "../services/api";
 
 export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
   const navigation = useNavigation<any>();
-  const insets = useSafeAreaInsets();
 
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw]     = useState(false);
   const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [error, setError]       = useState("");
 
   const handleLogin = async () => {
-    if (!email.trim() || !password) { setError('Email dan password wajib diisi.'); return; }
+    if (!email.trim() || !password) {
+      setError("Email dan password wajib diisi.");
+      return;
+    }
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const data = await authApi.login(email.trim(), password);
-      await SecureStore.setItemAsync('user', JSON.stringify(data.user));
-      console.log("🔧 [LoginScreen] Login successful — calling onLogin");
+      await SecureStore.setItemAsync("user", JSON.stringify(data.user));
       onLogin?.();
-      // Navigation reset not needed — AppNavigator re-renders with auth stack
-    } catch (err: any) {
-      console.error("🔧 [LoginScreen] Login failed:", err?.response?.status, err?.message ?? err);
-      setError('Email atau password salah. Silakan coba lagi.');
+    } catch {
+      setError("Email atau password salah.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScrollView
-        contentContainerStyle={[styles.container, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo / brand */}
-        <View style={styles.brand}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>🌱</Text>
+        <View style={styles.login}>
+          <LinearGradient
+            style={styles.loginChild}
+            locations={[0, 1]}
+            colors={["rgba(217, 217, 217, 0)", "#fbf2d4"]}
+            start={{ x: 0.5, y: 1 }}
+            end={{ x: 0.5, y: 0 }}
+          />
+
+          <View style={styles.selamatDatangKembaliParent}>
+            <Text style={[styles.selamatDatangKembali, styles.sobatPetaniTypo]}>
+              Selamat {"\n"}datang kembali,
+            </Text>
+            <Text style={[styles.sobatPetani, styles.sobatPetaniTypo]}>
+              Sobat Petani!
+            </Text>
           </View>
-          <Text style={styles.appName}>Agri</Text>
-          <Text style={styles.tagline}>Platform Pertanian Cerdas</Text>
-        </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Text style={styles.formTitle}>Masuk ke Akun</Text>
+          <View style={styles.masukUntukMemantauLahanMeParent}>
+            <Text style={[styles.masukUntukMemantau, styles.masukUntukMemantauFlexBox]}>
+              Masuk untuk memantau lahan, mengelola hasil panen, dan melanjutkan aktivitas pertanianmu.
+            </Text>
 
-          <Input
-            label="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            placeholder="contoh@email.com"
+            <View style={styles.frameParent}>
+              <View style={[styles.frameGroup, styles.frameFlexBox1]}>
+
+                {/* Email */}
+                <View style={[styles.frameContainer, styles.frameFlexBox]}>
+                  <View style={[styles.usernameWrapper, styles.wrapperBorder]}>
+                    <TextInput
+                      style={[styles.username, styles.usernameTypo, { flex: 1 }]}
+                      placeholder="Email"
+                      placeholderTextColor="#55835e"
+                      value={email}
+                      onChangeText={(v) => { setEmail(v); setError(""); }}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      editable={!loading}
+                    />
+                  </View>
+                  {error ? (
+                    <Text style={[styles.usernameTidakDitemukan, styles.usernameTypo]}>
+                      {error}
+                    </Text>
+                  ) : null}
+                </View>
+
+                {/* Password */}
+                <View style={[styles.frameView, styles.frameFlexBox]}>
+                  <View style={[styles.passwordParent, styles.wrapperBorder]}>
+                    <TextInput
+                      style={[styles.username, styles.usernameTypo, { flex: 1 }]}
+                      placeholder="Password"
+                      placeholderTextColor="#55835e"
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry={!showPw}
+                      editable={!loading}
+                    />
+                    <TouchableOpacity onPress={() => setShowPw((v) => !v)}>
+                      <Text style={styles.eyeToggle}>{showPw ? "🙈" : "👁"}</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <TouchableOpacity>
+                    <Text style={[styles.lupaKataSandi, styles.lupaKataSandiTypo]}>
+                      Lupa kata sandi?
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+              </View>
+
+              {/* Login button + register link */}
+              <View style={[styles.frameParent2, styles.frameFlexBox1]}>
+                <TouchableOpacity
+                  style={[styles.loginWrapper, styles.wrapperBorder]}
+                  onPress={handleLogin}
+                  disabled={loading}
+                  activeOpacity={0.8}
+                >
+                  {loading
+                    ? <ActivityIndicator color="#fbf2d4" size="small" />
+                    : <Text style={[styles.login2, styles.usernameTypo]}>LOGIN</Text>
+                  }
+                </TouchableOpacity>
+
+                <Text style={[styles.belumPunyaAkunContainer, styles.lupaKataSandiTypo]}>
+                  {"Belum punya akun Agri? "}
+                  <Text
+                    style={styles.daftarDiSini}
+                    onPress={() => navigation.navigate("Register")}
+                  >
+                    Daftar di sini
+                  </Text>
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Decorative assets — sama seperti Dashboard */}
+          <Image
+            style={styles.loginItem}
+            resizeMode="cover"
+            source={require("../../assets/images/dashboard-plant.png")}
           />
-          <Input
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPw}
-            placeholder="Masukkan password"
-            rightIcon={
-              <Text style={styles.showPw}>{showPw ? 'Sembunyikan' : 'Tampilkan'}</Text>
-            }
-            onRightIconPress={() => setShowPw((v) => !v)}
-          />
-
-          {error ? <Text style={styles.errorMsg}>{error}</Text> : null}
-
-          <Button label="Masuk" onPress={handleLogin} loading={loading} fullWidth size="lg" style={{ marginTop: 8 }} />
-
-          <TouchableOpacity style={styles.forgotBtn}>
-            <Text style={styles.forgotText}>Lupa Password?</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Register CTA */}
-        <View style={styles.registerRow}>
-          <Text style={styles.registerLabel}>Belum punya akun? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={styles.registerLink}>Daftar Sekarang</Text>
-          </TouchableOpacity>
+          <LinearGradient
+            style={styles.wrapper}
+            locations={[0, 1]}
+            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          >
+            <Image
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+              source={require("../../assets/images/deco-right.png")}
+            />
+          </LinearGradient>
+          <LinearGradient
+            style={styles.container}
+            locations={[0, 1]}
+            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          >
+            <Image
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+              source={require("../../assets/images/deco-left.png")}
+            />
+          </LinearGradient>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -101,41 +186,177 @@ export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: Theme.colors.bgBase },
-  container: { flexGrow: 1, paddingHorizontal: Theme.spacing.lg, justifyContent: 'center' },
-
-  brand: { alignItems: 'center', marginBottom: Theme.spacing.xl },
-  logoCircle: {
-    width: 72, height: 72,
-    borderRadius: Theme.radius.full,
-    backgroundColor: Theme.colors.grass[600],
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 12,
-    ...Theme.shadow.md,
+  sobatPetaniTypo: {
+    fontFamily: "FacultyGlyphic_400Regular",
+    textAlign: "left",
+    color: "#0e4719",
+    alignSelf: "stretch",
   },
-  logoText: { fontSize: 32 },
-  appName:  { fontSize: Theme.font.size3xl, fontWeight: Theme.font.weightBold, color: Theme.colors.grass[700] },
-  tagline:  { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted, marginTop: 4 },
-
-  form: {
-    backgroundColor: Theme.colors.bgCard,
-    borderRadius: Theme.radius.xl,
-    padding: Theme.spacing.lg,
-    ...Theme.shadow.sm,
-    marginBottom: Theme.spacing.lg,
+  masukUntukMemantauFlexBox: {
+    textAlign: "center",
+    alignSelf: "stretch",
   },
-  formTitle: {
-    fontSize: Theme.font.sizeXl,
-    fontWeight: Theme.font.weightBold,
-    color: Theme.colors.textPrimary,
-    marginBottom: Theme.spacing.lg,
+  frameFlexBox1: {
+    alignSelf: "stretch",
+    alignItems: "flex-start",
   },
-  showPw: { fontSize: Theme.font.sizeXs, color: Theme.colors.grass[600], fontWeight: Theme.font.weightMedium },
-  errorMsg: { fontSize: Theme.font.sizeSm, color: Theme.colors.danger, marginBottom: Theme.spacing.sm },
-  forgotBtn: { alignItems: 'center', marginTop: Theme.spacing.md },
-  forgotText: { fontSize: Theme.font.sizeSm, color: Theme.colors.grass[600] },
+  frameFlexBox: {
+    alignSelf: "stretch",
+    alignItems: "flex-start",
+  },
+  wrapperBorder: {
+    padding: 12,
+    flexDirection: "row",
+    borderWidth: 1,
+    borderColor: "#0e4719",
+    borderStyle: "solid",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  usernameTypo: {
+    fontFamily: "FacultyGlyphic_400Regular",
+    textAlign: "left",
+  },
+  lupaKataSandiTypo: {
+    fontSize: 12,
+    fontFamily: "FacultyGlyphic_400Regular",
+    fontWeight: "600",
+    color: "#0e4719",
+  },
+  login: {
+    backgroundColor: "#fefdf9",
+    overflow: "hidden",
+    height: 852,
+    width: "100%",
+  },
+  loginChild: {
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "transparent",
+    position: "absolute",
+    height: 852,
+  },
+  selamatDatangKembaliParent: {
+    top: 80,
+    width: 243,
+    gap: 12,
+    alignItems: "flex-start",
+    left: 23,
+    position: "absolute",
+  },
+  selamatDatangKembali: {
+    fontSize: 32,
+    textAlign: "left",
+    color: "#0e4719",
+  },
+  sobatPetani: {
+    fontSize: 40,
+    textAlign: "left",
+    color: "#0e4719",
+  },
+  masukUntukMemantauLahanMeParent: {
+    top: 481,
+    left: 23,
+    right: 23,
+    alignItems: "flex-end",
+    gap: 36,
+    position: "absolute",
+  },
+  masukUntukMemantau: {
+    fontSize: 16,
+    fontFamily: "FacultyGlyphic_400Regular",
+    color: "#0e4719",
+  },
+  frameParent: {
+    gap: 24,
+    alignItems: "center",
+    alignSelf: "stretch",
+  },
+  frameGroup: {
+    gap: 16,
+  },
+  frameContainer: {
+    gap: 4,
+  },
+  usernameWrapper: {
+    height: 41,
+    justifyContent: "space-between",
+    backgroundColor: "#dbe3dd",
+    alignSelf: "stretch",
+  },
+  username: {
+    color: "#55835e",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  usernameTidakDitemukan: {
+    fontSize: 10,
+    color: "#923333",
+    fontWeight: "600",
+    fontFamily: "FacultyGlyphic_400Regular",
+    alignSelf: "stretch",
+  },
+  frameView: {
+    gap: 6,
+  },
+  passwordParent: {
+    height: 44,
+    justifyContent: "space-between",
+    backgroundColor: "#dbe3dd",
+    alignSelf: "stretch",
+  },
+  eyeToggle: {
+    fontSize: 18,
+    color: "#0e4719",
+  },
+  lupaKataSandi: {
+    alignSelf: "stretch",
+    textAlign: "left",
+  },
+  frameParent2: {
+    gap: 8,
+  },
+  loginWrapper: {
+    backgroundColor: "#0e4719",
+    justifyContent: "center",
+    borderColor: "#0e4719",
+    borderRadius: 8,
+    alignSelf: "stretch",
+  },
+  login2: {
+    fontWeight: "700",
+    color: "#fbf2d4",
+    fontSize: 14,
+  },
+  belumPunyaAkunContainer: {
+    textAlign: "center",
+    alignSelf: "stretch",
+  },
+  daftarDiSini: {
+    textDecorationLine: "underline",
+  },
 
-  registerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
-  registerLabel: { fontSize: Theme.font.sizeSm, color: Theme.colors.textMuted },
-  registerLink: { fontSize: Theme.font.sizeSm, color: Theme.colors.grass[600], fontWeight: Theme.font.weightSemibold },
+  // Deco assets — posisi & ukuran sama dengan Dashboard
+  loginItem: {
+    position: "absolute",
+    top: -69,
+    left: 246,
+    width: 203,
+    height: 247,
+  },
+  wrapper: {
+    position: "absolute",
+    left: 225,
+    top: -92,
+    width: 180,
+    height: 220,
+  },
+  container: {
+    position: "absolute",
+    left: 152,
+    top: -150,
+    width: 160,
+    height: 200,
+  },
 });
