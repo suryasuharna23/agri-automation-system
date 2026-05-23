@@ -54,8 +54,9 @@ async def lifespan(app: FastAPI):
     try:
         grading_model = get_grading_model()
         if grading_model.ready:
-            MODEL_STATUS["grading"] = {"ready": True, "mode": "model", "error": None}
-            logger.info("Grading model loaded.")
+            mode = "model" if llm_ready() or grading_model.has_checkpoint else "demo_fallback"
+            MODEL_STATUS["grading"] = {"ready": True, "mode": mode, "error": None}
+            logger.info(f"Grading model loaded (mode: {mode}).")
         elif _demo_enabled():
             MODEL_STATUS["grading"] = {"ready": True, "mode": "demo_fallback", "error": "Grading checkpoint missing"}
             logger.warning("Grading model unavailable; demo fallback enabled.")
@@ -64,10 +65,18 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         MODEL_STATUS["grading"] = {"ready": False, "mode": "unavailable", "error": str(e)}
         logger.error(f"Failed to load grading model: {e}")
+        
     try:
-        get_disease_model()
-        MODEL_STATUS["diagnosis"] = {"ready": True, "mode": "model", "error": None}
-        logger.info("Disease model loaded.")
+        disease_model = get_disease_model()
+        if disease_model.ready:
+            mode = "model" if llm_ready() or (disease_model.model is not None) else "demo_fallback"
+            MODEL_STATUS["diagnosis"] = {"ready": True, "mode": mode, "error": None}
+            logger.info(f"Disease model loaded (mode: {mode}).")
+        elif _demo_enabled():
+            MODEL_STATUS["diagnosis"] = {"ready": True, "mode": "demo_fallback", "error": "Disease model missing"}
+            logger.warning("Disease model unavailable; demo fallback enabled.")
+        else:
+            MODEL_STATUS["diagnosis"] = {"ready": False, "mode": "unavailable", "error": "Disease model missing"}
     except Exception as e:
         MODEL_STATUS["diagnosis"] = {"ready": False, "mode": "unavailable", "error": str(e)}
         logger.error(f"Failed to load disease model: {e}")
@@ -108,8 +117,12 @@ async def grade(file: UploadFile = File(...), crop_id: str = Form(...)):
     try:
         model = get_grading_model()
         if model.ready:
-            result = model.predict(image)
-            return {"crop_id": crop_id, "mode": "model", **result}
+            try:
+                result = model.predict(image)
+                mode = "model" if llm_ready() or model.has_checkpoint else "demo_fallback"
+                return {"crop_id": crop_id, "mode": mode, **result}
+            except ValueError as val_err:
+                raise HTTPException(status_code=400, detail=str(val_err))
         if _demo_enabled():
             result = model.predict_demo(image)
             return {"crop_id": crop_id, "mode": "demo_fallback", **result}
@@ -138,8 +151,14 @@ async def diagnose(file: UploadFile = File(...)):
     try:
         if not MODEL_STATUS["diagnosis"]["ready"]:
             raise HTTPException(status_code=503, detail="Model diagnosis belum tersedia.")
-        result = get_disease_model().predict(image)
-        return {"mode": "model", **result}
+        
+        model = get_disease_model()
+        try:
+            result = model.predict(image)
+            mode = "model" if llm_ready() or (model.model is not None) else "demo_fallback"
+            return {"mode": mode, **result}
+        except ValueError as val_err:
+            raise HTTPException(status_code=400, detail=str(val_err))
     except HTTPException:
         raise
     except Exception as e:

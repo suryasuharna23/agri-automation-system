@@ -1,72 +1,87 @@
 """
-Crop Quality Grading Model using EfficientNet-B0.
+Crop Quality Grading Model using Google Gemini or local EfficientNet-B0 fallback.
 
-This expects a local fine-tuned checkpoint with a custom classifier head for a
-tomato freshness/quality dataset.
-
-The grading is specialized for tomato (tomat) which is a common
-Indonesian horticulture commodity.
+Uses Gemini multimodal API to grade crop quality (Grade A/B/C) and reject non-crop images.
+Falls back to local fine-tuned EfficientNet-B0 checkpoint if Gemini is not ready.
 """
 
 import logging
 from pathlib import Path
-
-import torch
-import torch.nn as nn
-from torchvision import models, transforms
 from PIL import Image
 import numpy as np
+from pydantic import BaseModel, Field
+from typing import Optional
+
+from ai.inference.llm_insight import llm_ready, demo_fallback_enabled, _get_client
 
 logger = logging.getLogger(__name__)
 
 GRADES = ["A", "B", "C"]
 MODEL_PATH = Path(__file__).parent.parent / "models" / "checkpoints" / "grading_model.pth"
 
-# Image preprocessing for EfficientNet-B0
-_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
 
-
-def _build_model(num_classes: int = 3) -> nn.Module:
-    """Build EfficientNet-B0 with custom classifier for 3-class grading."""
-    model = models.efficientnet_b0(weights=None)
-    model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
-    return model
+class GeminiGradingResult(BaseModel):
+    is_valid_crop: bool = Field(
+        description="Apakah gambar menampilkan produk hasil panen hortikultura/komoditas pertanian yang valid? Set ke True jika ya, set ke False jika bukan (misal: wajah manusia, pemandangan acak, gambar barang, teks, hewan, atau noise)."
+    )
+    error_message: Optional[str] = Field(
+        None,
+        description="Pesan error/penolakan dalam Bahasa Indonesia jika is_valid_crop adalah False (misal: 'Gambar terdeteksi bukan hasil panen komoditas pertanian. Silakan ambil foto komoditas yang benar.')."
+    )
+    grade: Optional[str] = Field(
+        None,
+        description="Kelas kualitas hasil panen: 'A' (kualitas premium/segar/bagus), 'B' (menengah/standar), atau 'C' (buruk/rusak/layak dibuang)."
+    )
+    confidence: Optional[float] = Field(
+        None,
+        description="Tingkat keyakinan grading (0.0 sampai 1.0)."
+    )
+    grade_a_prob: float = Field(0.0, description="Probabilitas masuk kelas A (0.0 s.d. 1.0).")
+    grade_b_prob: float = Field(0.0, description="Probabilitas masuk kelas B (0.0 s.d. 1.0).")
+    grade_c_prob: float = Field(0.0, description="Probabilitas masuk kelas C (0.0 s.d. 1.0).")
 
 
 class GradingModel:
     """
     Crop quality grading model.
 
-    Uses EfficientNet-B0 with a fine-tuned classifier checkpoint.
+    Uses Gemini API for grading or falls back to EfficientNet-B0.
     """
 
     def __init__(self):
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = _build_model()
         self.has_checkpoint = False
+        self.model = None
 
-        if MODEL_PATH.exists():
-            try:
-                self.model.load_state_dict(
-                    torch.load(MODEL_PATH, map_location=self.device, weights_only=True)
-                )
-                self.has_checkpoint = True
-                logger.info("Grading model checkpoint loaded successfully.")
-            except Exception as e:
-                raise RuntimeError(f"Failed to load grading checkpoint at {MODEL_PATH}: {e}") from e
-        else:
-            logger.warning(f"Grading checkpoint not found at {MODEL_PATH}. Grading model is unavailable.")
+        if not llm_ready() and not demo_fallback_enabled():
+            logger.info("Gemini API not ready. Attempting to load local PyTorch grading model...")
+            if MODEL_PATH.exists():
+                try:
+                    import torch
+                    import torch.nn as nn
+                    from torchvision import models
 
-        self.model.to(self.device)
-        self.model.eval()
+                    def _build_model(num_classes: int = 3) -> nn.Module:
+                        model = models.efficientnet_b0(weights=None)
+                        model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+                        return model
+
+                    self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+                    self.model = _build_model()
+                    self.model.load_state_dict(
+                        torch.load(MODEL_PATH, map_location=self.device, weights_only=True)
+                    )
+                    self.has_checkpoint = True
+                    self.model.to(self.device)
+                    self.model.eval()
+                    logger.info("Grading model checkpoint loaded successfully.")
+                except Exception as e:
+                    logger.error(f"Failed to load grading checkpoint at {MODEL_PATH}: {e}")
+            else:
+                logger.warning(f"Grading checkpoint not found at {MODEL_PATH}. Grading model is unavailable.")
 
     @property
     def ready(self) -> bool:
-        return self.has_checkpoint
+        return llm_ready() or demo_fallback_enabled() or self.has_checkpoint
 
     def predict(self, image: Image.Image) -> dict:
         """
@@ -74,12 +89,58 @@ class GradingModel:
 
         Returns dict with grade (A/B/C), confidence, and per-class probabilities.
         """
-        if not self.has_checkpoint:
-            raise RuntimeError(
-                "Grading model checkpoint not loaded. "
-                "Provide a fine-tuned checkpoint at: " + str(MODEL_PATH)
+        if llm_ready():
+            return self._predict_with_gemini(image)
+        elif self.has_checkpoint:
+            return self._predict_with_model(image)
+        elif demo_fallback_enabled():
+            return self.predict_demo(image)
+        else:
+            raise RuntimeError("Grading model is not ready (Gemini not configured and checkpoint missing).")
+
+    def _predict_with_gemini(self, image: Image.Image) -> dict:
+        client = _get_client()
+        if client is None:
+            raise RuntimeError("Gemini client is not initialized.")
+
+        from google.genai import types
+
+        prompt = (
+            "Lakukan grading kualitas komoditas hasil panen hortikultura pada gambar ini.\n"
+            "Aturan:\n"
+            "1. Pastikan gambar berisi hasil panen hortikultura/komoditas pertanian yang jelas (misal: tomat, cabai, sayuran, dsb). Jika tidak, set 'is_valid_crop' = False dan isi 'error_message' dengan penjelasan singkat dalam Bahasa Indonesia.\n"
+            "2. Jika gambar valid, set 'is_valid_crop' = True, tentukan 'grade' ('A' / 'B' / 'C'), 'confidence' (0.0 s.d 1.0), serta berikan estimasi probabilitas masuk kelas A, B, dan C (pastikan jumlahnya mendekati 1.0)."
+        )
+
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=[image, prompt],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=GeminiGradingResult,
+                ),
             )
-        return self._predict_with_model(image)
+            result = GeminiGradingResult.model_validate_json(response.text)
+            
+            if not result.is_valid_crop:
+                raise ValueError(result.error_message or "Gambar terdeteksi bukan hasil panen komoditas.")
+
+            # Make sure grade is uppercase and valid
+            grade = (result.grade or "A").upper()
+            if grade not in GRADES:
+                grade = "A"
+
+            return {
+                "grade": grade,
+                "confidence": round(result.confidence or 0.95, 4),
+                "grade_a_prob": round(result.grade_a_prob, 4),
+                "grade_b_prob": round(result.grade_b_prob, 4),
+                "grade_c_prob": round(result.grade_c_prob, 4),
+            }
+        except Exception as e:
+            logger.error(f"Gemini grading API call failed: {e}")
+            raise
 
     def predict_demo(self, image: Image.Image) -> dict:
         """Demo-only heuristic grading when ENABLE_DEMO_AI_FALLBACK=true."""
@@ -120,6 +181,15 @@ class GradingModel:
 
     def _predict_with_model(self, image: Image.Image) -> dict:
         """Use the fine-tuned model for prediction."""
+        import torch
+        from torchvision import transforms
+
+        _transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+
         tensor = _transform(image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             logits = self.model(tensor)
@@ -133,6 +203,7 @@ class GradingModel:
             "grade_b_prob": round(probs[1], 4),
             "grade_c_prob": round(probs[2], 4),
         }
+
 
 _grading_model: GradingModel | None = None
 

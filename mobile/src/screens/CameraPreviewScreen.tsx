@@ -27,14 +27,22 @@ const debugWarn = (...args: unknown[]) => {
 const debugError = (...args: unknown[]) => {
   if (__DEV__) console.error(...args);
 };
-
 function getAnalysisErrorMessage(err: any) {
   const status = err?.response?.status;
   const detail = err?.response?.data?.detail;
 
-  if (status === 400) return detail ?? 'Gambar tidak valid. Ambil ulang foto dengan pencahayaan yang lebih jelas.';
+  if (status === 400) {
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      return detail[0]?.msg ?? 'Gambar tidak valid.';
+    }
+    return 'Gambar tidak valid. Ambil ulang foto dengan pencahayaan yang lebih jelas.';
+  }
   if (status === 401 || status === 403) return 'Sesi login berakhir. Silakan login ulang.';
-  if (status === 503) return detail ?? 'Layanan AI sedang tidak tersedia. Coba beberapa saat lagi.';
+  if (status === 503) {
+    if (typeof detail === 'string') return detail;
+    return 'Layanan AI sedang tidak tersedia. Coba beberapa saat lagi.';
+  }
   if (err?.request && !err?.response) return 'Tidak dapat terhubung ke server. Periksa koneksi dan alamat API.';
   return 'Analisis tidak dapat dilakukan. Coba lagi beberapa saat lagi.';
 }

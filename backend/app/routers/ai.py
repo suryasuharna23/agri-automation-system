@@ -39,9 +39,13 @@ async def grade_crop(
     except Exception as exc:
         detail = "Layanan grading AI belum tersedia saat ini."
         if getattr(exc, "response", None) is not None and exc.response.status_code == 400:
+            try:
+                detail = exc.response.json().get("detail", "Gambar tidak valid.")
+            except Exception:
+                detail = "Gambar tidak valid. Pastikan file foto dapat dibaca."
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Gambar tidak valid. Pastikan file foto dapat dibaca.",
+                detail=detail,
             )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -66,9 +70,13 @@ async def diagnose(
     except Exception as exc:
         detail = "Layanan diagnosis AI belum tersedia saat ini."
         if getattr(exc, "response", None) is not None and exc.response.status_code == 400:
+            try:
+                detail = exc.response.json().get("detail", "Gambar tidak valid.")
+            except Exception:
+                detail = "Gambar tidak valid. Pastikan file foto dapat dibaca."
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Gambar tidak valid. Pastikan file foto dapat dibaca.",
+                detail=detail,
             )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
