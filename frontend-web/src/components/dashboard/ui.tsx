@@ -1,5 +1,9 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
+import { ImageIcon } from "lucide-react";
+import type { Crop } from "@/types";
+import { getUploadUrl } from "@/lib/api";
+import { formatCurrency, formatQuantity } from "@/lib/format";
 
 type PageHeaderProps = {
   title: string;
@@ -68,39 +72,37 @@ export function SectionTitle({ title, href, actionLabel }: { title: string; href
 }
 
 export function ProductCard({
-  name,
-  price,
-  unit,
-  stock,
-  sold,
-  image,
+  crop,
   href = "/katalog-detail",
 }: {
-  name: string;
-  price: string;
-  unit: string;
-  stock: string;
-  sold: string;
-  image: string;
+  crop: Crop;
   href?: string;
 }) {
+  const imageUrl = getUploadUrl(crop.image_url);
+
   return (
     <article className="overflow-hidden rounded-[22px] bg-white shadow-[0_16px_40px_rgba(14,71,25,0.08)]">
       <Link href={href} className="block">
-        <div className="h-[190px] bg-[#e7efe1]">
-          <img src={image} alt={name} className="h-full w-full object-cover" />
+        <div className="flex h-[190px] items-center justify-center bg-[#e7efe1] text-[#71af7d]">
+          {imageUrl ? (
+            <img src={imageUrl} alt={crop.name} className="h-full w-full object-cover" />
+          ) : (
+            <ImageIcon className="h-12 w-12" aria-hidden="true" />
+          )}
         </div>
         <div className="p-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-[22px] font-bold text-[#0e4719]">{name}</h3>
-              <p className="mt-1 text-[15px] font-medium text-[#7a8574]">{stock}</p>
+              <h3 className="text-[22px] font-bold text-[#0e4719]">{crop.name}</h3>
+              <p className="mt-1 text-[15px] font-medium text-[#7a8574]">{formatQuantity(crop.quantity_kg)} tersedia</p>
             </div>
-            <p className="whitespace-nowrap text-[15px] font-semibold text-[#71af7d]">{sold}</p>
+            <p className="whitespace-nowrap rounded-full bg-[#f7fbf3] px-3 py-1 text-[13px] font-semibold text-[#71af7d]">
+              Grade {crop.grade}
+            </p>
           </div>
           <p className="mt-5 text-[24px] font-bold text-[#0e4719]">
-            {price}
-            <span className="text-[15px] font-semibold text-[#7a8574]">{unit}</span>
+            {formatCurrency(crop.price_per_kg)}
+            <span className="text-[15px] font-semibold text-[#7a8574]">/kg</span>
           </p>
         </div>
       </Link>
@@ -116,5 +118,14 @@ export function PrimaryButton({ href, children }: { href: string; children: Reac
     >
       {children}
     </Link>
+  );
+}
+
+export function StateMessage({ title, message }: { title: string; message?: string }) {
+  return (
+    <div className="rounded-[22px] bg-white p-8 text-center shadow-[0_16px_40px_rgba(14,71,25,0.08)]">
+      <h2 className="text-[22px] font-bold text-[#0e4719]">{title}</h2>
+      {message && <p className="mt-2 text-[16px] font-semibold text-[#75826e]">{message}</p>}
+    </div>
   );
 }

@@ -13,6 +13,12 @@ import DiagnosisScreen from "../screens/DiagnosisScreen";
 import DiagnosisDetailScreen from "../screens/DiagnosisDetailScreen";
 import TreatmentScreen from "../screens/TreatmentScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+import CropListScreen from "../screens/CropListScreen";
+import CropDetailScreen from "../screens/CropDetailScreen";
+import CropFormScreen from "../screens/CropFormScreen";
+import SensorNodeFormScreen from "../screens/SensorNodeFormScreen";
+import OrdersScreen from "../screens/OrdersScreen";
+import FinanceScreen from "../screens/FinanceScreen";
 
 import MonitorScreen from "../screens/MonitorScreen";
 import NotificationScreen from "../screens/NotificationScreen";
@@ -71,6 +77,12 @@ export default function AppNavigator() {
             </Stack.Screen>
             <Stack.Screen name="Camera" component={CameraScreen} />
             <Stack.Screen name="CameraPreview" component={CameraPreviewScreen} />
+            <Stack.Screen name="CropList" component={CropListScreen} />
+            <Stack.Screen name="CropDetail" component={CropDetailScreen} />
+            <Stack.Screen name="CropForm" component={CropFormScreen} />
+            <Stack.Screen name="SensorNodeForm" component={SensorNodeFormScreen} />
+            <Stack.Screen name="Orders" component={OrdersScreen} />
+            <Stack.Screen name="Finance" component={FinanceScreen} />
           </>
         ) : (
           <>

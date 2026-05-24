@@ -3,6 +3,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request, UploadFile, File, HTTPException, status
 from pydantic import BaseModel
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 UPLOADS_DIR = Path(__file__).resolve().parent.parent.parent / "uploads" / "diagnosis"
@@ -131,7 +132,6 @@ async def list_diagnoses(
     db: AsyncSession = Depends(get_db),
 ):
     """List diagnosis records for the current user, newest first."""
-    from sqlalchemy import select
     stmt = (
         select(DiagnosisRecord)
         .where(DiagnosisRecord.farmer_id == current_user.id)
@@ -140,6 +140,19 @@ async def list_diagnoses(
     result = await db.execute(stmt)
     records = result.scalars().all()
     return records
+
+
+@router.delete("/diagnoses/{record_id}", status_code=204)
+async def delete_diagnosis(
+    record_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    record = await db.get(DiagnosisRecord, record_id)
+    if not record or (current_user.role != UserRole.ADMIN and record.farmer_id != current_user.id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Diagnosis record not found")
+    await db.delete(record)
+    await db.commit()
 
 
 

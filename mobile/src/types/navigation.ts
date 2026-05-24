@@ -28,6 +28,16 @@ export type RootStackParamList = {
     };
   };
   Profile: undefined;
+  CropList: undefined;
+  CropDetail: {
+    cropId: string;
+  };
+  CropForm: {
+    cropId?: string;
+  } | undefined;
+  SensorNodeForm: undefined;
+  Orders: undefined;
+  Finance: undefined;
   Treatment: {
     result: DiagnosisResult;
     imageUri: string;
@@ -45,4 +55,5 @@ export type MainTabParamList = {
   Notifications: undefined;
   Diagnosis: undefined;
   Monitor: undefined;
+  Profile: undefined;
 };

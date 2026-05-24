@@ -71,13 +71,22 @@ export default function ProfileScreen() {
   const [logoutVisible,  setLogoutVisible]  = useState(false);
 
   useEffect(() => {
-    SecureStore.getItemAsync('user').then((raw) => {
-      if (!raw) return;
-      const parsed: UserData = JSON.parse(raw);
-      setUser(parsed);
-      setFullName(parsed.full_name ?? '');
-      setPhone(parsed.phone ?? '');
-    });
+    const loadUser = async () => {
+      try {
+        const fresh = await authApi.me();
+        setUser(fresh);
+        setFullName(fresh.full_name ?? '');
+        setPhone(fresh.phone ?? '');
+      } catch {
+        const raw = await SecureStore.getItemAsync('user');
+        if (!raw) return;
+        const parsed: UserData = JSON.parse(raw);
+        setUser(parsed);
+        setFullName(parsed.full_name ?? '');
+        setPhone(parsed.phone ?? '');
+      }
+    };
+    loadUser();
   }, []);
 
   const handleSave = async () => {
@@ -284,9 +293,20 @@ export default function ProfileScreen() {
               <Text style={styles.balanceLabel}>Saldo Anda</Text>
               <Text style={styles.balanceAmount}>Rp20.140.340</Text>
             </View>
-            <TouchableOpacity style={styles.keuanganBtn} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.keuanganBtn} activeOpacity={0.8} onPress={() => navigation.navigate('Finance')}>
               <Ionicons name="card-outline" size={18} color="#44694b" />
               <Text style={styles.keuanganText}>Keuangan</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.menuGrid}>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => navigation.navigate('CropList')} activeOpacity={0.8}>
+              <Ionicons name="basket-outline" size={18} color="#0e4719" />
+              <Text style={styles.menuText}>Produk Saya</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuBtn} onPress={() => navigation.navigate('Orders')} activeOpacity={0.8}>
+              <Ionicons name="receipt-outline" size={18} color="#0e4719" />
+              <Text style={styles.menuText}>Pesanan</Text>
             </TouchableOpacity>
           </View>
 
@@ -438,6 +458,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
   },
   keuanganText: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#44694b', fontWeight: '600' },
+  menuGrid: { flexDirection: 'row', gap: 10 },
+  menuBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    borderRadius: 12,
+    backgroundColor: '#dbe3dd',
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    paddingVertical: 12,
+  },
+  menuText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
 
   /* Logout modal */
   modalOverlay: {

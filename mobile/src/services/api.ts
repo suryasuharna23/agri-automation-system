@@ -1,6 +1,17 @@
 import axios from "axios";
 import * as SecureStore from "expo-secure-store";
-import type { GradingResult, DiagnosisResult, SensorReading } from "../types";
+import type {
+  Crop,
+  CropInput,
+  CropUpdateInput,
+  DiagnosisResult,
+  GradingResult,
+  OrderStatus,
+  SensorNode,
+  SensorReading,
+  Transaction,
+  User,
+} from "../types";
 
 const debugLog = (...args: unknown[]) => {
   if (__DEV__) console.log(...args);
@@ -53,6 +64,19 @@ debugLog("🔧 [api.ts] EXPO_PUBLIC_API_URL =", process.env.EXPO_PUBLIC_API_URL)
 debugLog("🔧 [api.ts] Resolved BASE_URL   =", BASE_URL);
 
 const api = axios.create({ baseURL: BASE_URL });
+
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  unauthorizedHandler = handler;
+}
+
+export function getUploadUrl(path: string | null | undefined) {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file://")) return path;
+  const apiUrl = new URL(BASE_URL);
+  return `${apiUrl.origin}${path}`;
+}
 
 // ─────────────────────────────────────────────────────
 // DEBUG: Request interceptor — log every outgoing call
@@ -117,6 +141,11 @@ api.interceptors.response.use(
         error.config?.url
       );
       debugError("[api.ts]   Detail:", error.response.data?.detail ?? error.message);
+      if (error.response.status === 401) {
+        SecureStore.deleteItemAsync("access_token").catch(() => {});
+        SecureStore.deleteItemAsync("user").catch(() => {});
+        unauthorizedHandler?.();
+      }
     } else if (error.request) {
       // No response received (network error / timeout / wrong host)
       debugError(
@@ -150,6 +179,11 @@ export const authApi = {
     const res = await api.post("/auth/register", payload);
     await SecureStore.setItemAsync("access_token", res.data.access_token);
     debugLog("🔧 [authApi.register] Token stored, user:", res.data.user?.full_name, "role:", res.data.user?.role);
+    return res.data;
+  },
+  me: async (): Promise<User> => {
+    const res = await api.get("/auth/me");
+    await SecureStore.setItemAsync("user", JSON.stringify(res.data));
     return res.data;
   },
   updateMe: async (payload: { full_name?: string; phone?: string }) => {
@@ -190,6 +224,9 @@ export const aiApi = {
   },
   saveDiagnosisInsight: async (recordId: string, insight: string): Promise<void> => {
     await api.patch(`/ai/diagnoses/${recordId}/insight`, { insight });
+  },
+  deleteDiagnosis: async (recordId: string): Promise<void> => {
+    await api.delete(`/ai/diagnoses/${recordId}`);
   },
   getDiseaseInsight: async (
     diseaseName: string,
@@ -256,25 +293,70 @@ export const sensorApi = {
     debugLog("🔧 [sensorApi.getReadings] Count:", res.data?.length);
     return res.data;
   },
-  listNodes: async () => {
+  listNodes: async (): Promise<SensorNode[]> => {
     debugLog("🔧 [sensorApi.listNodes] Fetching sensor nodes...");
     const res = await api.get("/sensors/nodes");
     debugLog("🔧 [sensorApi.listNodes] Count:", res.data?.length);
     return res.data;
   },
+  registerNode: async (payload: { device_id: string; name: string; location?: string | null }): Promise<SensorNode> => {
+    const res = await api.post("/sensors/nodes", payload);
+    return res.data;
+  },
+  deleteNode: async (nodeId: string): Promise<void> => {
+    await api.delete(`/sensors/nodes/${nodeId}`);
+  },
 };
 
 export const marketplaceApi = {
-  listCrops: async () => {
+  listCrops: async (availableOnly = true): Promise<Crop[]> => {
     debugLog("🔧 [marketplaceApi.listCrops] Fetching crops...");
-    const res = await api.get("/marketplace/crops");
+    const res = await api.get("/marketplace/crops", { params: { available_only: availableOnly } });
     debugLog("🔧 [marketplaceApi.listCrops] Count:", res.data?.length);
     return res.data;
+  },
+  getCrop: async (cropId: string): Promise<Crop> => {
+    const res = await api.get(`/marketplace/crops/${cropId}`);
+    return res.data;
+  },
+  createCrop: async (payload: CropInput): Promise<Crop> => {
+    const res = await api.post("/marketplace/crops", payload);
+    return res.data;
+  },
+  updateCrop: async (cropId: string, payload: CropUpdateInput): Promise<Crop> => {
+    const res = await api.patch(`/marketplace/crops/${cropId}`, payload);
+    return res.data;
+  },
+  uploadCropImage: async (cropId: string, imageUri: string): Promise<Crop> => {
+    const form = new FormData();
+    form.append("file", { uri: imageUri, name: "crop.jpg", type: "image/jpeg" } as unknown as Blob);
+    const res = await api.post(`/marketplace/crops/${cropId}/image`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+  deleteCrop: async (cropId: string): Promise<void> => {
+    await api.delete(`/marketplace/crops/${cropId}`);
   },
   getPrices: async () => {
     debugLog("🔧 [marketplaceApi.getPrices] Fetching prices...");
     const res = await api.get("/marketplace/prices");
     debugLog("🔧 [marketplaceApi.getPrices] Response:", JSON.stringify(res.data).slice(0, 200));
+    return res.data;
+  },
+};
+
+export const transactionApi = {
+  listOrders: async (): Promise<Transaction[]> => {
+    const res = await api.get("/transactions/orders");
+    return res.data;
+  },
+  updateOrderStatus: async (orderId: string, status: OrderStatus): Promise<Transaction> => {
+    const res = await api.patch(`/transactions/orders/${orderId}/status`, null, { params: { new_status: status } });
+    return res.data;
+  },
+  cancelOrder: async (orderId: string): Promise<Transaction> => {
+    const res = await api.delete(`/transactions/orders/${orderId}`);
     return res.data;
   },
 };

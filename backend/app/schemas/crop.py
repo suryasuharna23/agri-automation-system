@@ -16,10 +16,13 @@ class CropCreate(BaseModel):
 
 
 class CropUpdate(BaseModel):
+    name: str | None = None
+    variety: str | None = None
     quantity_kg: float | None = None
     price_per_kg: float | None = None
     description: str | None = None
     is_available: bool | None = None
+    harvest_date: datetime | None = None
 
 
 class CropResponse(BaseModel):

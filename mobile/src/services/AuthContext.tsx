@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
+import { authApi, setUnauthorizedHandler } from "./api";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -23,10 +24,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuth = async () => {
       try {
         const token = await SecureStore.getItemAsync("access_token");
-        if (__DEV__) console.log("🔧 [AuthContext] Checking auth — token found:", !!token);
-        setIsAuthenticated(!!token);
+        if (__DEV__) console.log("[AuthContext] token found:", !!token);
+        if (!token) {
+          setIsAuthenticated(false);
+          return;
+        }
+        await authApi.me();
+        setIsAuthenticated(true);
       } catch (err) {
-        if (__DEV__) console.error("🔧 [AuthContext] Error reading token:", err);
+        if (__DEV__) console.error("[AuthContext] auth check failed:", err);
+        await SecureStore.deleteItemAsync("access_token");
+        await SecureStore.deleteItemAsync("user");
         setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
@@ -35,13 +43,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setIsAuthenticated(false);
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
+
   const login = useCallback(() => {
-    if (__DEV__) console.log("🔧 [AuthContext] login() called");
+    if (__DEV__) console.log("[AuthContext] login() called");
     setIsAuthenticated(true);
   }, []);
 
   const logout = useCallback(async () => {
-    if (__DEV__) console.log("🔧 [AuthContext] logout() called");
+    if (__DEV__) console.log("[AuthContext] logout() called");
     await SecureStore.deleteItemAsync("access_token");
     await SecureStore.deleteItemAsync("user");
     setIsAuthenticated(false);

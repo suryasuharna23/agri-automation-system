@@ -13,8 +13,9 @@ import {
   getCommodityPriceHistory,
   type CommodityPriceHistory,
 } from '../services/commodityService';
-import { sensorApi } from '../services/api';
-import type { SensorNode, SensorReading } from '../types';
+import api, { marketplaceApi, sensorApi, transactionApi } from '../services/api';
+import type { Crop, SensorNode, SensorReading, Transaction } from '../types';
+import { formatCurrency } from '../utils/format';
 
 const SCREEN_W = Dimensions.get('window').width;
 const CARD_W = SCREEN_W - 28;
@@ -48,6 +49,9 @@ export default function DashboardScreen() {
   // Sensor
   const [node,    setNode]    = useState<SensorNode | null>(null);
   const [reading, setReading] = useState<SensorReading | null>(null);
+  const [crops, setCrops] = useState<Crop[]>([]);
+  const [orders, setOrders] = useState<Transaction[]>([]);
+  const [diagnosisCount, setDiagnosisCount] = useState(0);
 
   useEffect(() => {
     getCommodityList().then((list) => {
@@ -60,6 +64,9 @@ export default function DashboardScreen() {
         sensorApi.getReadings(nodes[0].id, 1).then((r) => setReading(r[0] ?? null));
       }
     }).catch(() => {});
+    marketplaceApi.listCrops(false).then(setCrops).catch(() => {});
+    transactionApi.listOrders().then(setOrders).catch(() => {});
+    api.get('/ai/diagnoses').then((res) => setDiagnosisCount(Array.isArray(res.data) ? res.data.length : 0)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -73,6 +80,11 @@ export default function DashboardScreen() {
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
   const chartLabels = history?.data.map((d) => d.date) ?? [];
   const chartPrices = history?.data.map((d) => d.price) ?? [0];
+  const activeOrders = orders.filter((order) => order.status !== 'cancelled' && order.status !== 'completed');
+  const revenue = orders
+    .filter((order) => ['confirmed', 'processing', 'completed'].includes(order.status))
+    .reduce((sum, order) => sum + order.total_amount, 0);
+  const stock = crops.reduce((sum, crop) => sum + crop.quantity_kg, 0);
 
   return (
     <View style={styles.container}>
@@ -105,12 +117,26 @@ export default function DashboardScreen() {
           />
           <View style={styles.balanceLeft}>
             <Text style={styles.balanceLabel}>Saldo Anda</Text>
-            <Text style={styles.balanceAmount}>Rp20.140.340</Text>
+            <Text style={styles.balanceAmount}>{formatCurrency(revenue)}</Text>
           </View>
-          <TouchableOpacity style={styles.keuanganBtn} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.keuanganBtn} activeOpacity={0.8} onPress={() => navigation.navigate('Finance')}>
             <Ionicons name="card-outline" size={20} color="#44694b" />
             <Text style={styles.keuanganText}>Keuangan</Text>
           </TouchableOpacity>
+        </View>
+
+        <View style={[styles.summaryGrid, { width: CARD_W }]}>
+          <SummaryCard label="Produk" value={String(crops.length)} icon="basket-outline" />
+          <SummaryCard label="Stok" value={`${Math.round(stock)} kg`} icon="cube-outline" />
+          <SummaryCard label="Pesanan" value={String(activeOrders.length)} icon="receipt-outline" />
+          <SummaryCard label="Diagnosis" value={String(diagnosisCount)} icon="leaf-outline" />
+        </View>
+
+        <View style={[styles.shortcutGrid, { width: CARD_W }]}>
+          <Shortcut label="Tambah Produk" icon="add-circle-outline" onPress={() => navigation.navigate('CropForm')} />
+          <Shortcut label="Produk Saya" icon="basket-outline" onPress={() => navigation.navigate('CropList')} />
+          <Shortcut label="Tambah Sensor" icon="hardware-chip-outline" onPress={() => navigation.navigate('SensorNodeForm')} />
+          <Shortcut label="Pesanan" icon="receipt-outline" onPress={() => navigation.navigate('Orders')} />
         </View>
 
         {/* ── Sensor card ── */}
@@ -201,8 +227,8 @@ export default function DashboardScreen() {
               <View style={styles.chartTopRow}>
                 <View>
                   <View style={styles.priceRow}>
-                    <Text style={styles.priceAmount}>
-                      Rp{history.currentPrice.toLocaleString('id-ID')}
+                <Text style={styles.priceAmount}>
+                      {formatCurrency(history.currentPrice)}
                     </Text>
                     <Text style={styles.priceUnit}>/kg</Text>
                   </View>
@@ -274,6 +300,25 @@ export default function DashboardScreen() {
   );
 }
 
+function SummaryCard({ label, value, icon }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap }) {
+  return (
+    <View style={styles.summaryCard}>
+      <Ionicons name={icon} size={18} color="#0e4719" />
+      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function Shortcut({ label, icon, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) {
+  return (
+    <TouchableOpacity style={styles.shortcutBtn} onPress={onPress} activeOpacity={0.85}>
+      <Ionicons name={icon} size={18} color="#fbf2d4" />
+      <Text style={styles.shortcutText}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fffefb' },
   scroll: { paddingHorizontal: 14, gap: 14 },
@@ -301,6 +346,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14, paddingVertical: 10,
   },
   keuanganText: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#44694b', fontWeight: '600' },
+  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  summaryCard: {
+    width: (CARD_W - 8) / 2,
+    borderRadius: 14,
+    backgroundColor: '#f3f8f1',
+    borderWidth: 1,
+    borderColor: '#ccd9ce',
+    padding: 12,
+    gap: 4,
+  },
+  summaryValue: { fontSize: 18, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  summaryLabel: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#55835e' },
+  shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  shortcutBtn: {
+    width: (CARD_W - 8) / 2,
+    minHeight: 46,
+    borderRadius: 14,
+    backgroundColor: '#0e4719',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    paddingHorizontal: 10,
+  },
+  shortcutText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4' },
 
   /* ── Sensor card ── */
   sensorCard: {

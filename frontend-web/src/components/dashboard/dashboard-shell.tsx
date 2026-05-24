@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { LogOut, Sprout } from "lucide-react";
 import { sidebarItems } from "@/lib/dashboard-data";
 import { useAuthStore } from "@/lib/auth-store";
@@ -12,7 +13,14 @@ type DashboardShellProps = {
 
 export function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
+  const visibleItems = sidebarItems.filter((item) => !user || item.roles.includes(user.role));
+
+  useEffect(() => {
+    if (!localStorage.getItem("access_token")) router.replace("/login");
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-[#f8faf8] text-[#0e4719] lg:flex">
@@ -25,7 +33,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         </Link>
 
         <nav className="flex flex-1 flex-col gap-4">
-          {sidebarItems.map((item) => {
+          {visibleItems.map((item) => {
             const active = item.match.some((path) => pathname === path || pathname.startsWith(`${path}/`));
             const Icon = item.icon;
 

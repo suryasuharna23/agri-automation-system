@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
@@ -10,12 +10,17 @@ import type { UserRole } from "@/types";
 export default function RegisterPage() {
   const router = useRouter();
   const setSession = useAuthStore((state) => state.setSession);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Extract<UserRole, "farmer" | "buyer">>("farmer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) router.replace("/dashboard");
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,8 +37,8 @@ export default function RegisterPage() {
       setSession(data.access_token, data.user);
       router.push("/dashboard");
     } catch (err: any) {
-      console.error("🔧 [RegisterPage] Registration failed:", err?.response?.status, err?.message ?? err);
-      setError("Pendaftaran gagal. Periksa kembali data Anda.");
+      console.error("Registration failed:", err?.response?.status, err?.message ?? err);
+      setError(err?.response?.status === 409 ? "Email sudah terdaftar." : "Pendaftaran gagal. Periksa kembali data Anda.");
     } finally {
       setLoading(false);
     }

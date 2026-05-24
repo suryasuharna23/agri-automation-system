@@ -37,6 +37,25 @@ export interface Crop {
   created_at: string;
 }
 
+export interface CropInput {
+  name: string;
+  variety?: string | null;
+  quantity_kg: number;
+  price_per_kg: number;
+  description?: string | null;
+  harvest_date?: string | null;
+}
+
+export interface CropUpdateInput {
+  name?: string;
+  variety?: string | null;
+  quantity_kg?: number;
+  price_per_kg?: number;
+  description?: string | null;
+  is_available?: boolean;
+  harvest_date?: string | null;
+}
+
 export interface SensorNode {
   id: string;
   device_id: string;
@@ -72,6 +91,8 @@ export interface Transaction {
   status: OrderStatus;
   payment_reference: string | null;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface GradingResult {

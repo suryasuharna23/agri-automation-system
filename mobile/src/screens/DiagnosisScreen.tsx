@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, TextInput, Modal,
+  ActivityIndicator, TextInput, Modal, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import api from '../services/api';
+import api, { aiApi, getUploadUrl } from '../services/api';
 
 interface SensorReading {
   suhuUdara: string;
@@ -72,7 +72,7 @@ function mapRecord(record: DiagnosisRecord): DiagnosisHistoryItem {
       is_healthy: record.disease_name === 'Healthy' || record.disease_name === 'Sehat',
       recommendation: record.recommendation ?? '',
     },
-    imageUri: record.image_url || undefined,
+    imageUri: getUploadUrl(record.image_url) || undefined,
     ai_insight: record.ai_insight ?? undefined,
   };
 }
@@ -151,6 +151,24 @@ export default function DiagnosisScreen() {
   const resetFilter = () => {
     setTempHealth('all');
     setTempSort('newest');
+  };
+
+  const deleteRecord = (item: DiagnosisHistoryItem) => {
+    Alert.alert('Hapus diagnosis', `Hapus riwayat ${item.cropName}?`, [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Hapus',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await aiApi.deleteDiagnosis(item.id);
+            setItems((current) => current.filter((record) => record.id !== item.id));
+          } catch {
+            Alert.alert('Gagal', 'Riwayat diagnosis belum bisa dihapus.');
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -246,6 +264,7 @@ export default function DiagnosisScreen() {
             <DiagnosisCard
               key={item.id}
               item={item}
+              onDelete={() => deleteRecord(item)}
               onPress={() => {
                 navigation.navigate('DiagnosisDetail', {
                   result: item.result ?? { disease_name: 'Healthy', confidence: 1, is_healthy: true, recommendation: '' },
@@ -318,7 +337,7 @@ export default function DiagnosisScreen() {
   );
 }
 
-function DiagnosisCard({ item, onPress }: { item: DiagnosisHistoryItem; onPress: () => void }) {
+function DiagnosisCard({ item, onPress, onDelete }: { item: DiagnosisHistoryItem; onPress: () => void; onDelete: () => void }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
       <LinearGradient
@@ -331,6 +350,9 @@ function DiagnosisCard({ item, onPress }: { item: DiagnosisHistoryItem; onPress:
       <View style={[styles.badge, styles.badgeSelesai]}>
         <Text style={[styles.badgeText, styles.badgeTextSelesai]}>Selesai</Text>
       </View>
+      <TouchableOpacity style={styles.deleteCardBtn} onPress={onDelete}>
+        <Ionicons name="trash-outline" size={16} color="#923333" />
+      </TouchableOpacity>
 
       <View style={styles.cardTopLeft}>
         <Text style={styles.cardCrop}>{item.cropName}</Text>
@@ -522,6 +544,18 @@ const styles = StyleSheet.create({
     fontFamily: 'FacultyGlyphic_400Regular',
   },
   badgeTextSelesai: { color: '#0e4719' },
+  deleteCardBtn: {
+    position: 'absolute',
+    top: 43,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#fff0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
   cardTopLeft: {
     position: 'absolute',
     top: 9,

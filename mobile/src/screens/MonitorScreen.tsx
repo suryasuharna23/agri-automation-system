@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Modal, FlatList, Pressable, RefreshControl, Dimensions, ActivityIndicator,
+  Modal, FlatList, Pressable, RefreshControl, Dimensions, ActivityIndicator, Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { LineChart } from 'react-native-chart-kit';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { sensorApi, aiApi } from '../services/api';
 import type { SensorNode, SensorReading } from '../types';
 
@@ -29,6 +30,7 @@ const METRIC_CFG = [
 
 export default function MonitorScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
 
   const [nodes,       setNodes]       = useState<SensorNode[]>([]);
   const [activeNode,  setActiveNode]  = useState<SensorNode | null>(null);
@@ -78,16 +80,26 @@ export default function MonitorScreen() {
     }
   };
 
-  useEffect(() => {
-    sensorApi.listNodes().then((n) => {
+  const loadNodes = useCallback(async () => {
+    try {
+      const n = await sensorApi.listNodes();
       if (n.length > 0) {
         setNodes(n);
-        setActiveNode(n[0]);
-        load(n[0], period);
+        const selected = activeNode ? n.find((node) => node.id === activeNode.id) ?? n[0] : n[0];
+        setActiveNode(selected);
+        load(selected, period);
+      } else {
+        setNodes([]);
+        setActiveNode(null);
+        setAllReadings([]);
       }
-    }).catch((err: any) => {
+    } catch (err: any) {
       if (__DEV__) console.error('[MonitorScreen] Failed to list sensor nodes:', err?.message ?? err);
-    });
+    }
+  }, [activeNode, load, period]);
+
+  useEffect(() => {
+    loadNodes();
   }, []);
 
   useEffect(() => {
@@ -105,6 +117,26 @@ export default function MonitorScreen() {
     setActiveNode(node);
     setNodeModal(false);
     load(node, period);
+  };
+
+  const deleteActiveNode = () => {
+    if (!activeNode) return;
+    Alert.alert('Hapus sensor', `Hapus ${activeNode.name} beserta semua bacaannya?`, [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Hapus',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await sensorApi.deleteNode(activeNode.id);
+            setActiveNode(null);
+            await loadNodes();
+          } catch {
+            Alert.alert('Gagal', 'Sensor node belum bisa dihapus.');
+          }
+        },
+      },
+    ]);
   };
 
   // Anchor cutoff to the latest reading so old stored data still displays
@@ -179,6 +211,18 @@ export default function MonitorScreen() {
             </Text>
             <Ionicons name="chevron-down" size={14} color="#0e4719" />
           </Pressable>
+        </View>
+        <View style={styles.nodeActions}>
+          <TouchableOpacity style={styles.nodeActionBtn} onPress={() => navigation.navigate('SensorNodeForm')}>
+            <Ionicons name="add-circle-outline" size={16} color="#0e4719" />
+            <Text style={styles.nodeActionText}>Tambah Sensor</Text>
+          </TouchableOpacity>
+          {activeNode ? (
+            <TouchableOpacity style={[styles.nodeActionBtn, styles.nodeDeleteBtn]} onPress={deleteActiveNode}>
+              <Ionicons name="trash-outline" size={16} color="#923333" />
+              <Text style={[styles.nodeActionText, styles.nodeDeleteText]}>Hapus Sensor</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
         {/* ── Period selector ── */}
@@ -415,6 +459,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#dbe3dd', paddingHorizontal: 12,
   },
   lahanPillText: { flex: 1, fontSize: 13, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  nodeActions: { flexDirection: 'row', gap: 8 },
+  nodeActionBtn: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: 12,
+    backgroundColor: '#dbe3dd',
+    borderWidth: 1,
+    borderColor: '#0e4719',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  nodeActionText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  nodeDeleteBtn: { backgroundColor: '#fff0f0', borderColor: '#f5c5c5' },
+  nodeDeleteText: { color: '#923333' },
 
   /* ── Period selector ── */
   periodRow: {

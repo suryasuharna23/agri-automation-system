@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { TokenResponse, Crop, SensorNode, SensorReading, Transaction, User } from "@/types";
+import type { TokenResponse, Crop, CropInput, CropUpdateInput, OrderStatus, SensorNode, SensorReading, Transaction, User } from "@/types";
 
 function getRequiredBaseUrl() {
   const value = process.env.NEXT_PUBLIC_API_URL;
@@ -44,7 +44,14 @@ export const marketplaceApi = {
   listCrops: (availableOnly = true) =>
     api.get<Crop[]>("/marketplace/crops", { params: { available_only: availableOnly } }).then((r) => r.data),
   getCrop: (id: string) => api.get<Crop>(`/marketplace/crops/${id}`).then((r) => r.data),
-  createCrop: (data: Partial<Crop>) => api.post<Crop>("/marketplace/crops", data).then((r) => r.data),
+  createCrop: (data: CropInput) => api.post<Crop>("/marketplace/crops", data).then((r) => r.data),
+  updateCrop: (id: string, data: CropUpdateInput) =>
+    api.patch<Crop>(`/marketplace/crops/${id}`, data).then((r) => r.data),
+  uploadCropImage: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return api.post<Crop>(`/marketplace/crops/${id}/image`, formData).then((r) => r.data);
+  },
   getPrices: () => api.get("/marketplace/prices").then((r) => r.data),
 };
 
@@ -58,12 +65,21 @@ export const sensorApi = {
 
 export const transactionApi = {
   listOrders: () => api.get<Transaction[]>("/transactions/orders").then((r) => r.data),
-  createOrder: (cropId: string, quantityKg: number, idempotencyKey: string) =>
+  createOrder: (cropId: string, quantityKg: number, idempotencyKey: string, notes?: string) =>
     api.post<Transaction>(
       "/transactions/orders",
-      { crop_id: cropId, quantity_kg: quantityKg },
+      { crop_id: cropId, quantity_kg: quantityKg, notes },
       { headers: { "Idempotency-Key": idempotencyKey } }
     ).then((r) => r.data),
+  updateOrderStatus: (orderId: string, status: OrderStatus) =>
+    api.patch<Transaction>(`/transactions/orders/${orderId}/status`, null, { params: { new_status: status } }).then((r) => r.data),
 };
+
+export function getUploadUrl(path: string | null | undefined) {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const apiUrl = new URL(BASE_URL);
+  return `${apiUrl.origin}${path}`;
+}
 
 export default api;

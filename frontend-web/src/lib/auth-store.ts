@@ -60,7 +60,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem("user", JSON.stringify(user));
       set({ token, user, isAuthenticated: true });
     } catch (err) {
-      console.error("🔧 [auth-store] checkAuth failed:", err);
+      console.error("Auth check failed:", err);
       clearSession();
       set({ token: null, user: null, isAuthenticated: false });
     }

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel
@@ -32,6 +33,8 @@ class OrderResponse(BaseModel):
     status: OrderStatus
     payment_reference: str | None
     notes: str | None
+    created_at: datetime
+    updated_at: datetime
 
 
 @router.post("/orders", response_model=OrderResponse, status_code=201)
@@ -92,7 +95,32 @@ async def update_order_status(
     order = await db.get(Transaction, order_id)
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+    if current_user.role != UserRole.ADMIN and order.seller_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
     order.status = new_status
+    await db.commit()
+    await db.refresh(order)
+    return order
+
+
+@router.delete("/orders/{order_id}", response_model=OrderResponse)
+async def cancel_order(
+    order_id: uuid.UUID,
+    current_user: User = Depends(require_role(UserRole.ADMIN, UserRole.FARMER)),
+    db: AsyncSession = Depends(get_db),
+):
+    order = await db.get(Transaction, order_id)
+    if not order:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+    if current_user.role != UserRole.ADMIN and order.seller_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
+    if order.status not in {OrderStatus.PENDING, OrderStatus.CONFIRMED}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending or confirmed orders can be cancelled.",
+        )
+
+    order.status = OrderStatus.CANCELLED
     await db.commit()
     await db.refresh(order)
     return order

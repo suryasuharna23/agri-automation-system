@@ -1,15 +1,21 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/lib/auth-store";
 
 export default function LoginPage() {
   const router = useRouter();
   const login = useAuthStore((state) => state.login);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) router.replace("/dashboard");
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,8 +25,8 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/dashboard");
     } catch (err: any) {
-      console.error("🔧 [LoginPage] Login failed:", err?.response?.status, err?.message ?? err);
-      setError("Email atau password salah.");
+      console.error("Login failed:", err?.response?.status, err?.message ?? err);
+      setError(err?.response?.data?.detail === "Account deactivated" ? "Akun tidak aktif." : "Email atau password salah.");
     } finally {
       setLoading(false);
     }
