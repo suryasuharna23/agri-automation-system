@@ -27,6 +27,7 @@ export type RootStackParamList = {
       ph?: number;
     };
   };
+  Profile: undefined;
   Treatment: {
     result: DiagnosisResult;
     imageUri: string;

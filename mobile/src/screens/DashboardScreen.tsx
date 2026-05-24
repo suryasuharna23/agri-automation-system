@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { LineChart } from "react-native-chart-kit";
 import {
   getCommodityList,
@@ -17,6 +18,7 @@ import {
 const CHART_WIDTH = Dimensions.get("window").width - 48;
 
 export default function DashboardScreen() {
+  const navigation = useNavigation<any>();
   const [commodities, setCommodities] = useState<string[]>([]);
   const [selected, setSelected] = useState<string>("");
   const [history, setHistory] = useState<CommodityPriceHistory | null>(null);
@@ -107,12 +109,16 @@ export default function DashboardScreen() {
             </View>
             <Text style={[styles.keuangan, styles.phTypo]}>Keuangan</Text>
           </View>
-          <View style={[styles.frameParent10, styles.frameParentLayout]}>
+          <TouchableOpacity
+            style={[styles.frameParent10, styles.frameParentLayout]}
+            onPress={() => navigation.navigate("Profile")}
+            activeOpacity={0.8}
+          >
             <View style={[styles.iconbanknoteWrapper, styles.wrapperFlexBox]}>
-              <Ionicons name="arrow-down-circle-outline" size={24} color="#44694b" />
+              <Ionicons name="person-outline" size={24} color="#44694b" />
             </View>
-            <Text style={[styles.tarikTunai, styles.tarikTunaiTypo]}>Tarik Tunai</Text>
-          </View>
+            <Text style={[styles.tarikTunai, styles.tarikTunaiTypo]}>Profil</Text>
+          </TouchableOpacity>
         </View>
       </View>
 

@@ -12,6 +12,7 @@ import CameraPreviewScreen from "../screens/CameraPreviewScreen";
 import DiagnosisScreen from "../screens/DiagnosisScreen";
 import DiagnosisDetailScreen from "../screens/DiagnosisDetailScreen";
 import TreatmentScreen from "../screens/TreatmentScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 import MonitorScreen from "../screens/MonitorScreen";
 import NotificationScreen from "../screens/NotificationScreen";
 import Navbar2 from "../components/Navbar2";
@@ -59,6 +60,7 @@ export default function AppNavigator() {
             <Stack.Screen name="CameraPreview" component={CameraPreviewScreen} />
             <Stack.Screen name="DiagnosisDetail" component={DiagnosisDetailScreen} />
             <Stack.Screen name="Treatment" component={TreatmentScreen} />
+            <Stack.Screen name="Profile" component={ProfileScreen} />
           </>
         ) : (
           <>

@@ -119,6 +119,9 @@ export const authApi = {
     console.log("🔧 [authApi.login] Attempting login for:", email);
     const res = await api.post("/auth/login", { email, password });
     await SecureStore.setItemAsync("access_token", res.data.access_token);
+    if (res.data.user) {
+      await SecureStore.setItemAsync("user", JSON.stringify(res.data.user));
+    }
     console.log("🔧 [authApi.login] Token stored, user:", res.data.user?.full_name, "role:", res.data.user?.role);
     return res.data;
   },
@@ -126,7 +129,14 @@ export const authApi = {
     console.log("🔧 [authApi.register] Registering:", payload.email, "role:", payload.role);
     const res = await api.post("/auth/register", payload);
     await SecureStore.setItemAsync("access_token", res.data.access_token);
+    if (res.data.user) {
+      await SecureStore.setItemAsync("user", JSON.stringify(res.data.user));
+    }
     console.log("🔧 [authApi.register] Token stored, user:", res.data.user?.full_name, "role:", res.data.user?.role);
+    return res.data;
+  },
+  updateMe: async (payload: { full_name?: string; phone?: string }) => {
+    const res = await api.patch("/auth/me", payload);
     return res.data;
   },
   logout: async () => {
