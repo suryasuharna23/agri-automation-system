@@ -21,10 +21,10 @@ export type RootStackParamList = {
     imageUri: string;
     insight?: string;
     sensorData?: {
-      temperature?: number;
-      humidity?: number;
-      soil_moisture?: number;
-      ph?: number;
+      temperature?: number | null;
+      humidity?: number | null;
+      soil_moisture?: number | null;
+      ph?: number | null;
     };
   };
   Profile: undefined;
@@ -32,10 +32,10 @@ export type RootStackParamList = {
     result: DiagnosisResult;
     imageUri: string;
     sensorData?: {
-      temperature?: number;
-      humidity?: number;
-      soil_moisture?: number;
-      ph?: number;
+      temperature?: number | null;
+      humidity?: number | null;
+      soil_moisture?: number | null;
+      ph?: number | null;
     };
   };
 };

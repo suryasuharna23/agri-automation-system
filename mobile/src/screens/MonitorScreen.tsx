@@ -16,6 +16,7 @@ const CARD_W   = SCREEN_W - 28;   // 14px margin each side
 type Period = '1h' | '5h' | '1d';
 const PERIODS: Period[] = ['1h', '5h', '1d'];
 const PERIOD_HOURS: Record<Period, number> = { '1h': 1, '5h': 5, '1d': 24 };
+const DEMO_DATA_ENABLED = process.env.EXPO_PUBLIC_ENABLE_DEMO_DATA === 'true';
 
 const TINDAKAN = [
   'Pastikan kelembapan tanah di kisaran 60–70% untuk mendukung pertumbuhan optimal.',
@@ -42,9 +43,9 @@ function genMockReadings(count: number): SensorReading[] {
 export default function MonitorScreen() {
   const insets = useSafeAreaInsets();
 
-  const [nodes,       setNodes]       = useState<SensorNode[]>([MOCK_NODE]);
+  const [nodes,       setNodes]       = useState<SensorNode[]>(DEMO_DATA_ENABLED ? [MOCK_NODE] : []);
   const [activeNode,  setActiveNode]  = useState<SensorNode>(MOCK_NODE);
-  const [allReadings, setAllReadings] = useState<SensorReading[]>(genMockReadings(20));
+  const [allReadings, setAllReadings] = useState<SensorReading[]>(DEMO_DATA_ENABLED ? genMockReadings(20) : []);
   const [period,      setPeriod]      = useState<Period>('1h');
   const [nodeModal,   setNodeModal]   = useState(false);
   const [refreshing,  setRefreshing]  = useState(false);
@@ -65,11 +66,11 @@ export default function MonitorScreen() {
         }).then((insight) => {
           if (insight) setAiInsight(insight);
         }).catch((err: any) => {
-          console.error("🔧 [MonitorScreen] Sensor insight fetch failed:", err?.message ?? err);
+          if (__DEV__) console.error("🔧 [MonitorScreen] Sensor insight fetch failed:", err?.message ?? err);
         });
       }
     } catch (err: any) {
-      console.error("🔧 [MonitorScreen] Failed to load sensor readings:", err);
+      if (__DEV__) console.error("🔧 [MonitorScreen] Failed to load sensor readings:", err);
     }
   }, []);
 
@@ -81,7 +82,7 @@ export default function MonitorScreen() {
         load(n[0]);
       }
     }).catch((err: any) => {
-      console.error("🔧 [MonitorScreen] Failed to list sensor nodes:", err?.message ?? err);
+      if (__DEV__) console.error("🔧 [MonitorScreen] Failed to list sensor nodes:", err?.message ?? err);
     });
   }, []);
 
@@ -115,6 +116,7 @@ export default function MonitorScreen() {
       ).filter((_, i) => i % Math.max(1, Math.floor(readings.length / 4)) === 0)
     : ['—'];
 
+  const hasSensorData = allReadings.length > 0;
   const latest   = readings[readings.length - 1];
   const oldest   = readings[0];
   const curTemp  = latest?.temperature ?? 0;
@@ -233,7 +235,9 @@ export default function MonitorScreen() {
             </LinearGradient>
           </View>
           <Text style={styles.overviewDesc}>
-            {isAman
+            {!hasSensorData
+              ? 'Data sensor belum tersedia. Hubungkan node sensor atau aktifkan mode demo untuk melihat contoh data.'
+              : isAman
               ? 'Kondisi lahan saat ini dalam batas normal. Suhu, kelembapan, dan pH tanah berada pada rentang optimal untuk pertumbuhan tanaman.'
               : `Terdeteksi ${anomalyCount} anomali pada pembacaan sensor. Segera periksa kondisi lahan dan ambil tindakan yang diperlukan.`}
           </Text>

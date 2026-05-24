@@ -82,7 +82,7 @@ export default function DiagnosisScreen() {
     api.get('/diagnoses').then((res) => {
       if (Array.isArray(res.data) && res.data.length > 0) setItems(res.data);
     }).catch((err: any) => {
-      console.error("🔧 [DiagnosisScreen] Failed to load diagnosis history:", err?.message ?? err);
+      if (__DEV__) console.error("🔧 [DiagnosisScreen] Failed to load diagnosis history:", err?.message ?? err);
     });
   }, []);
 

@@ -92,7 +92,10 @@ def test_grading_endpoint(base_url: str):
         timeout=30,
     )
 
-    assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+    assert response.status_code in (200, 503), f"Expected 200 or 503, got {response.status_code}: {response.text}"
+    if response.status_code == 503:
+        logger.info("  /grade unavailable as expected without checkpoint.")
+        return True
     data = response.json()
 
     assert "crop_id" in data
@@ -103,6 +106,7 @@ def test_grading_endpoint(base_url: str):
     assert "grade_a_prob" in data
     assert "grade_b_prob" in data
     assert "grade_c_prob" in data
+    assert data.get("mode") in ["model", "demo_fallback"]
 
     # Verify probabilities sum to ~1
     prob_sum = data["grade_a_prob"] + data["grade_b_prob"] + data["grade_c_prob"]
@@ -153,9 +157,9 @@ def test_health_endpoint(base_url: str):
     assert response.status_code == 200
     data = response.json()
 
-    assert data["status"] in ["ok", "degraded"]
-    assert "grading_model" in data
-    assert "disease_model" in data
+    assert data["status"] in ["ok", "unavailable"]
+    assert "capabilities" in data
+    assert {"diagnosis", "grading", "llm"}.issubset(data["capabilities"])
 
     logger.info(f"  Status: {data}")
     logger.info("  ✓ /health endpoint PASSED")

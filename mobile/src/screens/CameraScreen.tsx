@@ -15,6 +15,14 @@ const GUIDE_H = 400;
 const CORNER_LEN = 28;
 const CORNER_THICK = 3;
 
+const debugLog = (...args: unknown[]) => {
+  if (__DEV__) console.log(...args);
+};
+
+const debugError = (...args: unknown[]) => {
+  if (__DEV__) console.error(...args);
+};
+
 export default function CameraScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -24,10 +32,7 @@ export default function CameraScreen() {
   const cropId: string | undefined = route.params?.cropId;
 
   // ── DEBUG ──────────────────────────────────────────
-  console.log("🔧 [CameraScreen] Mounted");
-  console.log("🔧 [CameraScreen] Route params:", JSON.stringify(route.params));
-  console.log("🔧 [CameraScreen] Mode:", mode);
-  console.log("🔧 [CameraScreen] CropId:", cropId);
+  debugLog("[CameraScreen] Mounted", { mode, hasCropId: !!cropId });
   // ───────────────────────────────────────────────────
 
   const [permission, requestPermission] = useCameraPermissions();
@@ -37,9 +42,9 @@ export default function CameraScreen() {
 
   useEffect(() => {
     // ── DEBUG ────────────────────────────────────────
-    console.log("🔧 [CameraScreen] Permission status:", JSON.stringify(permission));
+    debugLog("[CameraScreen] Permission status:", permission?.status);
     if (permission && !permission.granted && permission.canAskAgain) {
-      console.log("🔧 [CameraScreen] Requesting camera permission...");
+      debugLog("[CameraScreen] Requesting camera permission...");
       requestPermission();
     }
     // ─────────────────────────────────────────────────
@@ -62,31 +67,22 @@ export default function CameraScreen() {
 
   const takePicture = async () => {
     if (!cameraRef.current) {
-      console.error("🔧 [CameraScreen] ❌ cameraRef.current is null — cannot take picture");
+      debugError("[CameraScreen] cameraRef.current is null; cannot take picture");
       return;
     }
     try {
-      console.log("🔧 [CameraScreen] 👆 Shutter pressed — taking picture...");
+      debugLog("[CameraScreen] Shutter pressed; taking picture...");
       const photo = await cameraRef.current.takePictureAsync({ quality: 0.85, base64: false });
 
       // ── DEBUG ──────────────────────────────────────
-      console.log("🔧 [CameraScreen] ✅ Photo captured. Full photo object:");
-      console.log("🔧 [CameraScreen]   uri:", photo.uri);
-      console.log("🔧 [CameraScreen]   width:", photo.width);
-      console.log("🔧 [CameraScreen]   height:", photo.height);
-      if ('exif' in photo) console.log("🔧 [CameraScreen]   exif:", JSON.stringify((photo as any).exif));
+      debugLog("[CameraScreen] Photo captured", { width: photo.width, height: photo.height });
       // ───────────────────────────────────────────────
 
       setLastPhoto(photo.uri);
-      console.log("🔧 [CameraScreen] Navigating to CameraPreview with:", JSON.stringify({
-        uri: photo.uri,
-        mode,
-        cropId,
-      }));
+      debugLog("[CameraScreen] Navigating to CameraPreview", { mode, hasCropId: !!cropId });
       navigation.navigate('CameraPreview', { uri: photo.uri, mode, cropId });
     } catch (err: any) {
-      console.error("🔧 [CameraScreen] ❌ takePictureAsync failed:", err.message);
-      console.error("🔧 [CameraScreen] ❌ Full error:", JSON.stringify(err));
+      debugError("[CameraScreen] takePictureAsync failed:", err?.message ?? err);
       Alert.alert('Gagal', 'Tidak dapat mengambil foto. Coba lagi.');
     }
   };
@@ -108,7 +104,7 @@ export default function CameraScreen() {
         <TouchableOpacity
           style={styles.flipBtn}
           onPress={() => {
-            console.log("🔧 [CameraScreen] Flipping camera — was:", facing, "→", facing === 'back' ? 'front' : 'back');
+            debugLog("[CameraScreen] Flipping camera", { from: facing, to: facing === 'back' ? 'front' : 'back' });
             setFacing((f) => (f === 'back' ? 'front' : 'back'));
           }}
         >
@@ -189,7 +185,7 @@ export default function CameraScreen() {
             activeOpacity={0.8}
             onPress={() => {
               if (lastPhoto) {
-                console.log("🔧 [CameraScreen] Using last photo from thumbnail:", lastPhoto);
+                debugLog("[CameraScreen] Using last photo from thumbnail");
                 navigation.navigate('CameraPreview', { uri: lastPhoto, mode, cropId });
               }
             }}

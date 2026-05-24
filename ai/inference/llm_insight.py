@@ -22,12 +22,21 @@ logger = logging.getLogger(__name__)
 _client = None
 
 
+def demo_fallback_enabled() -> bool:
+    return os.environ.get("ENABLE_DEMO_AI_FALLBACK", "").lower() in {"1", "true", "yes", "on"}
+
+
+def llm_ready() -> bool:
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    return bool(api_key and not api_key.startswith("your_"))
+
+
 def _get_client():
     """Get or create the Gemini client."""
     global _client
     if _client is None:
         api_key = os.environ.get("GEMINI_API_KEY", "")
-        if not api_key:
+        if not api_key or api_key.startswith("your_"):
             logger.warning("GEMINI_API_KEY not set. LLM insight requests will fail explicitly.")
             return None
         try:
@@ -63,6 +72,8 @@ async def generate_disease_insight(
     """
     client = _get_client()
     if client is None:
+        if demo_fallback_enabled():
+            return _fallback_disease_insight(disease_name, is_healthy)
         raise RuntimeError(
             "Gemini API key (GEMINI_API_KEY) not configured. "
             "LLM insights require a valid API key from https://aistudio.google.com"
@@ -103,6 +114,8 @@ Gunakan bahasa yang mudah dipahami petani."""
         return result
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
+        if demo_fallback_enabled():
+            return _fallback_disease_insight(disease_name, is_healthy)
         raise
 
 
@@ -126,6 +139,8 @@ async def generate_grading_insight(
     """
     client = _get_client()
     if client is None:
+        if demo_fallback_enabled():
+            return _fallback_grading_insight(grade)
         raise RuntimeError(
             "Gemini API key (GEMINI_API_KEY) not configured. "
             "LLM insights require a valid API key from https://aistudio.google.com"
@@ -161,6 +176,8 @@ Gunakan bahasa yang mudah dipahami petani."""
         return result
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
+        if demo_fallback_enabled():
+            return _fallback_grading_insight(grade)
         raise
 
 
@@ -178,6 +195,8 @@ async def generate_sensor_insight(sensor_data: dict) -> str:
     """
     client = _get_client()
     if client is None:
+        if demo_fallback_enabled():
+            return _fallback_sensor_insight(sensor_data)
         raise RuntimeError(
             "Gemini API key (GEMINI_API_KEY) not configured. "
             "LLM insights require a valid API key from https://aistudio.google.com"
@@ -206,4 +225,48 @@ Gunakan bahasa sederhana yang mudah dipahami petani."""
         return result
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
+        if demo_fallback_enabled():
+            return _fallback_sensor_insight(sensor_data)
         raise
+
+
+def _fallback_disease_insight(disease_name: str, is_healthy: bool) -> str:
+    if is_healthy:
+        return (
+            "Tanaman terdeteksi sehat. Pertahankan penyiraman, pemupukan, dan inspeksi rutin. "
+            "Ini adalah insight demo karena layanan LLM tidak aktif."
+        )
+    return (
+        f"Terdeteksi gejala {disease_name}. Pisahkan tanaman yang terinfeksi, jaga sanitasi alat, "
+        "dan konsultasikan dengan penyuluh pertanian. Ini adalah insight demo karena layanan LLM tidak aktif."
+    )
+
+
+def _fallback_grading_insight(grade: str) -> str:
+    insights = {
+        "A": "Grade A menunjukkan kualitas premium. Pertahankan praktik budidaya dan pascapanen saat ini.",
+        "B": "Grade B masih layak jual. Perbaiki sortasi, waktu panen, dan penanganan pascapanen.",
+        "C": "Grade C perlu evaluasi budidaya. Periksa nutrisi, air, dan kerusakan pascapanen.",
+    }
+    return insights.get(grade, "Grade tidak dikenali. Ini adalah insight demo karena layanan LLM tidak aktif.")
+
+
+def _fallback_sensor_insight(sensor_data: dict) -> str:
+    issues = []
+    temp = sensor_data.get("temperature")
+    humidity = sensor_data.get("humidity")
+    ph = sensor_data.get("ph")
+    soil = sensor_data.get("soil_moisture")
+
+    if temp is not None and (temp < 15 or temp > 35):
+        issues.append("Suhu berada di luar rentang ideal.")
+    if humidity is not None and (humidity < 40 or humidity > 90):
+        issues.append("Kelembapan udara perlu diperhatikan.")
+    if soil is not None and (soil < 20 or soil > 80):
+        issues.append("Kelembapan tanah perlu disesuaikan.")
+    if ph is not None and (ph < 5.5 or ph > 7.5):
+        issues.append("pH tanah berada di luar rentang ideal.")
+
+    if not issues:
+        issues.append("Kondisi sensor terlihat dalam rentang aman.")
+    return " ".join(issues) + " Ini adalah insight demo karena layanan LLM tidak aktif."

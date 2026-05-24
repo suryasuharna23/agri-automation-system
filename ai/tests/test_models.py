@@ -36,6 +36,10 @@ def test_grading_model():
     model = get_grading_model()
     assert model is not None, "Grading model failed to load"
 
+    if not model.ready:
+        logger.info("Grading checkpoint unavailable; model test skipped.")
+        return True
+
     # Test with a green (healthy-looking) image
     green_image = create_test_image(color=(50, 180, 50))
     result = model.predict(green_image)
@@ -115,57 +119,62 @@ def test_inference_server():
     from fastapi.testclient import TestClient
     from ai.api.inference_server import app
 
-    client = TestClient(app)
+    with TestClient(app) as client:
+        # Test health endpoint
+        response = client.get("/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] in ["ok", "unavailable"]
+        assert "capabilities" in data
+        assert {"diagnosis", "grading", "llm"}.issubset(data["capabilities"])
+        logger.info(f"Health check: {data}")
 
-    # Test health endpoint
-    response = client.get("/health")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["status"] in ["ok", "degraded"]
-    logger.info(f"Health check: {data}")
+        # Test grading endpoint
+        test_image = create_test_image(color=(100, 150, 50))
+        img_bytes = io.BytesIO()
+        test_image.save(img_bytes, format="JPEG")
+        img_bytes.seek(0)
 
-    # Test grading endpoint
-    test_image = create_test_image(color=(100, 150, 50))
-    img_bytes = io.BytesIO()
-    test_image.save(img_bytes, format="JPEG")
-    img_bytes.seek(0)
+        response = client.post(
+            "/grade",
+            files={"file": ("test.jpg", img_bytes, "image/jpeg")},
+            data={"crop_id": "test-crop-123"},
+        )
+        assert response.status_code in (200, 503), f"Unexpected grade response: {response.text}"
+        if response.status_code == 200:
+            data = response.json()
+            assert data["crop_id"] == "test-crop-123"
+            assert data["grade"] in ["A", "B", "C"]
+            assert data["mode"] in ["model", "demo_fallback"]
+            logger.info(f"Grade endpoint: {data}")
+        else:
+            logger.info("Grade endpoint unavailable as expected without checkpoint.")
 
-    response = client.post(
-        "/grade",
-        files={"file": ("test.jpg", img_bytes, "image/jpeg")},
-        data={"crop_id": "test-crop-123"},
-    )
-    assert response.status_code == 200, f"Grade endpoint failed: {response.text}"
-    data = response.json()
-    assert data["crop_id"] == "test-crop-123"
-    assert data["grade"] in ["A", "B", "C"]
-    logger.info(f"Grade endpoint: {data}")
+        # Test diagnosis endpoint
+        leaf_image = create_test_image(color=(60, 140, 40))
+        img_bytes2 = io.BytesIO()
+        leaf_image.save(img_bytes2, format="JPEG")
+        img_bytes2.seek(0)
 
-    # Test diagnosis endpoint
-    leaf_image = create_test_image(color=(60, 140, 40))
-    img_bytes2 = io.BytesIO()
-    leaf_image.save(img_bytes2, format="JPEG")
-    img_bytes2.seek(0)
+        response = client.post(
+            "/diagnose",
+            files={"file": ("leaf.jpg", img_bytes2, "image/jpeg")},
+        )
+        assert response.status_code == 200, f"Diagnose endpoint failed: {response.text}"
+        data = response.json()
+        assert "disease_name" in data
+        assert "confidence" in data
+        assert "recommendation" in data
+        logger.info(f"Diagnose endpoint: {data}")
 
-    response = client.post(
-        "/diagnose",
-        files={"file": ("leaf.jpg", img_bytes2, "image/jpeg")},
-    )
-    assert response.status_code == 200, f"Diagnose endpoint failed: {response.text}"
-    data = response.json()
-    assert "disease_name" in data
-    assert "confidence" in data
-    assert "recommendation" in data
-    logger.info(f"Diagnose endpoint: {data}")
-
-    # Test invalid image
-    response = client.post(
-        "/grade",
-        files={"file": ("bad.txt", b"not an image", "text/plain")},
-        data={"crop_id": "test"},
-    )
-    assert response.status_code == 400
-    logger.info("Invalid image correctly rejected")
+        # Test invalid image
+        response = client.post(
+            "/grade",
+            files={"file": ("bad.txt", b"not an image", "text/plain")},
+            data={"crop_id": "test"},
+        )
+        assert response.status_code == 400
+        logger.info("Invalid image correctly rejected")
 
     logger.info("✓ Inference server tests PASSED")
     return True

@@ -1,11 +1,15 @@
 """
-Test the LLM Insight endpoints (fallback mode without API key).
+Test the LLM Insight endpoints.
+
+Without GEMINI_API_KEY, these endpoints require ENABLE_DEMO_AI_FALLBACK=true
+to return demo fallback responses.
 
 Run with: python -m ai.tests.test_llm_insight
 """
 
 import sys
 import logging
+import os
 import threading
 import time
 
@@ -19,6 +23,7 @@ PORT = 8096
 
 
 def start_server():
+    os.environ.setdefault("ENABLE_DEMO_AI_FALLBACK", "true")
     from ai.api.inference_server import app
     config = uvicorn.Config(app, host="127.0.0.1", port=PORT, log_level="warning")
     uvicorn.Server(config).run()

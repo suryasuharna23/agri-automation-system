@@ -9,6 +9,44 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { aiApi, sensorApi } from '../services/api';
 import type { CameraMode } from './CameraScreen';
 
+type SensorContext = {
+  temperature: number | null;
+  humidity: number | null;
+  soil_moisture: number | null;
+  ph: number | null;
+};
+
+const debugLog = (...args: unknown[]) => {
+  if (__DEV__) console.log(...args);
+};
+
+const debugWarn = (...args: unknown[]) => {
+  if (__DEV__) console.warn(...args);
+};
+
+const debugError = (...args: unknown[]) => {
+  if (__DEV__) console.error(...args);
+};
+function getAnalysisErrorMessage(err: any) {
+  const status = err?.response?.status;
+  const detail = err?.response?.data?.detail;
+
+  if (status === 400) {
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail) && detail.length > 0) {
+      return detail[0]?.msg ?? 'Gambar tidak valid.';
+    }
+    return 'Gambar tidak valid. Ambil ulang foto dengan pencahayaan yang lebih jelas.';
+  }
+  if (status === 401 || status === 403) return 'Sesi login berakhir. Silakan login ulang.';
+  if (status === 503) {
+    if (typeof detail === 'string') return detail;
+    return 'Layanan AI sedang tidak tersedia. Coba beberapa saat lagi.';
+  }
+  if (err?.request && !err?.response) return 'Tidak dapat terhubung ke server. Periksa koneksi dan alamat API.';
+  return 'Analisis tidak dapat dilakukan. Coba lagi beberapa saat lagi.';
+}
+
 export default function CameraPreviewScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
@@ -17,16 +55,13 @@ export default function CameraPreviewScreen() {
   const mode: CameraMode = route.params?.mode ?? 'diagnosis';
   const cropId: string | undefined = route.params?.cropId;
 
-  // ── DEBUG: Log all route params ────────────────────
-  console.log("🔧 [CameraPreview] ====== SCREEN MOUNTED ======");
-  console.log("🔧 [CameraPreview] Route params:", JSON.stringify(route.params, null, 2));
-  console.log("🔧 [CameraPreview] Mode:", mode);
-  console.log("🔧 [CameraPreview] CropId:", cropId);
+  debugLog("🔧 [CameraPreview] ====== SCREEN MOUNTED ======");
+  debugLog("🔧 [CameraPreview] Mode:", mode);
+  debugLog("🔧 [CameraPreview] CropId:", cropId);
   // ───────────────────────────────────────────────────
 
   // Support single uri or batch uris array
   const initialPhotos: string[] = route.params?.uris ?? (route.params?.uri ? [route.params.uri] : []);
-  console.log("🔧 [CameraPreview] initialPhotos:", initialPhotos.length, "URIs:", initialPhotos);
 
   const [photos, setPhotos] = useState<string[]>(initialPhotos);
   const [index, setIndex] = useState(0);
@@ -48,158 +83,141 @@ export default function CameraPreviewScreen() {
     setIndex(Math.min(index, next.length - 1));
   };
 
-  // State to hold dynamically loaded sensor data, defaulted to safe values
-  const [sensorData, setSensorData] = useState<{
-    temperature: number;
-    humidity: number;
-    soil_moisture: number;
-    ph: number;
-  }>({
-    temperature: 28.0,
-    humidity: 72.0,
-    soil_moisture: 58.0,
-    ph: 6.5,
-  });
+  const [sensorData, setSensorData] = useState<SensorContext | null>(null);
 
   // ── Fetch live sensor data on mount ────────────────
   useEffect(() => {
-    console.log("🔧 [CameraPreview] useEffect: fetching sensor data...");
+    debugLog("🔧 [CameraPreview] useEffect: fetching sensor data...");
     let active = true;
     const fetchSensorData = async () => {
       try {
-        console.log("🔧 [CameraPreview] Calling sensorApi.listNodes()...");
+        debugLog("🔧 [CameraPreview] Calling sensorApi.listNodes()...");
         const nodes = await sensorApi.listNodes();
-        console.log("🔧 [CameraPreview] listNodes returned:", nodes?.length, "nodes");
-        console.log("🔧 [CameraPreview] Nodes data:", JSON.stringify(nodes));
+        debugLog("🔧 [CameraPreview] listNodes returned:", nodes?.length, "nodes");
+        debugLog("[CameraPreview] Sensor nodes fetched", nodes?.length ?? 0);
         if (nodes && nodes.length > 0) {
-          console.log("🔧 [CameraPreview] Calling getReadings for node:", nodes[0].id);
+          debugLog("🔧 [CameraPreview] Calling getReadings for node:", nodes[0].id);
           const readings = await sensorApi.getReadings(nodes[0].id, 1);
-          console.log("🔧 [CameraPreview] getReadings returned:", readings?.length, "readings");
+          debugLog("🔧 [CameraPreview] getReadings returned:", readings?.length, "readings");
           if (active && readings && readings.length > 0) {
             const latest = readings[0];
-            console.log("🔧 [CameraPreview] Latest reading:", JSON.stringify(latest));
             setSensorData({
-              temperature: latest.temperature ?? 28.0,
-              humidity: latest.humidity ?? 72.0,
-              soil_moisture: latest.soil_moisture ?? 58.0,
-              ph: latest.ph ?? 6.5,
+              temperature: latest.temperature,
+              humidity: latest.humidity,
+              soil_moisture: latest.soil_moisture,
+              ph: latest.ph,
             });
           } else {
-            console.log("🔧 [CameraPreview] No readings found, keeping defaults");
+            debugLog("🔧 [CameraPreview] No readings found; sensor context unavailable");
           }
         } else {
-          console.log("🔧 [CameraPreview] No sensor nodes found, keeping defaults");
+          debugLog("🔧 [CameraPreview] No sensor nodes found; sensor context unavailable");
         }
       } catch (err) {
-        console.warn("🔧 [CameraPreview] ⚠️ Failed to fetch live sensor data:", err);
-        console.warn("🔧 [CameraPreview] ⚠️ Error type:", typeof err);
-        console.warn("🔧 [CameraPreview] ⚠️ Error string:", String(err));
+        debugWarn("🔧 [CameraPreview] ⚠️ Failed to fetch live sensor data:", err);
+        debugWarn("🔧 [CameraPreview] ⚠️ Error type:", typeof err);
+        debugWarn("🔧 [CameraPreview] ⚠️ Error string:", String(err));
       }
     };
     fetchSensorData();
     return () => {
-      console.log("🔧 [CameraPreview] useEffect cleanup");
+      debugLog("🔧 [CameraPreview] useEffect cleanup");
       active = false;
     };
   }, []);
   // ───────────────────────────────────────────────────
 
   const handleAnalyze = async () => {
-    console.log("🔧 [CameraPreview] ====== ANALYZE BUTTON PRESSED ======");
-    console.log("🔧 [CameraPreview] Mode:", mode);
-    console.log("🔧 [CameraPreview] Current photo URI:", current);
-    console.log("🔧 [CameraPreview] Current photo URI length:", current?.length);
-    console.log("🔧 [CameraPreview] Sensor data being used:", JSON.stringify(sensorData));
-    console.log("🔧 [CameraPreview] CropId:", cropId);
+    debugLog("🔧 [CameraPreview] ====== ANALYZE BUTTON PRESSED ======");
+    debugLog("🔧 [CameraPreview] Mode:", mode);
+    debugLog("🔧 [CameraPreview] Sensor data available:", !!sensorData);
+    debugLog("🔧 [CameraPreview] CropId:", cropId);
 
     setLoading(true);
     try {
       if (mode === 'grading') {
         const id = cropId ?? '00000000-0000-0000-0000-000000000000';
-        console.log("🔧 [CameraPreview] GRADE mode — calling aiApi.gradeCrop with id:", id);
-        console.log("🔧 [CameraPreview] About to POST to /ai/grade/{cropId} with image URI:", current);
+        debugLog("🔧 [CameraPreview] GRADE mode — calling aiApi.gradeCrop with id:", id);
+        debugLog("[CameraPreview] About to POST to /ai/grade/{cropId}");
 
         const result = await aiApi.gradeCrop(id, current);
 
-        console.log("🔧 [CameraPreview] GRADE result:", JSON.stringify(result));
+        debugLog("[CameraPreview] GRADE result", { grade: result.grade, confidence: result.confidence, mode: result.mode ?? "model" });
 
         // Fetch LLM insight for grading (non-blocking enhancement)
         let insight = '';
         try {
-          console.log("🔧 [CameraPreview] Fetching grading insight...");
+          debugLog("🔧 [CameraPreview] Fetching grading insight...");
           insight = await aiApi.getGradingInsight(
             result.grade,
             result.confidence,
             result.grade_a_prob,
             result.grade_b_prob,
             result.grade_c_prob,
-            sensorData,
+            sensorData ?? undefined,
           );
-          console.log("🔧 [CameraPreview] Grading insight received, length:", insight?.length);
+          debugLog("🔧 [CameraPreview] Grading insight received, length:", insight?.length);
         } catch (err) {
-          console.warn("🔧 [CameraPreview] Grading insight fetch failed:", err);
+          debugWarn("🔧 [CameraPreview] Grading insight fetch failed:", err);
         }
 
-        console.log("🔧 [CameraPreview] Navigating to DiagnosisDetail with grade result");
-        navigation.navigate('DiagnosisDetail', { result, mode, imageUri: current, insight, sensorData });
+        debugLog("🔧 [CameraPreview] Navigating to DiagnosisDetail with grade result");
+        navigation.navigate('DiagnosisDetail', { result, mode, imageUri: current, insight, sensorData: sensorData ?? undefined });
       } else {
-        console.log("🔧 [CameraPreview] DIAGNOSE mode — calling aiApi.diagnose with URI:", current);
-        console.log("🔧 [CameraPreview] About to POST to /ai/diagnose with image URI:", current);
+        debugLog("[CameraPreview] DIAGNOSE mode calling aiApi.diagnose");
+        debugLog("[CameraPreview] About to POST to /ai/diagnose");
 
         const result = await aiApi.diagnose(current);
 
-        console.log("🔧 [CameraPreview] DIAGNOSE result:", JSON.stringify(result));
-        console.log("🔧 [CameraPreview]   disease_name:", result.disease_name);
-        console.log("🔧 [CameraPreview]   confidence:", result.confidence);
-        console.log("🔧 [CameraPreview]   is_healthy:", result.is_healthy);
-        console.log("🔧 [CameraPreview]   recommendation:", result.recommendation);
+        debugLog("[CameraPreview] DIAGNOSE result", { disease_name: result.disease_name, confidence: result.confidence, is_healthy: result.is_healthy, mode: result.mode ?? "model" });
+        debugLog("🔧 [CameraPreview]   disease_name:", result.disease_name);
+        debugLog("🔧 [CameraPreview]   confidence:", result.confidence);
+        debugLog("🔧 [CameraPreview]   is_healthy:", result.is_healthy);
 
         // Fetch LLM insight for disease (non-blocking enhancement)
         let insight = '';
         try {
-          console.log("🔧 [CameraPreview] Fetching disease insight...");
+          debugLog("🔧 [CameraPreview] Fetching disease insight...");
           insight = await aiApi.getDiseaseInsight(
             result.disease_name,
             result.confidence,
             result.is_healthy,
-            sensorData,
+            sensorData ?? undefined,
           );
-          console.log("🔧 [CameraPreview] Disease insight received, length:", insight?.length);
+          debugLog("🔧 [CameraPreview] Disease insight received, length:", insight?.length);
         } catch (err) {
-          console.warn("🔧 [CameraPreview] Disease insight fetch failed:", err);
+          debugWarn("🔧 [CameraPreview] Disease insight fetch failed:", err);
         }
 
-        console.log("🔧 [CameraPreview] Navigating to DiagnosisDetail with diagnosis result");
-        navigation.navigate('DiagnosisDetail', { result, mode, imageUri: current, insight, sensorData });
+        debugLog("🔧 [CameraPreview] Navigating to DiagnosisDetail with diagnosis result");
+        navigation.navigate('DiagnosisDetail', { result, mode, imageUri: current, insight, sensorData: sensorData ?? undefined });
       }
     } catch (err: any) {
       // ── DEBUG: Log every detail of the error ──
-      console.error("🔧 [CameraPreview] ❌❌❌ ANALYZE FAILED ❌❌❌");
-      console.error("🔧 [CameraPreview] Error type:", typeof err);
-      console.error("🔧 [CameraPreview] Error constructor:", err?.constructor?.name);
-      console.error("🔧 [CameraPreview] Error message:", err?.message);
-      console.error("🔧 [CameraPreview] Error code:", err?.code);
-      console.error("🔧 [CameraPreview] Error stack:", err?.stack);
+      debugError("🔧 [CameraPreview] ❌❌❌ ANALYZE FAILED ❌❌❌");
+      debugError("🔧 [CameraPreview] Error type:", typeof err);
+      debugError("🔧 [CameraPreview] Error constructor:", err?.constructor?.name);
+      debugError("🔧 [CameraPreview] Error message:", err?.message);
+      debugError("🔧 [CameraPreview] Error code:", err?.code);
+      debugError("🔧 [CameraPreview] Error stack:", err?.stack);
 
       // AxiosError specific fields
       if (err?.response) {
-        console.error("🔧 [CameraPreview] Axios response status:", err.response.status);
-        console.error("🔧 [CameraPreview] Axios response data:", JSON.stringify(err.response.data));
-        console.error("🔧 [CameraPreview] Axios response headers:", JSON.stringify(err.response.headers));
+        debugError("🔧 [CameraPreview] Axios response status:", err.response.status);
+        debugError("[CameraPreview] Axios response detail:", err.response.data?.detail ?? err.response.status);
       }
       if (err?.config) {
-        console.error("🔧 [CameraPreview] Request URL:", err.config?.baseURL + err.config?.url);
-        console.error("🔧 [CameraPreview] Request method:", err.config?.method);
-        console.error("🔧 [CameraPreview] Request headers:", JSON.stringify(err.config?.headers));
+        debugError("[CameraPreview] Request path:", err.config?.url);
+        debugError("🔧 [CameraPreview] Request method:", err.config?.method);
       }
       if (err?.request) {
-        console.error("🔧 [CameraPreview] Request object present (network error type):", typeof err.request);
+        debugError("🔧 [CameraPreview] Request object present (network error type):", typeof err.request);
       }
       // ───────────────────────────────────────────
 
-      Alert.alert('Gagal', 'Analisis tidak dapat dilakukan. Periksa koneksi dan coba lagi.');
+      Alert.alert('Gagal', getAnalysisErrorMessage(err));
     } finally {
-      console.log("🔧 [CameraPreview] ====== ANALYZE COMPLETE ======");
+      debugLog("🔧 [CameraPreview] ====== ANALYZE COMPLETE ======");
       setLoading(false);
     }
   };

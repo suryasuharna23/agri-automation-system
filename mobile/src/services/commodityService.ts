@@ -61,7 +61,7 @@ export async function getCommodityList(): Promise<string[]> {
     const names = [...new Set(res.data.map((c) => c.name))];
     return names.length > 0 ? names : FALLBACK_COMMODITIES;
   } catch (err: any) {
-    console.error("🔧 [commodityService.getCommodityList] Failed:", err?.message ?? err);
+    if (__DEV__) console.error("🔧 [commodityService.getCommodityList] Failed:", err?.message ?? err);
     return FALLBACK_COMMODITIES;
   }
 }
@@ -82,7 +82,7 @@ export async function getCommodityPriceHistory(
       return history;
     }
   } catch (err: any) {
-    console.error("🔧 [commodityService.getCommodityPriceHistory] Failed:", err?.message ?? err);
+    if (__DEV__) console.error("🔧 [commodityService.getCommodityPriceHistory] Failed:", err?.message ?? err);
     // fall through
   }
 
