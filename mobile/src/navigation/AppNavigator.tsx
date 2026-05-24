@@ -13,6 +13,7 @@ import DiagnosisScreen from "../screens/DiagnosisScreen";
 import DiagnosisDetailScreen from "../screens/DiagnosisDetailScreen";
 import TreatmentScreen from "../screens/TreatmentScreen";
 import ProfileScreen from "../screens/ProfileScreen";
+
 import MonitorScreen from "../screens/MonitorScreen";
 import NotificationScreen from "../screens/NotificationScreen";
 import Navbar2 from "../components/Navbar2";
@@ -42,6 +43,7 @@ function MainTabs() {
       <Tab.Screen name="Notifications" component={NotificationScreen} />
       <Tab.Screen name="Diagnosis" component={DiagnosisStack} />
       <Tab.Screen name="Monitor" component={MonitorScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -69,7 +71,6 @@ export default function AppNavigator() {
             </Stack.Screen>
             <Stack.Screen name="Camera" component={CameraScreen} />
             <Stack.Screen name="CameraPreview" component={CameraPreviewScreen} />
-            <Stack.Screen name="Profile" component={ProfileScreen} />
           </>
         ) : (
           <>

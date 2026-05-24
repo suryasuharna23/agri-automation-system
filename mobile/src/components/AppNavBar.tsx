@@ -1,17 +1,22 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-const LEFT_ITEMS = [
-  { route: 'Dashboard',     label: 'Dashboard',  icon: require('../../assets/icons/icon-dashboard.png') },
-  { route: 'Notifications', label: 'Notifikasi', icon: require('../../assets/icons/icon-notification.png') },
-] as const;
+type ImageItem = { route: string; label: string; kind: 'image'; icon: any };
+type IoniconsItem = { route: string; label: string; kind: 'ion'; ion: string };
+type NavItem = ImageItem | IoniconsItem;
 
-const RIGHT_ITEMS = [
-  { route: 'Diagnosis', label: 'Diagnosis', icon: require('../../assets/icons/icon-diagnosis.png') },
-  { route: 'Monitor',   label: 'Monitor',   icon: require('../../assets/icons/icon-monitor.png') },
-] as const;
+const LEFT_ITEMS: NavItem[] = [
+  { route: 'Dashboard',     label: 'Dashboard',  kind: 'image', icon: require('../../assets/icons/icon-dashboard.png') },
+  { route: 'Notifications', label: 'Notifikasi', kind: 'image', icon: require('../../assets/icons/icon-notification.png') },
+];
+
+const RIGHT_ITEMS: NavItem[] = [
+  { route: 'Diagnosis', label: 'Diagnosis', kind: 'image', icon: require('../../assets/icons/icon-diagnosis.png') },
+  { route: 'Monitor',   label: 'Monitor',   kind: 'image', icon: require('../../assets/icons/icon-monitor.png') },
+];
 
 interface Props {
   activeRoute?: string;
@@ -24,7 +29,7 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
 
   const go = (routeName: string) => navigation.navigate(routeName);
 
-  const renderItem = (item: { route: string; label: string; icon: any }, width?: number) => {
+  const renderItem = (item: NavItem, width?: number) => {
     const active = activeRoute === item.route;
     return (
       <TouchableOpacity
@@ -33,7 +38,11 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
         onPress={() => go(item.route)}
         activeOpacity={0.7}
       >
-        <Image style={[styles.icon, !active && styles.inactive]} resizeMode="cover" source={item.icon} />
+        {item.kind === 'image' ? (
+          <Image style={[styles.icon, !active && styles.inactive]} resizeMode="cover" source={item.icon} />
+        ) : (
+          <Ionicons name={item.ion as any} size={24} color="#fbf2d4" style={!active && styles.inactive} />
+        )}
         <Text style={[styles.label, !active && styles.inactiveText]}>{item.label}</Text>
       </TouchableOpacity>
     );
@@ -44,10 +53,10 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
       <View style={styles.inner}>
         <View style={styles.sides}>
           <View style={styles.group}>
-            {LEFT_ITEMS.map((item) => renderItem(item, item.route === 'Dashboard' ? 63 : undefined))}
+            {LEFT_ITEMS.map((item) => renderItem(item))}
           </View>
           <View style={styles.group}>
-            {RIGHT_ITEMS.map((item) => renderItem(item, item.route === 'Diagnosis' ? 63 : undefined))}
+            {RIGHT_ITEMS.map((item) => renderItem(item))}
           </View>
         </View>
       </View>

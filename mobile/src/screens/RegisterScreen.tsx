@@ -6,6 +6,7 @@ import {
   ActivityIndicator, ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import * as Location from "expo-location";
@@ -215,7 +216,7 @@ export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
                     />
                     {location ? (
                       <TouchableOpacity onPress={() => setLocation("")}>
-                        <Text style={styles.clearBtn}>✕</Text>
+                        <Ionicons name="close-circle" size={18} color="#55835e" />
                       </TouchableOpacity>
                     ) : null}
                   </View>
@@ -227,7 +228,10 @@ export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
                   >
                     {locLoading
                       ? <ActivityIndicator size="small" color="#fbf2d4" />
-                      : <Text style={styles.gpsBtnText}>📍 GPS</Text>
+                      : <>
+                          <Ionicons name="location-outline" size={14} color="#fbf2d4" />
+                          <Text style={styles.gpsBtnText}>GPS</Text>
+                        </>
                     }
                   </TouchableOpacity>
                 </View>
@@ -245,7 +249,7 @@ export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
                       editable={!loading}
                     />
                     <TouchableOpacity onPress={() => setShowPw((v) => !v)}>
-                      <Text style={styles.eyeToggle}>{showPw ? "🙈" : "👁"}</Text>
+                      <Ionicons name={showPw ? "eye-off-outline" : "eye-outline"} size={20} color="#55835e" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -423,11 +427,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 14,
   },
-  clearBtn: {
-    fontSize: 14,
-    color: "#55835e",
-    paddingHorizontal: 4,
-  },
   gpsBtnText: {
     fontSize: 12,
     fontFamily: "FacultyGlyphic_400Regular",
@@ -439,10 +438,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "#dbe3dd",
     alignSelf: "stretch",
-  },
-  eyeToggle: {
-    fontSize: 18,
-    color: "#0e4719",
   },
   lupaKataSandiTypo: {
     fontSize: 12,

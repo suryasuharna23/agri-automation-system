@@ -6,6 +6,7 @@ import {
   ActivityIndicator, ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import { authApi } from "../services/api";
@@ -108,7 +109,7 @@ export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
                       editable={!loading}
                     />
                     <TouchableOpacity onPress={() => setShowPw((v) => !v)}>
-                      <Text style={styles.eyeToggle}>{showPw ? "🙈" : "👁"}</Text>
+                      <Ionicons name={showPw ? "eye-off-outline" : "eye-outline"} size={20} color="#55835e" />
                     </TouchableOpacity>
                   </View>
                   <TouchableOpacity>
@@ -305,10 +306,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     backgroundColor: "#dbe3dd",
     alignSelf: "stretch",
-  },
-  eyeToggle: {
-    fontSize: 18,
-    color: "#0e4719",
   },
   lupaKataSandi: {
     alignSelf: "stretch",
