@@ -1,8 +1,12 @@
 import uuid
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
+from fastapi import APIRouter, Depends, Request, UploadFile, File, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+
+UPLOADS_DIR = Path(__file__).resolve().parent.parent.parent / "uploads" / "diagnosis"
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 from app.database import get_db
 from app.models.crop import Crop, CropGrade, DiagnosisRecord
@@ -60,11 +64,19 @@ async def grade_crop(
 
 @router.post("/diagnose", response_model=DiagnosisResult)
 async def diagnose(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     image_bytes = await file.read()
+
+    ext = Path(file.filename or "image.jpg").suffix or ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+    (UPLOADS_DIR / filename).write_bytes(image_bytes)
+    base = str(request.base_url).rstrip("/")
+    image_url = f"{base}/uploads/diagnosis/{filename}"
+
     try:
         result = await diagnose_plant_disease(image_bytes, file.filename or "image.jpg")
     except Exception as exc:
@@ -85,14 +97,32 @@ async def diagnose(
 
     record = DiagnosisRecord(
         farmer_id=current_user.id,
-        image_url="",
+        image_url=image_url,
         disease_name=result.disease_name,
         confidence=result.confidence,
         recommendation=result.recommendation,
     )
     db.add(record)
     await db.commit()
-    return result
+    return result.model_copy(update={"record_id": record.id})
+
+
+class InsightSaveRequest(BaseModel):
+    insight: str
+
+
+@router.patch("/diagnoses/{record_id}/insight", status_code=204)
+async def save_diagnosis_insight(
+    record_id: uuid.UUID,
+    body: InsightSaveRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    record = await db.get(DiagnosisRecord, record_id)
+    if not record or record.farmer_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Diagnosis record not found")
+    record.ai_insight = body.insight
+    await db.commit()
 
 
 @router.get("/diagnoses", response_model=list[DiagnosisRecordResponse])

@@ -56,6 +56,7 @@ class DiagnosisResult(BaseModel):
     recommendation: str
     is_healthy: bool
     mode: str = "model"
+    record_id: uuid.UUID | None = None
 
 
 class DiagnosisRecordResponse(BaseModel):
@@ -67,4 +68,5 @@ class DiagnosisRecordResponse(BaseModel):
     disease_name: str | None
     confidence: float | None
     recommendation: str | None
+    ai_insight: str | None
     created_at: datetime

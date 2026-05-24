@@ -1,8 +1,10 @@
 import asyncio
 import logging
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.database import init_db
 from app.routers import auth, sensor, ai, marketplace, transaction
@@ -36,6 +38,10 @@ app.include_router(sensor.router, prefix="/api/v1")
 app.include_router(ai.router, prefix="/api/v1")
 app.include_router(marketplace.router, prefix="/api/v1")
 app.include_router(transaction.router, prefix="/api/v1")
+
+_uploads_dir = Path(__file__).resolve().parent.parent / "uploads"
+_uploads_dir.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(_uploads_dir)), name="uploads")
 
 
 async def _handle_mqtt_sensor(payload: dict):

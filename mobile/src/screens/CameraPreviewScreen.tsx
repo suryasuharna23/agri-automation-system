@@ -162,7 +162,7 @@ export default function CameraPreviewScreen() {
         }
 
         debugLog("🔧 [CameraPreview] Navigating to DiagnosisDetail with grade result");
-        navigation.navigate('DiagnosisDetail', { result, mode, imageUri: current, insight, sensorData: sensorData ?? undefined });
+        navigation.navigate('Main', { screen: 'Diagnosis', params: { screen: 'DiagnosisDetail', params: { result, mode, imageUri: current, insight, sensorData: sensorData ?? undefined } } });
       } else {
         debugLog("[CameraPreview] DIAGNOSE mode calling aiApi.diagnose");
         debugLog("[CameraPreview] About to POST to /ai/diagnose");
@@ -185,12 +185,18 @@ export default function CameraPreviewScreen() {
             sensorData ?? undefined,
           );
           debugLog("🔧 [CameraPreview] Disease insight received, length:", insight?.length);
+          // Save insight to backend so it appears in history
+          if (result.record_id && insight) {
+            aiApi.saveDiagnosisInsight(result.record_id, insight).catch((err) => {
+              debugWarn("🔧 [CameraPreview] Failed to save insight:", err);
+            });
+          }
         } catch (err) {
           debugWarn("🔧 [CameraPreview] Disease insight fetch failed:", err);
         }
 
         debugLog("🔧 [CameraPreview] Navigating to DiagnosisDetail with diagnosis result");
-        navigation.navigate('DiagnosisDetail', { result, mode, imageUri: current, insight, sensorData: sensorData ?? undefined });
+        navigation.navigate('Main', { screen: 'Diagnosis', params: { screen: 'DiagnosisDetail', params: { result, mode, imageUri: current, insight, sensorData: sensorData ?? undefined } } });
       }
     } catch (err: any) {
       // ── DEBUG: Log every detail of the error ──

@@ -41,5 +41,14 @@ async def get_db() -> AsyncSession:
 
 async def init_db():
     """Create all tables on startup."""
+    from sqlalchemy import text
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # SQLite migrations: add new nullable columns to existing tables
+        for stmt in [
+            "ALTER TABLE diagnosis_records ADD COLUMN ai_insight TEXT",
+        ]:
+            try:
+                await conn.execute(text(stmt))
+            except Exception:
+                pass  # column already exists

@@ -47,6 +47,7 @@ class DiagnosisRecord(Base):
     disease_name: Mapped[str | None] = mapped_column(String(255))
     confidence: Mapped[float | None] = mapped_column(Float)
     recommendation: Mapped[str | None] = mapped_column(Text)
+    ai_insight: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

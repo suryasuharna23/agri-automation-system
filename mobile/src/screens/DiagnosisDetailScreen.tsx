@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -297,7 +298,7 @@ export default function DiagnosisDetailScreen() {
       <View style={styles.container}>
         <TouchableOpacity
           style={[styles.backBtn, { top: insets.top + 8 }]}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate('DiagnosisHistory')}
         >
           <Ionicons name="arrow-back" size={24} color="#fbf2d4" />
         </TouchableOpacity>
@@ -320,7 +321,7 @@ export default function DiagnosisDetailScreen() {
         {/* ── Header ── */}
         <View style={[styles.headerArea, { paddingTop: insets.top + 8 }]}>
           <View style={styles.titleRow}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('DiagnosisHistory')}>
               <Ionicons name="arrow-back" size={24} color="#fbf2d4" />
             </TouchableOpacity>
             <Text style={styles.title}>Detail Diagnosis</Text>
@@ -336,6 +337,7 @@ export default function DiagnosisDetailScreen() {
                 <Text style={styles.sensorVal}>
                   {(result.confidence * 100).toFixed(0)}%
                 </Text>
+                <Text style={styles.sensorCardLabel}>Keyakinan</Text>
               </View>
               <View style={styles.sensorCard}>
                 <Image
@@ -346,6 +348,7 @@ export default function DiagnosisDetailScreen() {
                 <Text style={styles.sensorVal}>
                   {formatSensorValue(sensorData?.temperature, '°')}
                 </Text>
+                <Text style={styles.sensorCardLabel}>Suhu Udara</Text>
               </View>
               <View style={styles.sensorCard}>
                 <Image
@@ -356,6 +359,7 @@ export default function DiagnosisDetailScreen() {
                 <Text style={styles.sensorVal}>
                   {formatSensorValue(sensorData?.ph)}
                 </Text>
+                <Text style={styles.sensorCardLabel}>pH Tanah</Text>
               </View>
             </View>
 
@@ -434,16 +438,26 @@ export default function DiagnosisDetailScreen() {
             );
           })}
 
-          {/* ── LLM AI Insight card ── */}
-          {llmInsight.length > 0 && (
-            <View style={styles.insightCard}>
-              <View style={styles.insightHeader}>
-                <Ionicons name="sparkles-outline" size={18} color="#0e4719" />
-                <Text style={styles.insightTitle}>AI Insight</Text>
+          {/* ── AI Insight card ── */}
+          <View style={styles.insightCard}>
+            <LinearGradient
+              style={StyleSheet.absoluteFill}
+              colors={['#e4f3e7', '#f7fcf8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <View style={styles.insightHeader}>
+              <View style={styles.insightIconWrap}>
+                <Ionicons name="sparkles" size={16} color="#fbf2d4" />
               </View>
-              <Text style={styles.insightText}>{llmInsight}</Text>
+              <Text style={styles.insightTitle}>AI Insight</Text>
             </View>
-          )}
+            {llmInsight.length > 0 ? (
+              <Text style={styles.insightText}>{llmInsight}</Text>
+            ) : (
+              <Text style={styles.insightEmpty}>Insight AI belum tersedia untuk diagnosis ini.</Text>
+            )}
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -510,9 +524,15 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'center',
   },
+  sensorCardLabel: {
+    fontSize: 10,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#2e6b38',
+    textAlign: 'center',
+  },
   sensorCard: {
-    width: 104,
-    height: 94,
+    flex: 1,
+    height: 110,
     borderRadius: 12,
     backgroundColor: '#d3e6d7',
     alignItems: 'center',
@@ -520,7 +540,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingTop: 10,
     paddingBottom: 15,
-    paddingHorizontal: 26,
+    paddingHorizontal: 10,
   },
   icontemp: {
     width: 13,
@@ -676,17 +696,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#0e4719',
-    backgroundColor: '#f0f7f1',
+    overflow: 'hidden',
     padding: 14,
-    gap: 8,
+    gap: 10,
   },
   insightHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+  },
+  insightIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: '#0e4719',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   insightTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'FacultyGlyphic_400Regular',
     color: '#0e4719',
   },
@@ -694,6 +722,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'FacultyGlyphic_400Regular',
     color: '#1a3d1f',
-    lineHeight: 19,
+    lineHeight: 20,
+  },
+  insightEmpty: {
+    fontSize: 13,
+    fontFamily: 'FacultyGlyphic_400Regular',
+    color: '#7a9e7e',
+    lineHeight: 20,
+    fontStyle: 'italic',
   },
 });

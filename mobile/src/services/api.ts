@@ -188,6 +188,9 @@ export const aiApi = {
     debugLog("[aiApi.diagnose] Result mode:", res.data?.mode ?? "model");
     return res.data;
   },
+  saveDiagnosisInsight: async (recordId: string, insight: string): Promise<void> => {
+    await api.patch(`/ai/diagnoses/${recordId}/insight`, { insight });
+  },
   getDiseaseInsight: async (
     diseaseName: string,
     confidence: number,

@@ -90,6 +90,7 @@ export interface DiagnosisResult {
   recommendation: string;
   is_healthy: boolean;
   mode?: 'model' | 'demo_fallback';
+  record_id?: string;
 }
 
 export interface InsightResponse {

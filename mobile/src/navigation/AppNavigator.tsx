@@ -20,6 +20,17 @@ import { useAuth } from "../services/AuthContext";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+const DiagnosisStackNav = createStackNavigator();
+
+function DiagnosisStack() {
+  return (
+    <DiagnosisStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <DiagnosisStackNav.Screen name="DiagnosisHistory" component={DiagnosisScreen} />
+      <DiagnosisStackNav.Screen name="DiagnosisDetail" component={DiagnosisDetailScreen} />
+      <DiagnosisStackNav.Screen name="Treatment" component={TreatmentScreen} />
+    </DiagnosisStackNav.Navigator>
+  );
+}
 
 function MainTabs() {
   return (
@@ -29,7 +40,7 @@ function MainTabs() {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
-      <Tab.Screen name="Diagnosis" component={DiagnosisScreen} />
+      <Tab.Screen name="Diagnosis" component={DiagnosisStack} />
       <Tab.Screen name="Monitor" component={MonitorScreen} />
     </Tab.Navigator>
   );
@@ -58,8 +69,6 @@ export default function AppNavigator() {
             </Stack.Screen>
             <Stack.Screen name="Camera" component={CameraScreen} />
             <Stack.Screen name="CameraPreview" component={CameraPreviewScreen} />
-            <Stack.Screen name="DiagnosisDetail" component={DiagnosisDetailScreen} />
-            <Stack.Screen name="Treatment" component={TreatmentScreen} />
             <Stack.Screen name="Profile" component={ProfileScreen} />
           </>
         ) : (
