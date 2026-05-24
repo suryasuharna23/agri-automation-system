@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../services/AuthContext';
 
 const LEFT_ITEMS = [
   { route: 'Dashboard',     label: 'Dashboard',  icon: require('../../assets/icons/icon-dashboard.png') },
@@ -22,16 +21,8 @@ interface Props {
 export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
   const hookNav = useNavigation<any>();
   const navigation = navProp ?? hookNav;
-  const { logout } = useAuth();
 
   const go = (routeName: string) => navigation.navigate(routeName);
-
-  const handleLogout = () => {
-    Alert.alert('Keluar', 'Apakah Anda yakin ingin keluar?', [
-      { text: 'Batal', style: 'cancel' },
-      { text: 'Keluar', style: 'destructive', onPress: async () => { await logout(); } },
-    ]);
-  };
 
   const renderItem = (item: { route: string; label: string; icon: any }, width?: number) => {
     const active = activeRoute === item.route;
@@ -59,13 +50,6 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
             {RIGHT_ITEMS.map((item) => renderItem(item, item.route === 'Diagnosis' ? 63 : undefined))}
           </View>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.7}>
-          <Image
-            style={styles.logoutIcon}
-            resizeMode="cover"
-            source={require('../../assets/icons/icon-notification.png')}
-          />
-        </TouchableOpacity>
       </View>
 
       <LinearGradient
@@ -163,22 +147,5 @@ const styles = StyleSheet.create({
   cameraIcon: {
     width: 40,
     height: 40,
-  },
-  logoutBtn: {
-    position: 'absolute',
-    right: 4,
-    top: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: 'rgba(251,242,212,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoutIcon: {
-    width: 18,
-    height: 18,
-    tintColor: '#fbf2d4',
-    transform: [{ rotate: '180deg' }],
   },
 });

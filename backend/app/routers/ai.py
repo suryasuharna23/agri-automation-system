@@ -175,6 +175,7 @@ class SensorInsightRequest(BaseModel):
 class InsightResponse(BaseModel):
     """Response containing LLM-generated insight."""
     insight: str
+    actions: list[str] = []
 
 
 @router.post("/insight/disease", response_model=InsightResponse)
@@ -261,15 +262,15 @@ async def sensor_insight_endpoint(
         "ph": data.ph,
     }
     try:
-        insight = await get_sensor_insight(sensor_data)
+        result = await get_sensor_insight(sensor_data)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Layanan insight AI belum tersedia saat ini.",
         )
-    if not insight:
+    if not result or not result.get("insight"):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Layanan insight AI belum tersedia saat ini.",
         )
-    return InsightResponse(insight=insight)
+    return InsightResponse(insight=result["insight"], actions=result.get("actions", []))

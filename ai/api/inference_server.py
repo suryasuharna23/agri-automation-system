@@ -204,6 +204,7 @@ class SensorInsightRequest(BaseModel):
 
 class InsightResponse(BaseModel):
     insight: str
+    actions: list[str] = []
     mode: str = "model"
 
 
@@ -273,8 +274,8 @@ async def sensor_insight(request: SensorInsightRequest):
             "soil_moisture": request.soil_moisture,
             "ph": request.ph,
         }
-        insight = await generate_sensor_insight(sensor_data)
-        return {"insight": insight, "mode": MODEL_STATUS["llm"]["mode"]}
+        result = await generate_sensor_insight(sensor_data)
+        return {"insight": result["insight"], "actions": result.get("actions", []), "mode": MODEL_STATUS["llm"]["mode"]}
     except Exception as e:
         logger.error(f"Sensor insight error: {e}")
         raise HTTPException(status_code=500, detail="Gagal menghasilkan insight.")

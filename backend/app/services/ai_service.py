@@ -152,11 +152,11 @@ async def get_grading_insight(
     return response["insight"]
 
 
-async def get_sensor_insight(sensor_data: dict) -> str:
+async def get_sensor_insight(sensor_data: dict) -> dict:
     """
     Get LLM-generated environmental analysis from AI service.
 
-    Analyzes sensor readings and provides actionable farming advice.
+    Returns dict with 'insight' (str) and 'actions' (list[str]).
     """
     response = await _post_insight(f"{settings.ai_service_url}/insight/sensor", sensor_data)
-    return response["insight"]
+    return {"insight": response["insight"], "actions": response.get("actions", [])}

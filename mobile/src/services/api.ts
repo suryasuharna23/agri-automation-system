@@ -238,10 +238,10 @@ export const aiApi = {
     humidity?: number | null;
     soil_moisture?: number | null;
     ph?: number | null;
-  }): Promise<string> => {
+  }): Promise<{ insight: string; actions: string[] }> => {
     try {
       const res = await api.post("/ai/insight/sensor", sensorData);
-      return res.data.insight;
+      return { insight: res.data.insight ?? '', actions: res.data.actions ?? [] };
     } catch (err: any) {
       debugError("🔧 [aiApi.getSensorInsight] Failed:", err?.response?.status, err?.message ?? err);
       throw err;

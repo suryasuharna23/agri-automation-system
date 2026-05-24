@@ -181,18 +181,16 @@ Gunakan bahasa yang mudah dipahami petani."""
         raise
 
 
-async def generate_sensor_insight(sensor_data: dict) -> str:
+async def generate_sensor_insight(sensor_data: dict) -> dict:
     """
     Generate farming insight based on current sensor readings.
 
-    Analyzes environmental conditions and provides actionable advice.
-
-    Args:
-        sensor_data: Dict with temperature, humidity, soil_moisture, ph
-
-    Returns:
-        Environmental insight string in Indonesian
+    Returns a dict with:
+        insight: str  — short analysis paragraph (3-5 sentences)
+        actions: list[str] — 3-4 concrete action items for the farmer
     """
+    import json as _json
+
     client = _get_client()
     if client is None:
         if demo_fallback_enabled():
@@ -208,21 +206,33 @@ async def generate_sensor_insight(sensor_data: dict) -> str:
 - Kelembapan tanah: {sensor_data.get('soil_moisture', 'N/A')}%
 - pH tanah: {sensor_data.get('ph', 'N/A')}
 
-Berikan analisis singkat (3-5 kalimat) dalam Bahasa Indonesia:
-1. Apakah kondisi ini optimal untuk tanaman hortikultura (tomat, cabai, sayuran)?
-2. Jika ada parameter yang tidak ideal, apa yang harus dilakukan petani?
-3. Peringatan jika ada risiko penyakit berdasarkan kondisi lingkungan ini.
-Gunakan bahasa sederhana yang mudah dipahami petani."""
+Balas HANYA dengan JSON valid (tanpa markdown code block), format persis seperti ini:
+{{
+  "insight": "Analisis kondisi lahan dalam 3-4 kalimat. Sebutkan apakah kondisi optimal, parameter yang perlu perhatian, dan risiko penyakit.",
+  "actions": [
+    "Tindakan konkret pertama yang harus dilakukan petani",
+    "Tindakan konkret kedua",
+    "Tindakan konkret ketiga"
+  ]
+}}
+Gunakan bahasa Indonesia yang sederhana dan mudah dipahami petani."""
 
     try:
         response = client.models.generate_content(
             model="gemini-flash-lite-latest",
             contents=prompt,
         )
-        result = response.text.strip()
-        if not result:
+        text = response.text.strip()
+        if not text:
             raise RuntimeError("Gemini returned empty response for sensor insight")
-        return result
+        try:
+            data = _json.loads(text)
+            if "insight" in data and "actions" in data:
+                return {"insight": str(data["insight"]), "actions": [str(a) for a in data["actions"]]}
+        except _json.JSONDecodeError:
+            pass
+        # Fallback: treat full response as insight text
+        return {"insight": text, "actions": []}
     except Exception as e:
         logger.error(f"Gemini API error: {e}")
         if demo_fallback_enabled():
@@ -251,8 +261,9 @@ def _fallback_grading_insight(grade: str) -> str:
     return insights.get(grade, "Grade tidak dikenali. Ini adalah insight demo karena layanan LLM tidak aktif.")
 
 
-def _fallback_sensor_insight(sensor_data: dict) -> str:
+def _fallback_sensor_insight(sensor_data: dict) -> dict:
     issues = []
+    actions = []
     temp = sensor_data.get("temperature")
     humidity = sensor_data.get("humidity")
     ph = sensor_data.get("ph")
@@ -260,13 +271,23 @@ def _fallback_sensor_insight(sensor_data: dict) -> str:
 
     if temp is not None and (temp < 15 or temp > 35):
         issues.append("Suhu berada di luar rentang ideal.")
+        actions.append("Atur ventilasi atau naungan untuk menstabilkan suhu lahan.")
     if humidity is not None and (humidity < 40 or humidity > 90):
         issues.append("Kelembapan udara perlu diperhatikan.")
+        actions.append("Periksa sistem irigasi dan sirkulasi udara di area lahan.")
     if soil is not None and (soil < 20 or soil > 80):
         issues.append("Kelembapan tanah perlu disesuaikan.")
+        actions.append("Sesuaikan jadwal irigasi untuk menjaga kelembapan tanah 40–70%.")
     if ph is not None and (ph < 5.5 or ph > 7.5):
         issues.append("pH tanah berada di luar rentang ideal.")
+        actions.append("Lakukan pengapuran (jika pH rendah) atau penambahan belerang (jika pH tinggi).")
 
     if not issues:
-        issues.append("Kondisi sensor terlihat dalam rentang aman.")
-    return " ".join(issues) + " Ini adalah insight demo karena layanan LLM tidak aktif."
+        issues.append("Kondisi sensor terlihat dalam rentang aman untuk tanaman hortikultura.")
+        actions = [
+            "Pertahankan jadwal irigasi dan pemupukan yang sudah berjalan.",
+            "Lakukan inspeksi visual tanaman secara rutin untuk mendeteksi hama dini.",
+            "Catat data sensor harian untuk memantau tren perubahan kondisi lahan.",
+        ]
+    insight = " ".join(issues) + " (Demo — layanan LLM tidak aktif.)"
+    return {"insight": insight, "actions": actions}

@@ -160,6 +160,18 @@ def build_services(args: argparse.Namespace) -> list[Service]:
         )
     ]
 
+    if not args.no_sensor:
+        mock_cmd = [str(python_in_venv(ROOT / "backend" / ".venv")), str(ROOT / "scripts" / "sensor.py"), "--interval", "30"]
+        if args.mock_api_url and args.mock_username and args.mock_password:
+            mock_cmd += ["--api-url", args.mock_api_url, "--api-username", args.mock_username, "--api-password", args.mock_password]
+        services.append(Service(
+            name="mock-sensor",
+            command=mock_cmd,
+            cwd=ROOT,
+            env=backend_env,
+            note="Publishing mock sensor data every 30s to MQTT",
+        ))
+
     if args.backend_only:
         return services
 
@@ -302,6 +314,11 @@ def parse_args() -> argparse.Namespace:
         "--mobile-api-url",
         help="Full API URL injected into Expo, e.g. http://192.168.1.10:8000/api/v1.",
     )
+    parser.add_argument("--no-sensor", action="store_true", help="Skip the MQTT sensor publisher.")
+
+    parser.add_argument("--mock-api-url", default="http://localhost:8000", help="Backend URL for mock sensor auto-registration.")
+    parser.add_argument("--mock-username", help="Username for mock sensor node auto-registration.")
+    parser.add_argument("--mock-password", help="Password for mock sensor node auto-registration.")
     return parser.parse_args()
 
 

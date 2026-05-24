@@ -14,10 +14,25 @@ logger = logging.getLogger(__name__)
 THRESHOLDS = AnomalyThresholds()
 
 
+async def _get_or_create_node(device_id: str, db: AsyncSession) -> SensorNode | None:
+    node = await db.scalar(select(SensorNode).where(SensorNode.device_id == device_id))
+    if node:
+        return node
+    # Auto-create node assigned to the first available user (dev convenience)
+    owner = await db.scalar(select(User).limit(1))
+    if not owner:
+        logger.warning(f"No users in DB — cannot auto-create node for device_id: {device_id}")
+        return None
+    node = SensorNode(device_id=device_id, name=device_id, owner_id=owner.id, is_active=True)
+    db.add(node)
+    await db.flush()
+    logger.info(f"Auto-created sensor node '{device_id}' assigned to user {owner.email}")
+    return node
+
+
 async def process_sensor_reading(payload: SensorReadingPayload, db: AsyncSession):
-    node = await db.scalar(select(SensorNode).where(SensorNode.device_id == payload.device_id))
+    node = await _get_or_create_node(payload.device_id, db)
     if not node:
-        logger.warning(f"Unknown device_id: {payload.device_id}")
         return
 
     anomalies = _detect_anomalies(payload)
