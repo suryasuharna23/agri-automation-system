@@ -1,22 +1,32 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, field_validator
 
 from app.models.user import UserRole
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     password: str
     full_name: str
     phone: str | None = None
     role: UserRole = UserRole.FARMER
 
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        return _normalize_email(value)
+
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        return _normalize_email(value)
 
 
 class UserUpdate(BaseModel):
@@ -46,3 +56,11 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     user: UserResponse
+
+
+def _normalize_email(value: str) -> str:
+    normalized = value.strip().lower()
+    local, separator, domain = normalized.partition("@")
+    if not separator or not local or "." not in domain or domain.startswith(".") or domain.endswith("."):
+        raise ValueError("Email tidak valid.")
+    return normalized

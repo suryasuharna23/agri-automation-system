@@ -39,5 +39,8 @@ Thumbs.db
 
 # Development
 agri_dev.db
+backend/agri.db
+backend/agri_dev.db
+backend/uploads/
 _test_*.py
 *.tsbuildinfo
