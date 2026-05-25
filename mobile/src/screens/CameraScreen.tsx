@@ -173,7 +173,7 @@ export default function CameraScreen() {
                 <Image
                   style={styles.cameraIcon}
                   resizeMode="cover"
-                  source={require('../../assets/icons/icon-camera.png')}
+                  source={require('../../assets/icons/icon-camera.svg')}
                 />
               </LinearGradient>
             </TouchableOpacity>
