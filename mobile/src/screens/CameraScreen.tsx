@@ -7,6 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import IconCamera from '../../assets/icons/icon-camera.svg';
 
 export type CameraMode = 'grading' | 'diagnosis';
 
@@ -170,11 +171,7 @@ export default function CameraScreen() {
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
               >
-                <Image
-                  style={styles.cameraIcon}
-                  resizeMode="cover"
-                  source={require('../../assets/icons/icon-camera.png')}
-                />
+                <IconCamera width={43} height={43} />
               </LinearGradient>
             </TouchableOpacity>
           </LinearGradient>
@@ -404,10 +401,6 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  cameraIcon: {
-    width: 43,
-    height: 43,
   },
   checklistBtn: {
     width: 70,

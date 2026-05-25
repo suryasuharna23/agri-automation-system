@@ -6,12 +6,18 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import api, { aiApi, getUploadUrl } from '../services/api';
+import api, { aiApi, getUploadUrl, sensorApi } from '../services/api';
 
-interface SensorReading {
+interface SensorDisplay {
   suhuUdara: string;
   kelembapan: string;
   phTanah: string;
+}
+
+interface RawSensor {
+  temperature: number | null;
+  humidity: number | null;
+  ph: number | null;
 }
 
 interface DiagnosisHistoryItem {
@@ -21,7 +27,8 @@ interface DiagnosisHistoryItem {
   createdAt: string;
   status: 'Selesai';
   description: string;
-  sensors: SensorReading;
+  sensors: SensorDisplay;
+  sensorRaw?: RawSensor;
   result?: any;
   imageUri?: string;
   ai_insight?: string;
@@ -56,7 +63,7 @@ function extractPlantName(diseaseName: string | null): string {
   return diseaseName;
 }
 
-function mapRecord(record: DiagnosisRecord): DiagnosisHistoryItem {
+function mapRecord(record: DiagnosisRecord, raw?: RawSensor): DiagnosisHistoryItem {
   return {
     id: record.id,
     cropName: extractPlantName(record.disease_name),
@@ -64,7 +71,12 @@ function mapRecord(record: DiagnosisRecord): DiagnosisHistoryItem {
     createdAt: record.created_at,
     status: 'Selesai',
     description: record.recommendation ?? '-',
-    sensors: { suhuUdara: '-', kelembapan: '-', phTanah: '-' },
+    sensors: {
+      suhuUdara: raw?.temperature != null ? `${raw.temperature.toFixed(1)}°C` : '-',
+      kelembapan: raw?.humidity   != null ? `${raw.humidity.toFixed(1)}%`    : '-',
+      phTanah:   raw?.ph          != null ? raw.ph.toFixed(1)                : '-',
+    },
+    sensorRaw: raw,
     result: {
       disease_name: record.disease_name ?? '',
       confidence: record.confidence ?? 0,
@@ -98,14 +110,40 @@ export default function DiagnosisScreen() {
     useCallback(() => {
       let active = true;
       setLoading(true);
-      api.get('/ai/diagnoses')
-        .then((res) => {
-          if (active && Array.isArray(res.data)) setItems(res.data.map(mapRecord));
-        })
-        .catch((err: any) => {
-          if (__DEV__) console.error("🔧 [DiagnosisScreen] Failed to load:", err?.message ?? err);
-        })
-        .finally(() => { if (active) setLoading(false); });
+
+      Promise.all([
+        api.get('/ai/diagnoses'),
+        sensorApi.listNodes(),
+      ]).then(async ([diagRes, nodes]) => {
+        if (!active) return;
+        const records: DiagnosisRecord[] = Array.isArray(diagRes.data) ? diagRes.data : [];
+
+        let readings: any[] = [];
+        if (nodes.length > 0) {
+          try {
+            readings = await sensorApi.getReadings(nodes[0].id, 300);
+          } catch { /* sensor unavailable, continue without */ }
+        }
+
+        const mapped = records.map((record) => {
+          const diagTime = new Date(record.created_at).getTime();
+          let closest: any = readings[0] ?? null;
+          let minDiff = Infinity;
+          for (const r of readings) {
+            const diff = Math.abs(new Date(r.recorded_at).getTime() - diagTime);
+            if (diff < minDiff) { minDiff = diff; closest = r; }
+          }
+          const raw: RawSensor | undefined = closest
+            ? { temperature: closest.temperature ?? null, humidity: closest.humidity ?? null, ph: closest.ph ?? null }
+            : undefined;
+          return mapRecord(record, raw);
+        });
+
+        if (active) setItems(mapped);
+      }).catch((err: any) => {
+        if (__DEV__) console.error('[DiagnosisScreen] Failed to load:', err?.message ?? err);
+      }).finally(() => { if (active) setLoading(false); });
+
       return () => { active = false; };
     }, [])
   );
@@ -264,7 +302,7 @@ export default function DiagnosisScreen() {
                 navigation.navigate('DiagnosisDetail', {
                   result: item.result ?? { disease_name: 'Healthy', confidence: 1, is_healthy: true, recommendation: '' },
                   imageUri: item.imageUri ?? '',
-                  sensorData: undefined,
+                  sensorData: item.sensorRaw,
                   insight: item.ai_insight ?? '',
                 });
               }}
@@ -583,6 +621,7 @@ const styles = StyleSheet.create({
   sensorPanel: {
     width: 141,
     gap: 6,
+    marginRight: 14,
   },
   sensorRow: {
     flexDirection: 'row',

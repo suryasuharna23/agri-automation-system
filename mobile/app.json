@@ -13,6 +13,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Izinkan Agri menggunakan kamera untuk mengambil foto tanaman dan hasil panen."
+        }
+      ],
       "expo-secure-store",
       "expo-font"
     ]

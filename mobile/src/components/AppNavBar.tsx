@@ -36,6 +36,11 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
   const insets = useSafeAreaInsets();
 
   const go = (routeName: string) => {
+    if (routeName === 'Camera') {
+      const parentNavigation = navigation.getParent?.();
+      (parentNavigation ?? navigation).navigate('Camera', { mode: 'diagnosis' });
+      return;
+    }
     if (routeName === 'Diagnosis') {
       navigation.navigate('Diagnosis', { screen: 'DiagnosisHistory' });
       return;

@@ -282,7 +282,7 @@ export default function TreatmentScreen() {
                 <Image
                   style={styles.icontemp}
                   resizeMode="cover"
-                  source={require('../../assets/icons/icon-temp.png')}
+                  source={require('../../assets/icons/icon-temp.svg')}
                 />
                 <Text style={styles.sensorVal}>
                   {formatSensorValue(sensorData?.temperature, '°')}
@@ -292,7 +292,7 @@ export default function TreatmentScreen() {
                 <Image
                   style={styles.iconph}
                   resizeMode="cover"
-                  source={require('../../assets/icons/icon-ph.png')}
+                  source={require('../../assets/icons/icon-ph.svg')}
                 />
                 <Text style={styles.sensorVal}>
                   {formatSensorValue(sensorData?.ph)}
