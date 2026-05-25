@@ -10,7 +10,9 @@ import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../services/AuthContext';
-import { authApi } from '../services/api';
+import { authApi, transactionApi } from '../services/api';
+import type { Transaction } from '../types';
+import { formatCurrency } from '../utils/format';
 
 type UserData = {
   full_name: string;
@@ -69,6 +71,7 @@ export default function ProfileScreen() {
   const [phone,          setPhone]          = useState('');
   const [location,       setLocation]       = useState('');
   const [logoutVisible,  setLogoutVisible]  = useState(false);
+  const [orders,         setOrders]         = useState<Transaction[]>([]);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -87,6 +90,7 @@ export default function ProfileScreen() {
       }
     };
     loadUser();
+    transactionApi.listOrders().then(setOrders).catch(() => {});
   }, []);
 
   const handleSave = async () => {
@@ -141,6 +145,10 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => setLogoutVisible(true);
+
+  const revenue = orders
+    .filter((o) => ['confirmed', 'processing', 'completed'].includes(o.status))
+    .reduce((sum, o) => sum + o.total_amount, 0);
 
   const initials = (user?.full_name ?? 'U')
     .split(' ')
@@ -291,7 +299,7 @@ export default function ProfileScreen() {
             />
             <View>
               <Text style={styles.balanceLabel}>Saldo Anda</Text>
-              <Text style={styles.balanceAmount}>Rp20.140.340</Text>
+              <Text style={styles.balanceAmount}>{formatCurrency(revenue)}</Text>
             </View>
             <TouchableOpacity style={styles.keuanganBtn} activeOpacity={0.8} onPress={() => navigation.navigate('Finance')}>
               <Ionicons name="card-outline" size={18} color="#44694b" />

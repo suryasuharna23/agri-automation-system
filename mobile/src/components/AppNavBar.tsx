@@ -60,26 +60,6 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
           </View>
         </View>
       </View>
-
-      <LinearGradient
-        style={styles.cameraWrap}
-        locations={[0, 1]}
-        colors={['#0e4719', '#062f0e']}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-      >
-        <TouchableOpacity onPress={() => go('Camera')} activeOpacity={0.8}>
-          <LinearGradient
-            style={styles.cameraBtn}
-            locations={[0, 0.42]}
-            colors={['#a69e84', '#fbf2d4']}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-          >
-            <Image style={styles.cameraIcon} resizeMode="cover" source={require('../../assets/icons/icon-camera.png')} />
-          </LinearGradient>
-        </TouchableOpacity>
-      </LinearGradient>
     </View>
   );
 }
@@ -128,33 +108,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   inactiveText: { opacity: 0.5 },
-  cameraWrap: {
-    position: 'absolute',
-    top: '0%',
-    left: '38.17%',
-    right: '40.33%',
-    height: '55.51%',
-    borderRadius: 12,
-    overflow: 'hidden',
-    alignItems: 'flex-start',
-    paddingLeft: 9,
-    paddingTop: 6,
-    paddingRight: 10,
-    paddingBottom: 7,
-  },
-  cameraBtn: {
-    width: 66,
-    height: 53,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 3,
-    borderColor: 'transparent',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cameraIcon: {
-    width: 40,
-    height: 40,
-  },
 });
