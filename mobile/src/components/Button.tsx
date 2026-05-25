@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
   variant_ghost:     { backgroundColor: Theme.colors.transparent },
   variant_danger:    { backgroundColor: Theme.colors.danger },
 
-  label: { fontWeight: Theme.font.weightSemibold },
+  label: { fontFamily: 'Lato_400Regular', fontWeight: Theme.font.weightSemibold },
   labelVariant_primary:   { color: Theme.colors.white },
   labelVariant_secondary: { color: Theme.colors.grass[700] },
   labelVariant_outline:   { color: Theme.colors.grass[600] },

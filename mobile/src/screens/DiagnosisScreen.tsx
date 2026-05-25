@@ -3,7 +3,6 @@ import {
   View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, TextInput, Modal, Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -174,15 +173,11 @@ export default function DiagnosisScreen() {
   return (
     <View style={styles.container}>
       {/* Decorative */}
-      <LinearGradient
-        style={styles.decoGradient}
-        colors={['rgba(113, 175, 125, 0)', '#0e4719']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-      >
-        <Image style={{ width: '100%', height: '100%' }} resizeMode="cover" source={require('../../assets/images/deco-right.png')} />
-      </LinearGradient>
-      <Image style={styles.decoPlant} resizeMode="cover" source={require('../../assets/images/dashboard-plant.png')} />
+      <Image
+        style={[styles.decoPlant, { top: -(insets.top + 8) }]}
+        resizeMode="contain"
+        source={require('../../assets/images/plant upside down.png')}
+      />
 
       {/* Header */}
       <View style={[styles.headerArea, { paddingTop: insets.top + 8 }]}>
@@ -340,19 +335,14 @@ export default function DiagnosisScreen() {
 function DiagnosisCard({ item, onPress, onDelete }: { item: DiagnosisHistoryItem; onPress: () => void; onDelete: () => void }) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.75}>
-      <LinearGradient
-        style={StyleSheet.absoluteFill}
-        colors={['#fefdf9', '#d9eedc']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
-      <View style={[styles.badge, styles.badgeSelesai]}>
-        <Text style={[styles.badgeText, styles.badgeTextSelesai]}>Selesai</Text>
+      <View style={styles.statusRow}>
+        <TouchableOpacity style={styles.deleteCardBtn} onPress={onDelete}>
+          <Ionicons name="trash-outline" size={16} color="#923333" />
+        </TouchableOpacity>
+        <View style={[styles.badge, styles.badgeSelesai]}>
+          <Text style={[styles.badgeText, styles.badgeTextSelesai]}>Selesai</Text>
+        </View>
       </View>
-      <TouchableOpacity style={styles.deleteCardBtn} onPress={onDelete}>
-        <Ionicons name="trash-outline" size={16} color="#923333" />
-      </TouchableOpacity>
 
       <View style={styles.cardTopLeft}>
         <Text style={styles.cardCrop}>{item.cropName}</Text>
@@ -391,19 +381,13 @@ const styles = StyleSheet.create({
   },
 
   /* ── Decorative ── */
-  decoGradient: {
-    position: 'absolute',
-    left: 225,
-    top: -127,
-    width: 180,
-    height: 220,
-  },
   decoPlant: {
     position: 'absolute',
-    top: -109,
-    left: 246,
-    width: 203,
-    height: 247,
+    right: -18,
+    width: 160,
+    height: 196,
+    zIndex: 0,
+    pointerEvents: 'none',
   },
 
   /* ── Header ── */
@@ -485,7 +469,7 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
   },
 
@@ -498,12 +482,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#b4c6b8',
   },
   resetText: {
     fontSize: 13,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
     textDecorationLine: 'underline',
   },
@@ -521,6 +505,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#b4c6b8',
+    backgroundColor: '#fefdf9',
     overflow: 'hidden',
     elevation: 4,
     shadowColor: '#000',
@@ -528,12 +513,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  badge: {
+  statusRow: {
     position: 'absolute',
     top: 0,
-    left: 253,
-    width: 111,
+    right: 0,
     height: 37,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  badge: {
+    minWidth: 111,
+    height: 37,
+    paddingHorizontal: 14,
     borderBottomLeftRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -545,16 +538,14 @@ const styles = StyleSheet.create({
   },
   badgeTextSelesai: { color: '#0e4719' },
   deleteCardBtn: {
-    position: 'absolute',
-    top: 43,
-    right: 10,
     width: 32,
     height: 32,
-    borderRadius: 10,
-    backgroundColor: '#fff0f0',
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,240,240,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    borderWidth: 1,
+    borderColor: '#f5c5c5',
   },
   cardTopLeft: {
     position: 'absolute',
@@ -584,9 +575,10 @@ const styles = StyleSheet.create({
   cardDesc: {
     width: 175,
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
     lineHeight: 16,
+    textAlign: 'justify',
   },
   sensorPanel: {
     width: 141,
@@ -601,6 +593,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'FacultyGlyphic_400Regular',
     color: '#0e4719',
+    fontStyle: 'italic',
   },
   sensorValue: {
     fontSize: 12,
@@ -666,7 +659,7 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 14,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
   },
   optionTextActive: {
@@ -687,7 +680,7 @@ const styles = StyleSheet.create({
   },
   resetBtnText: {
     fontSize: 15,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
   },
   applyBtn: {
@@ -699,7 +692,7 @@ const styles = StyleSheet.create({
   },
   applyBtnText: {
     fontSize: 15,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#fbf2d4',
   },
 });

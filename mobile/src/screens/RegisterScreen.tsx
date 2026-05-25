@@ -101,36 +101,10 @@ export default function RegisterScreen({ onLogin }: { onLogin?: () => void }) {
           />
 
           {/* Decorative top-right assets — sama seperti Dashboard */}
-          <LinearGradient
-            style={styles.decoRight}
-            locations={[0, 1]}
-            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          >
-            <Image
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="cover"
-              source={require("../../assets/images/deco-right.png")}
-            />
-          </LinearGradient>
-          <LinearGradient
-            style={styles.decoLeft}
-            locations={[0, 1]}
-            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          >
-            <Image
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="cover"
-              source={require("../../assets/images/deco-left.png")}
-            />
-          </LinearGradient>
           <Image
             style={styles.plantImage}
-            resizeMode="cover"
-            source={require("../../assets/images/dashboard-plant.png")}
+            resizeMode="contain"
+            source={require("../../assets/images/plant upside down.png")}
           />
 
           {/* Title */}
@@ -300,27 +274,14 @@ const styles = StyleSheet.create({
     width: "100%",
   },
 
-  // Deco assets
-  decoRight: {
-    position: "absolute",
-    left: 225,
-    top: -92,
-    width: 180,
-    height: 220,
-  },
-  decoLeft: {
-    position: "absolute",
-    left: 152,
-    top: -150,
-    width: 160,
-    height: 200,
-  },
   plantImage: {
     position: "absolute",
-    top: -69,
-    left: 246,
-    width: 203,
-    height: 247,
+    top: 0,
+    right: -18,
+    width: 160,
+    height: 196,
+    zIndex: 0,
+    pointerEvents: "none",
   },
 
   // Title
@@ -332,6 +293,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     gap: 12,
     alignItems: "center",
+    zIndex: 1,
   },
   sobatPetaniTypo: {
     fontFamily: "FacultyGlyphic_400Regular",
@@ -354,16 +316,17 @@ const styles = StyleSheet.create({
     right: 23,
     alignItems: "flex-end",
     gap: 36,
+    zIndex: 1,
   },
   gabungBersamaAgriFlexBox: {
-    textAlign: "center",
+    textAlign: "justify",
     alignSelf: "stretch",
   },
   gabungBersamaAgri: {
     fontSize: 16,
-    fontFamily: "FacultyGlyphic_400Regular",
+    fontFamily: "Lato_400Regular",
     color: "#0e4719",
-    textAlign: "center",
+    textAlign: "justify",
   },
   frameParent: {
     gap: 24,
@@ -429,7 +392,7 @@ const styles = StyleSheet.create({
   },
   gpsBtnText: {
     fontSize: 12,
-    fontFamily: "FacultyGlyphic_400Regular",
+    fontFamily: "Lato_400Regular",
     fontWeight: "600",
     color: "#fbf2d4",
   },
@@ -441,7 +404,7 @@ const styles = StyleSheet.create({
   },
   lupaKataSandiTypo: {
     fontSize: 12,
-    fontFamily: "FacultyGlyphic_400Regular",
+    fontFamily: "Lato_400Regular",
     fontWeight: "600",
     color: "#0e4719",
   },
@@ -457,7 +420,7 @@ const styles = StyleSheet.create({
   },
   registrasi: {
     fontWeight: "700",
-    fontFamily: "FacultyGlyphic_400Regular",
+    fontFamily: "Lato_400Regular",
     color: "#fbf2d4",
     fontSize: 14,
     textAlign: "left",

@@ -131,7 +131,7 @@ export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
                 >
                   {loading
                     ? <ActivityIndicator color="#fbf2d4" size="small" />
-                    : <Text style={[styles.login2, styles.usernameTypo]}>LOGIN</Text>
+                    : <Text style={styles.login2}>LOGIN</Text>
                   }
                 </TouchableOpacity>
 
@@ -151,35 +151,9 @@ export default function LoginScreen({ onLogin }: { onLogin?: () => void }) {
           {/* Decorative assets — sama seperti Dashboard */}
           <Image
             style={styles.loginItem}
-            resizeMode="cover"
-            source={require("../../assets/images/dashboard-plant.png")}
+            resizeMode="contain"
+            source={require("../../assets/images/plant upside down.png")}
           />
-          <LinearGradient
-            style={styles.wrapper}
-            locations={[0, 1]}
-            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          >
-            <Image
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="cover"
-              source={require("../../assets/images/deco-right.png")}
-            />
-          </LinearGradient>
-          <LinearGradient
-            style={styles.container}
-            locations={[0, 1]}
-            colors={["rgba(113, 175, 125, 0)", "#0e4719"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 1 }}
-          >
-            <Image
-              style={{ width: "100%", height: "100%" }}
-              resizeMode="cover"
-              source={require("../../assets/images/deco-left.png")}
-            />
-          </LinearGradient>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -194,7 +168,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   masukUntukMemantauFlexBox: {
-    textAlign: "center",
+    textAlign: "justify",
     alignSelf: "stretch",
   },
   frameFlexBox1: {
@@ -220,7 +194,7 @@ const styles = StyleSheet.create({
   },
   lupaKataSandiTypo: {
     fontSize: 12,
-    fontFamily: "FacultyGlyphic_400Regular",
+    fontFamily: "Lato_400Regular",
     fontWeight: "600",
     color: "#0e4719",
   },
@@ -245,6 +219,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     left: 23,
     position: "absolute",
+    zIndex: 1,
   },
   selamatDatangKembali: {
     fontSize: 32,
@@ -263,10 +238,11 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: 36,
     position: "absolute",
+    zIndex: 1,
   },
   masukUntukMemantau: {
     fontSize: 16,
-    fontFamily: "FacultyGlyphic_400Regular",
+    fontFamily: "Lato_400Regular",
     color: "#0e4719",
   },
   frameParent: {
@@ -325,6 +301,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#fbf2d4",
     fontSize: 14,
+    fontFamily: "Lato_400Regular",
   },
   belumPunyaAkunContainer: {
     textAlign: "center",
@@ -337,10 +314,12 @@ const styles = StyleSheet.create({
   // Deco assets — posisi & ukuran sama dengan Dashboard
   loginItem: {
     position: "absolute",
-    top: -69,
-    left: 246,
+    top: 0,
+    right: -18,
     width: 203,
     height: 247,
+    zIndex: 0,
+    pointerEvents: "none",
   },
   wrapper: {
     position: "absolute",

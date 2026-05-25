@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Image,
   Modal, FlatList, Pressable, ActivityIndicator, Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -89,26 +89,39 @@ export default function DashboardScreen() {
   return (
     <View style={styles.container}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 24 }]}
+        contentContainerStyle={[styles.scroll, { paddingTop: 0, paddingBottom: insets.bottom + 24 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Header ── */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.greeting}>{greetingByHour()}!</Text>
-            <Text style={styles.date}>{today}</Text>
+        <View style={[styles.headerWrap, { paddingTop: insets.top + 8 }]}>
+          <LinearGradient
+            style={StyleSheet.absoluteFillObject}
+            colors={['rgba(251, 242, 212, 1)', '#fffefb']}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+          />
+          <Image
+            style={[styles.headerPlant, { top: -(insets.top + 8) }]}
+            resizeMode="contain"
+            source={require('../../assets/images/plant upside down.png')}
+          />
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={styles.greeting}>{greetingByHour()}!</Text>
+              <Text style={styles.date}>{today}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.profileBtn}
+              onPress={() => navigation.navigate('Profile')}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="person-outline" size={20} color="#0e4719" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.profileBtn}
-            onPress={() => navigation.navigate('Profile')}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="person-outline" size={20} color="#0e4719" />
-          </TouchableOpacity>
         </View>
 
         {/* ── Balance card ── */}
-        <View style={[styles.balanceCard, { width: CARD_W }]}>
+        <View style={[styles.balanceCard, { width: SCREEN_W }]}>
           <LinearGradient
             style={StyleSheet.absoluteFillObject}
             colors={['#1a5e2a', '#0e4719']}
@@ -123,20 +136,6 @@ export default function DashboardScreen() {
             <Ionicons name="card-outline" size={20} color="#44694b" />
             <Text style={styles.keuanganText}>Keuangan</Text>
           </TouchableOpacity>
-        </View>
-
-        <View style={[styles.summaryGrid, { width: CARD_W }]}>
-          <SummaryCard label="Produk" value={String(crops.length)} icon="basket-outline" />
-          <SummaryCard label="Stok" value={`${Math.round(stock)} kg`} icon="cube-outline" />
-          <SummaryCard label="Pesanan" value={String(activeOrders.length)} icon="receipt-outline" />
-          <SummaryCard label="Diagnosis" value={String(diagnosisCount)} icon="leaf-outline" />
-        </View>
-
-        <View style={[styles.shortcutGrid, { width: CARD_W }]}>
-          <Shortcut label="Tambah Produk" icon="add-circle-outline" onPress={() => navigation.navigate('CropForm')} />
-          <Shortcut label="Produk Saya" icon="basket-outline" onPress={() => navigation.navigate('CropList')} />
-          <Shortcut label="Tambah Sensor" icon="hardware-chip-outline" onPress={() => navigation.navigate('SensorNodeForm')} />
-          <Shortcut label="Pesanan" icon="receipt-outline" onPress={() => navigation.navigate('Orders')} />
         </View>
 
         {/* ── Sensor card ── */}
@@ -202,6 +201,20 @@ export default function DashboardScreen() {
             <Text style={styles.monitorLinkText}>Lihat detail di Monitor</Text>
             <Ionicons name="arrow-forward" size={13} color="#0e4719" />
           </TouchableOpacity>
+        </View>
+
+        <View style={[styles.summaryGrid, { width: CARD_W }]}>
+          <SummaryCard label="Produk" value={String(crops.length)} icon="basket-outline" />
+          <SummaryCard label="Stok" value={`${Math.round(stock)} kg`} icon="cube-outline" />
+          <SummaryCard label="Pesanan" value={String(activeOrders.length)} icon="receipt-outline" />
+          <SummaryCard label="Diagnosis" value={String(diagnosisCount)} icon="leaf-outline" />
+        </View>
+
+        <View style={[styles.shortcutGrid, { width: CARD_W }]}>
+          <Shortcut label="Tambah Produk" icon="add-circle-outline" onPress={() => navigation.navigate('CropForm')} />
+          <Shortcut label="Produk Saya" icon="basket-outline" onPress={() => navigation.navigate('CropList')} />
+          <Shortcut label="Tambah Sensor" icon="hardware-chip-outline" onPress={() => navigation.navigate('SensorNodeForm')} />
+          <Shortcut label="Pesanan" icon="receipt-outline" onPress={() => navigation.navigate('Orders')} />
         </View>
 
         {/* ── Commodity price section ── */}
@@ -303,9 +316,11 @@ export default function DashboardScreen() {
 function SummaryCard({ label, value, icon }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap }) {
   return (
     <View style={styles.summaryCard}>
-      <Ionicons name={icon} size={18} color="#0e4719" />
-      <Text style={styles.summaryValue}>{value}</Text>
-      <Text style={styles.summaryLabel}>{label}</Text>
+      <Ionicons name={icon} size={28} color="#0e4719" />
+      <View style={styles.summaryTextFrame}>
+        <Text style={styles.summaryValue}>{value}</Text>
+        <Text style={styles.summaryLabel}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -313,7 +328,7 @@ function SummaryCard({ label, value, icon }: { label: string; value: string; ico
 function Shortcut({ label, icon, onPress }: { label: string; icon: keyof typeof Ionicons.glyphMap; onPress: () => void }) {
   return (
     <TouchableOpacity style={styles.shortcutBtn} onPress={onPress} activeOpacity={0.85}>
-      <Ionicons name={icon} size={18} color="#fbf2d4" />
+      <Ionicons name={icon} size={26} color="#fbf2d4" />
       <Text style={styles.shortcutText}>{label}</Text>
     </TouchableOpacity>
   );
@@ -324,6 +339,22 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 14, gap: 14 },
 
   /* ── Header ── */
+  headerWrap: {
+    marginHorizontal: -14,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 18,
+    overflow: 'hidden',
+  },
+  headerPlant: {
+    position: 'absolute',
+    top: 0,
+    right: -18,
+    width: 160,
+    height: 196,
+    zIndex: 0,
+    pointerEvents: 'none',
+  },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   greeting: { fontSize: 36, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
   date: { fontSize: 14, fontFamily: 'FacultyGlyphic_400Regular', color: '#55835e', marginTop: 3 },
@@ -334,6 +365,7 @@ const styles = StyleSheet.create({
 
   /* ── Balance card ── */
   balanceCard: {
+    marginHorizontal: -14,
     borderRadius: 16, overflow: 'hidden', padding: 18,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
@@ -345,23 +377,28 @@ const styles = StyleSheet.create({
     backgroundColor: '#fbf2d4', borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 10,
   },
-  keuanganText: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#44694b', fontWeight: '600' },
+  keuanganText: { fontSize: 11, fontFamily: 'Lato_400Regular', color: '#44694b', fontWeight: '600' },
   summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   summaryCard: {
     width: (CARD_W - 8) / 2,
+    minHeight: 78,
     borderRadius: 14,
     backgroundColor: '#f3f8f1',
     borderWidth: 1,
     borderColor: '#ccd9ce',
-    padding: 12,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
+  summaryTextFrame: { flex: 1, gap: 3 },
   summaryValue: { fontSize: 18, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
   summaryLabel: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#55835e' },
   shortcutGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   shortcutBtn: {
     width: (CARD_W - 8) / 2,
-    minHeight: 46,
+    minHeight: 58,
     borderRadius: 14,
     backgroundColor: '#0e4719',
     flexDirection: 'row',
@@ -370,7 +407,7 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingHorizontal: 10,
   },
-  shortcutText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4' },
+  shortcutText: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#fbf2d4' },
 
   /* ── Sensor card ── */
   sensorCard: {
@@ -396,7 +433,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(220,38,38,0.08)', borderRadius: 8, padding: 10,
     borderWidth: 1, borderColor: 'rgba(220,38,38,0.25)',
   },
-  anomalyText: { flex: 1, fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#b91c1c', lineHeight: 17 },
+  anomalyText: { flex: 1, fontSize: 12, fontFamily: 'Lato_400Regular', color: '#b91c1c', lineHeight: 17, textAlign: 'justify' },
   metricGrid: { flexDirection: 'row', gap: 8 },
   metricPill: {
     flex: 1,
@@ -408,7 +445,7 @@ const styles = StyleSheet.create({
   monitorLink: {
     flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-end',
   },
-  monitorLinkText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  monitorLinkText: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#0e4719' },
 
   /* ── Section header ── */
   sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -419,7 +456,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6,
     borderWidth: 1, borderColor: '#0e4719', maxWidth: 180,
   },
-  commodityPillText: { flex: 1, fontSize: 13, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  commodityPillText: { flex: 1, fontSize: 13, fontFamily: 'Lato_400Regular', color: '#0e4719' },
 
   /* ── Chart card ── */
   chartCard: {
@@ -453,6 +490,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#f0f3f0',
   },
   dropdownItemActive: { backgroundColor: '#f0f3f0' },
-  dropdownItemText: { fontSize: 15, fontFamily: 'FacultyGlyphic_400Regular', color: '#1e3c22' },
+  dropdownItemText: { fontSize: 15, fontFamily: 'Lato_400Regular', color: '#1e3c22' },
   dropdownItemTextActive: { color: '#0e4719', fontWeight: '700' },
 });

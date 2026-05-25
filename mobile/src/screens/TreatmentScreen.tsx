@@ -520,9 +520,10 @@ const styles = StyleSheet.create({
   },
   cardDesc: {
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
     lineHeight: 16,
+    textAlign: 'justify',
   },
 
   /* Action group */
@@ -547,7 +548,7 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#923333',
   },
 
@@ -580,8 +581,9 @@ const styles = StyleSheet.create({
   stepText: {
     flex: 1,
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#5a1e1e',
     lineHeight: 17,
+    textAlign: 'justify',
   },
 });

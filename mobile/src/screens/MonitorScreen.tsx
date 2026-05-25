@@ -19,6 +19,7 @@ type Metric = 'temperature' | 'humidity' | 'soil_moisture' | 'ph';
 
 const PERIODS: Period[] = ['1h', '5h', '1d'];
 const PERIOD_HOURS: Record<Period, number> = { '1h': 1, '5h': 5, '1d': 24 };
+const PERIOD_LABELS: Record<Period, string> = { '1h': '1j', '5h': '5j', '1d': '1h' };
 
 const METRIC_CFG = [
   { key: 'temperature'   as Metric, label: 'Suhu',   unit: '°C', r: 214, g: 85,  b: 40  },
@@ -206,23 +207,23 @@ export default function MonitorScreen() {
         <View style={styles.headerRow}>
           <Text style={styles.title}>Lahan</Text>
           <Pressable style={styles.lahanPill} onPress={() => setNodeModal(true)}>
-            <Text style={styles.lahanPillText} numberOfLines={1}>
+            <Text style={styles.lahanPillText}>
               {activeNode?.name ?? 'Pilih Lahan'}
             </Text>
             <Ionicons name="chevron-down" size={14} color="#0e4719" />
           </Pressable>
         </View>
         <View style={styles.nodeActions}>
-          <TouchableOpacity style={styles.nodeActionBtn} onPress={() => navigation.navigate('SensorNodeForm')}>
-            <Ionicons name="add-circle-outline" size={16} color="#0e4719" />
-            <Text style={styles.nodeActionText}>Tambah Sensor</Text>
-          </TouchableOpacity>
           {activeNode ? (
             <TouchableOpacity style={[styles.nodeActionBtn, styles.nodeDeleteBtn]} onPress={deleteActiveNode}>
               <Ionicons name="trash-outline" size={16} color="#923333" />
               <Text style={[styles.nodeActionText, styles.nodeDeleteText]}>Hapus Sensor</Text>
             </TouchableOpacity>
           ) : null}
+          <TouchableOpacity style={styles.nodeActionBtn} onPress={() => navigation.navigate('SensorNodeForm')}>
+            <Ionicons name="add-circle-outline" size={16} color="#0e4719" />
+            <Text style={styles.nodeActionText}>Tambah Sensor</Text>
+          </TouchableOpacity>
         </View>
 
         {/* ── Period selector ── */}
@@ -233,7 +234,7 @@ export default function MonitorScreen() {
               style={[styles.periodBtn, p === period && styles.periodBtnActive]}
               onPress={() => setPeriod(p)}
             >
-              <Text style={[styles.periodText, p === period && styles.periodTextActive]}>{p}</Text>
+              <Text style={[styles.periodText, p === period && styles.periodTextActive]}>{PERIOD_LABELS[p]}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -376,14 +377,14 @@ export default function MonitorScreen() {
                 disabled={insightLoading || !hasSensorData}
                 activeOpacity={0.75}
               >
+                <Text style={styles.aiInsightBtnText}>
+                  {insightLoading ? 'Generating...' : aiInsight ? 'Regenerate' : 'Generate'}
+                </Text>
                 {insightLoading ? (
                   <ActivityIndicator size={12} color="#fbf2d4" />
                 ) : (
                   <Ionicons name="arrow-forward" size={12} color="#fbf2d4" />
                 )}
-                <Text style={styles.aiInsightBtnText}>
-                  {insightLoading ? 'Generating...' : aiInsight ? 'Regenerate' : 'Generate'}
-                </Text>
               </TouchableOpacity>
             </View>
             {aiInsight.length > 0 && (
@@ -454,11 +455,14 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 28, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
   lahanPill: {
+    marginLeft: 12,
+    flexShrink: 1,
     flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'space-between',
-    maxWidth: 200, minWidth: 160, height: 43, borderRadius: 8, borderWidth: 1, borderColor: '#0e4719',
-    backgroundColor: '#dbe3dd', paddingHorizontal: 12,
+    maxWidth: SCREEN_W - 118,
+    minHeight: 43, borderRadius: 8, borderWidth: 1, borderColor: '#0e4719',
+    backgroundColor: '#dbe3dd', paddingHorizontal: 12, paddingVertical: 8,
   },
-  lahanPillText: { flex: 1, fontSize: 13, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  lahanPillText: { flex: 1, flexShrink: 1, fontSize: 13, fontFamily: 'Lato_400Regular', color: '#0e4719' },
   nodeActions: { flexDirection: 'row', gap: 8 },
   nodeActionBtn: {
     flex: 1,
@@ -472,7 +476,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  nodeActionText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  nodeActionText: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#0e4719' },
   nodeDeleteBtn: { backgroundColor: '#fff0f0', borderColor: '#f5c5c5' },
   nodeDeleteText: { color: '#923333' },
 
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
   },
   periodBtn: { width: 68, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   periodBtnActive: { backgroundColor: '#0e4719' },
-  periodText: { fontSize: 16, fontFamily: 'FacultyGlyphic_400Regular', color: '#55835e' },
+  periodText: { fontSize: 16, fontFamily: 'Lato_400Regular', color: '#55835e' },
   periodTextActive: { color: '#fbf2d4' },
 
   /* ── Metric selector ── */
@@ -493,7 +497,7 @@ const styles = StyleSheet.create({
     flex: 1, height: 36, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1.5, borderColor: '#c5d3c6', backgroundColor: '#f0f4f1',
   },
-  metricText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#55835e' },
+  metricText: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#55835e' },
   metricTextActive: { color: '#fff' },
 
   /* ── Chart card ── */
@@ -515,14 +519,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 4,
   },
-  statLabel: { fontSize: 10, fontFamily: 'FacultyGlyphic_400Regular', color: '#7a9a7e' },
+  statLabel: { fontSize: 10, fontFamily: 'Lato_400Regular', color: '#7a9a7e' },
   statVal: { fontSize: 13, fontFamily: 'FacultyGlyphic_400Regular' },
   statValLarge: { fontSize: 17, fontFamily: 'FacultyGlyphic_400Regular', fontWeight: '700' },
   statChange: { fontSize: 10, fontFamily: 'FacultyGlyphic_400Regular' },
 
   /* ── Last updated ── */
   lastUpdated: {
-    fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular',
+    fontSize: 12, fontFamily: 'Lato_400Regular',
     fontStyle: 'italic', color: '#0e4719', alignSelf: 'flex-end',
   },
 
@@ -530,8 +534,8 @@ const styles = StyleSheet.create({
   overviewCard: {
     borderRadius: 12, backgroundColor: '#fefbf2',
     paddingLeft: 11, paddingTop: 12, paddingRight: 12, paddingBottom: 16, gap: 8,
-    elevation: 3, shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 3,
+    elevation: 8, shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 8,
   },
   overviewHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
   overviewTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
@@ -542,20 +546,20 @@ const styles = StyleSheet.create({
     borderColor: '#0d4c19', justifyContent: 'center', alignItems: 'center',
   },
   amanText: { fontSize: 14, fontFamily: 'FacultyGlyphic_400Regular', color: '#0d4c19' },
-  overviewDesc: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719', lineHeight: 18 },
+  overviewDesc: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#0e4719', lineHeight: 18, textAlign: 'justify' },
   aiInsightBox: { marginTop: 8, padding: 12, borderRadius: 10, backgroundColor: '#eef6f0', gap: 8, borderWidth: 1, borderColor: '#d0e8d4' },
   aiInsightHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   aiInsightIcon: { width: 22, height: 22, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  aiInsightLabel: { flex: 1, fontSize: 13, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719', fontWeight: '600' },
+  aiInsightLabel: { flex: 1, fontSize: 13, fontFamily: 'Lato_400Regular', color: '#0e4719', fontWeight: '600' },
   aiInsightBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     backgroundColor: '#0e4719', borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 6,
   },
   aiInsightBtnLoading: { backgroundColor: '#3a7042' },
-  aiInsightBtnText: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4' },
-  aiInsightText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#1a3d1f', lineHeight: 18 },
-  aiInsightEmpty: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#7a9a7e', fontStyle: 'italic', lineHeight: 17 },
+  aiInsightBtnText: { fontSize: 11, fontFamily: 'Lato_400Regular', color: '#fbf2d4' },
+  aiInsightText: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#1a3d1f', lineHeight: 18, textAlign: 'justify' },
+  aiInsightEmpty: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#7a9a7e', fontStyle: 'italic', lineHeight: 17, textAlign: 'justify' },
 
   /* ── Tindakan ── */
   tindakanSection: { gap: 12 },
@@ -573,13 +577,13 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1,
   },
   checkboxChecked: { backgroundColor: '#0e4719', borderColor: '#0e4719' },
-  tindakanText: { flex: 1, fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#000', lineHeight: 18 },
+  tindakanText: { flex: 1, fontSize: 12, fontFamily: 'Lato_400Regular', color: '#000', lineHeight: 18, textAlign: 'justify' },
   tindakanTextChecked: { color: '#4a7a52' },
 
   /* ── Node modal ── */
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
   modalList: {
-    backgroundColor: '#fff', borderRadius: 12, width: 240, maxHeight: 200,
+    backgroundColor: '#fff', borderRadius: 12, width: CARD_W, maxHeight: 200,
     overflow: 'hidden', elevation: 8,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8,
   },
@@ -590,6 +594,6 @@ const styles = StyleSheet.create({
   },
   modalItemActive: { backgroundColor: '#f0f3f0' },
   nodeDot: { width: 8, height: 8, borderRadius: 4 },
-  modalItemText: { fontSize: 15, fontFamily: 'FacultyGlyphic_400Regular', color: '#1e3c22' },
+  modalItemText: { flex: 1, fontSize: 15, fontFamily: 'Lato_400Regular', color: '#1e3c22' },
   modalItemTextActive: { color: '#0e4719', fontWeight: '700' },
 });

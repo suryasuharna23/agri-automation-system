@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   iconSpace: { width: 40 },
   summaryRow: { flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingBottom: 10 },
   summaryCard: { flex: 1, borderRadius: 16, backgroundColor: "#f3f8f1", borderWidth: 1, borderColor: "#ccd9ce", padding: 14, gap: 8 },
-  summaryTitle: { fontSize: 12, fontFamily: "FacultyGlyphic_400Regular", color: "#55835e" },
+  summaryTitle: { fontSize: 12, fontFamily: "Lato_400Regular", color: "#55835e" },
   summaryValue: { fontSize: 16, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
   list: { padding: 14, gap: 12 },
   card: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16, backgroundColor: "#f3f8f1", borderWidth: 1, borderColor: "#ccd9ce", padding: 12 },
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   mutedCircle: { backgroundColor: "#e7ede8" },
   body: { flex: 1, gap: 4 },
   name: { fontSize: 15, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
-  meta: { fontSize: 11, fontFamily: "FacultyGlyphic_400Regular", color: "#55835e" },
+  meta: { fontSize: 11, fontFamily: "Lato_400Regular", color: "#55835e" },
   amount: { fontSize: 14, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
   mutedAmount: { color: "#75826e" },
 });

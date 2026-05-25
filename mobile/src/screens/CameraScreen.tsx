@@ -221,9 +221,9 @@ const styles = StyleSheet.create({
   },
   permBody: {
     fontSize: 14,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#44694b',
-    textAlign: 'center',
+    textAlign: 'justify',
     marginTop: 8,
     marginBottom: 24,
   },
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   permBtnText: {
     color: '#fbf2d4',
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     fontSize: 16,
   },
 
@@ -332,8 +332,8 @@ const styles = StyleSheet.create({
   hintText: {
     color: 'rgba(251,242,212,0.85)',
     fontSize: 13,
-    fontFamily: 'FacultyGlyphic_400Regular',
-    textAlign: 'center',
+    fontFamily: 'Lato_400Regular',
+    textAlign: 'justify',
     paddingHorizontal: 24,
   },
 

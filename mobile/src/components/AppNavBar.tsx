@@ -1,21 +1,28 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Theme } from '../theme';
+import IconDashboard from '../../assets/icons/icon-dashboard.svg';
+import IconNotification from '../../assets/icons/icon-notification.svg';
+import IconDiagnose from '../../assets/icons/icon-diagnose.svg';
+import IconMonitor from '../../assets/icons/icon-monitor.svg';
+import IconCamera from '../../assets/icons/icon-camera.svg';
 
-type ImageItem = { route: string; label: string; kind: 'image'; icon: any };
+type SvgItem = { route: string; label: string; kind: 'svg'; icon: React.FC<any> };
 type IoniconsItem = { route: string; label: string; kind: 'ion'; ion: string };
-type NavItem = ImageItem | IoniconsItem;
+type NavItem = SvgItem | IoniconsItem;
 
 const LEFT_ITEMS: NavItem[] = [
-  { route: 'Dashboard',     label: 'Dashboard',  kind: 'image', icon: require('../../assets/icons/icon-dashboard.png') },
-  { route: 'Notifications', label: 'Notifikasi', kind: 'image', icon: require('../../assets/icons/icon-notification.png') },
+  { route: 'Dashboard', label: 'Dashboard', kind: 'svg', icon: IconDashboard },
+  { route: 'Monitor',   label: 'Monitor',   kind: 'svg', icon: IconMonitor },
 ];
 
 const RIGHT_ITEMS: NavItem[] = [
-  { route: 'Diagnosis', label: 'Diagnosis', kind: 'image', icon: require('../../assets/icons/icon-diagnosis.png') },
-  { route: 'Monitor',   label: 'Monitor',   kind: 'image', icon: require('../../assets/icons/icon-monitor.png') },
+  { route: 'Diagnosis', label: 'Diagnosis', kind: 'svg', icon: IconDiagnose },
+  { route: 'Notifications', label: 'Notifikasi', kind: 'svg', icon: IconNotification },
 ];
 
 interface Props {
@@ -26,31 +33,42 @@ interface Props {
 export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
   const hookNav = useNavigation<any>();
   const navigation = navProp ?? hookNav;
+  const insets = useSafeAreaInsets();
 
-  const go = (routeName: string) => navigation.navigate(routeName);
+  const go = (routeName: string) => {
+    if (routeName === 'Diagnosis') {
+      navigation.navigate('Diagnosis', { screen: 'DiagnosisHistory' });
+      return;
+    }
+    navigation.navigate(routeName);
+  };
 
   const renderItem = (item: NavItem, width?: number) => {
     const active = activeRoute === item.route;
     return (
       <TouchableOpacity
         key={item.route}
-        style={[styles.item, width ? { width } : null]}
+        style={[styles.item, active && styles.itemActive, width ? { width } : null]}
         onPress={() => go(item.route)}
         activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 10, right: 10 }}
       >
-        {item.kind === 'image' ? (
-          <Image style={[styles.icon, !active && styles.inactive]} resizeMode="cover" source={item.icon} />
+        {item.kind === 'svg' ? (
+          <View style={[styles.iconWrap, !active && styles.inactive]}>
+            <item.icon width={24} height={24} />
+          </View>
         ) : (
-          <Ionicons name={item.ion as any} size={24} color="#fbf2d4" style={!active && styles.inactive} />
+          <Ionicons name={item.ion as any} size={24} color={Theme.colors.cream[100]} style={!active && styles.inactive} />
         )}
-        <Text style={[styles.label, !active && styles.inactiveText]}>{item.label}</Text>
+        <Text style={[styles.label, active && styles.labelActive, !active && styles.inactiveText]}>{item.label}</Text>
+        {active ? <View style={styles.activeDot} /> : null}
       </TouchableOpacity>
     );
   };
 
   return (
-    <View style={styles.navbar}>
-      <View style={styles.inner}>
+    <View style={[styles.navbar, { height: styles.navbar.height + insets.bottom }]}>
+      <View style={[styles.inner, { paddingBottom: 18 + insets.bottom }]}>
         <View style={styles.sides}>
           <View style={styles.group}>
             {LEFT_ITEMS.map((item) => renderItem(item))}
@@ -64,19 +82,19 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
       <LinearGradient
         style={styles.cameraWrap}
         locations={[0, 1]}
-        colors={['#0e4719', '#062f0e']}
+        colors={[Theme.colors.grass[800], Theme.colors.grass[900]]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
       >
-        <TouchableOpacity onPress={() => go('Camera')} activeOpacity={0.8}>
+        <TouchableOpacity onPress={() => go('Camera')} activeOpacity={0}>
           <LinearGradient
             style={styles.cameraBtn}
             locations={[0, 0.42]}
-            colors={['#a69e84', '#fbf2d4']}
+            colors={[Theme.colors.cream[600], Theme.colors.cream[100]]}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
           >
-            <Image style={styles.cameraIcon} resizeMode="cover" source={require('../../assets/icons/icon-camera.png')} />
+            <IconCamera width={40} height={40} />
           </LinearGradient>
         </TouchableOpacity>
       </LinearGradient>
@@ -86,16 +104,17 @@ export default function AppNavBar({ activeRoute, navigation: navProp }: Props) {
 
 const styles = StyleSheet.create({
   navbar: {
-    height: 118,
+    height: 80,
     width: '100%',
+    backgroundColor: Theme.colors.grass[800],
   },
   inner: {
     position: 'absolute',
-    top: '32.2%',
+    top: '22.2%',
     left: '0%',
     right: '0%',
     bottom: '0%',
-    backgroundColor: '#0e4719',
+    backgroundColor: Theme.colors.grass[800],
     paddingHorizontal: 13,
     paddingTop: 16,
     paddingBottom: 20,
@@ -114,23 +133,45 @@ const styles = StyleSheet.create({
   },
   item: {
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
+    minWidth: 64,
+    paddingVertical: 6,
+    borderRadius: Theme.radius.md,
+  },
+  itemActive: {
+    backgroundColor: 'rgba(251,242,212,0.12)',
   },
   icon: {
     width: 24,
     height: 24,
   },
+  iconWrap: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   inactive: { opacity: 0.5 },
   label: {
-    fontSize: 10,
-    fontFamily: 'FacultyGlyphic_400Regular',
-    color: '#fbf2d4',
+    fontSize: 11,
+    fontFamily: 'Lato_400Regular',
+    color: Theme.colors.cream[100],
     textAlign: 'center',
   },
+  labelActive: {
+    fontWeight: '700',
+  },
   inactiveText: { opacity: 0.5 },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: Theme.radius.full,
+    backgroundColor: Theme.colors.cream[100],
+    marginTop: 2,
+  },
   cameraWrap: {
     position: 'absolute',
-    top: '0%',
+    top: '-36%',
     left: '38.17%',
     right: '40.33%',
     height: '55.51%',
@@ -152,9 +193,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  cameraIcon: {
-    width: 40,
-    height: 40,
+    ...Theme.shadow.sm,
   },
 });

@@ -13,6 +13,12 @@ const nextStatus: Partial<Record<OrderStatus, OrderStatus>> = {
   processing: "completed",
 };
 
+const statusActionLabel: Partial<Record<OrderStatus, string>> = {
+  pending: "Proses Pesanan",
+  confirmed: "Proses Pesanan",
+  processing: "Selesaikan Pesanan",
+};
+
 export default function OrdersScreen() {
   const navigation = useNavigation<any>();
   const [orders, setOrders] = useState<Transaction[]>([]);
@@ -25,7 +31,11 @@ export default function OrdersScreen() {
     setError("");
     try {
       const [orderData, cropData] = await Promise.all([transactionApi.listOrders(), marketplaceApi.listCrops(false)]);
-      setOrders(orderData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+      setOrders(orderData.sort((a, b) => {
+        if (a.status === "completed" && b.status !== "completed") return -1;
+        if (a.status !== "completed" && b.status === "completed") return 1;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }));
       setCrops(cropData);
     } catch {
       setError("Pesanan belum bisa dimuat.");
@@ -101,7 +111,7 @@ export default function OrdersScreen() {
                 <View style={styles.actions}>
                   {target ? (
                     <TouchableOpacity style={styles.primaryBtn} onPress={() => mutateStatus(item, target)}>
-                      <Text style={styles.primaryText}>Ubah ke {orderStatusLabel(target)}</Text>
+                      <Text style={styles.primaryText}>{statusActionLabel[item.status] ?? `Ubah ke ${orderStatusLabel(target)}`}</Text>
                     </TouchableOpacity>
                   ) : null}
                   {canCancel ? (
@@ -121,7 +131,7 @@ export default function OrdersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fffefb" },
-  header: { paddingTop: 48, paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  header: { paddingTop: 58, paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontSize: 24, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
   iconBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#dbe3dd", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#0e4719" },
   iconSpace: { width: 40 },
@@ -129,13 +139,13 @@ const styles = StyleSheet.create({
   card: { borderRadius: 16, backgroundColor: "#f3f8f1", borderWidth: 1, borderColor: "#ccd9ce", padding: 14, gap: 7 },
   code: { fontSize: 12, fontFamily: "FacultyGlyphic_400Regular", color: "#71af7d" },
   name: { fontSize: 19, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
-  meta: { fontSize: 12, fontFamily: "FacultyGlyphic_400Regular", color: "#55835e" },
+  meta: { fontSize: 12, fontFamily: "Lato_400Regular", color: "#55835e" },
   row: { flexDirection: "row", justifyContent: "space-between", gap: 12, alignItems: "center" },
   status: { fontSize: 13, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
   amount: { fontSize: 16, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   primaryBtn: { borderRadius: 12, backgroundColor: "#0e4719", paddingHorizontal: 12, paddingVertical: 9 },
-  primaryText: { fontSize: 12, fontFamily: "FacultyGlyphic_400Regular", color: "#fbf2d4" },
+  primaryText: { fontSize: 12, fontFamily: "Lato_400Regular", color: "#fbf2d4" },
   cancelBtn: { borderRadius: 12, backgroundColor: "#fff0f0", borderWidth: 1, borderColor: "#f5c5c5", paddingHorizontal: 12, paddingVertical: 9 },
-  cancelText: { fontSize: 12, fontFamily: "FacultyGlyphic_400Regular", color: "#923333" },
+  cancelText: { fontSize: 12, fontFamily: "Lato_400Regular", color: "#923333" },
 });

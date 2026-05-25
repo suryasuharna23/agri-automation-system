@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(220,38,38,0.08)', borderRadius: 8, padding: 10,
     borderWidth: 1, borderColor: 'rgba(220,38,38,0.25)',
   },
-  anomalyText: { flex: 1, fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#b91c1c', lineHeight: 17 },
+  anomalyText: { flex: 1, fontSize: 12, fontFamily: 'Lato_400Regular', color: '#b91c1c', lineHeight: 17, textAlign: 'justify' },
 
   /* Metric pills 2x2 grid */
   metricGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -233,12 +233,12 @@ const styles = StyleSheet.create({
   metricLabel: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular' },
 
   lastUpdated: {
-    fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular',
+    fontSize: 11, fontFamily: 'Lato_400Regular',
     color: '#7a9a7e', fontStyle: 'italic', alignSelf: 'flex-end',
   },
   emptyText: {
     textAlign: 'center', fontSize: 13,
-    fontFamily: 'FacultyGlyphic_400Regular', color: '#7a9a7e', paddingVertical: 16,
+    fontFamily: 'Lato_400Regular', color: '#7a9a7e', paddingVertical: 16,
   },
 
   /* ── Section title ── */
@@ -258,6 +258,6 @@ const styles = StyleSheet.create({
     width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
   },
   actionLabel: {
-    fontSize: 13, fontFamily: 'FacultyGlyphic_400Regular', lineHeight: 18,
+    fontSize: 13, fontFamily: 'Lato_400Regular', lineHeight: 18, textAlign: 'justify',
   },
 });

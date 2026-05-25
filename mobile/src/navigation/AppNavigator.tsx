@@ -2,7 +2,7 @@ import React from "react";
 import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createStackNavigator } from "@react-navigation/stack";
+import { CardStyleInterpolators, createStackNavigator } from "@react-navigation/stack";
 
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
@@ -31,7 +31,12 @@ const DiagnosisStackNav = createStackNavigator();
 
 function DiagnosisStack() {
   return (
-    <DiagnosisStackNav.Navigator screenOptions={{ headerShown: false }}>
+    <DiagnosisStackNav.Navigator
+      screenOptions={{
+        headerShown: false,
+        cardStyleInterpolator: CardStyleInterpolators.forHorizontalIOS,
+      }}
+    >
       <DiagnosisStackNav.Screen name="DiagnosisHistory" component={DiagnosisScreen} />
       <DiagnosisStackNav.Screen name="DiagnosisDetail" component={DiagnosisDetailScreen} />
       <DiagnosisStackNav.Screen name="Treatment" component={TreatmentScreen} />

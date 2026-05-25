@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import {
-  View, Text, Image, ScrollView, TouchableOpacity, StyleSheet,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { DiagnosisResult, GradingResult } from '../types';
+import IconTemp from '../../assets/icons/icon-temp.svg';
+import IconPh from '../../assets/icons/icon-ph.svg';
 
 const DISEASE_INFO: Record<string, {
   tempNote: string;
@@ -292,13 +294,17 @@ export default function DiagnosisDetailScreen() {
   const sensorData = route.params?.sensorData;
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const goBackToHistory = () => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.navigate('DiagnosisHistory');
+  };
 
   if (!result) {
     return (
       <View style={styles.container}>
         <TouchableOpacity
           style={[styles.backBtn, { top: insets.top + 8 }]}
-          onPress={() => navigation.navigate('DiagnosisHistory')}
+          onPress={goBackToHistory}
         >
           <Ionicons name="arrow-back" size={24} color="#fbf2d4" />
         </TouchableOpacity>
@@ -321,7 +327,7 @@ export default function DiagnosisDetailScreen() {
         {/* ── Header ── */}
         <View style={[styles.headerArea, { paddingTop: insets.top + 8 }]}>
           <View style={styles.titleRow}>
-            <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('DiagnosisHistory')}>
+            <TouchableOpacity style={styles.backBtn} onPress={goBackToHistory}>
               <Ionicons name="arrow-back" size={24} color="#fbf2d4" />
             </TouchableOpacity>
             <Text style={styles.title}>Detail Diagnosis</Text>
@@ -329,66 +335,60 @@ export default function DiagnosisDetailScreen() {
 
           {/* Sensor readings box */}
           <View style={styles.sensorBox}>
-            <Ionicons name="leaf-outline" size={24} color="#0e4719" style={styles.decoLeafLeft} />
-
             <View style={styles.sensorRow}>
               <View style={styles.sensorCard}>
-                <Ionicons name="leaf" size={37} color="#0e4719" />
+                <Ionicons name="leaf" size={28} color="#0e4719" />
                 <Text style={styles.sensorVal}>
                   {(result.confidence * 100).toFixed(0)}%
                 </Text>
-                <Text style={styles.sensorCardLabel}>Keyakinan</Text>
+                <Text style={styles.sensorCardLabel}>Confidence score</Text>
               </View>
               <View style={styles.sensorCard}>
-                <Image
-                  style={styles.icontemp}
-                  resizeMode="cover"
-                  source={require('../../assets/icons/icon-temp.png')}
-                />
+                <IconTemp width={14} height={26} />
                 <Text style={styles.sensorVal}>
                   {formatSensorValue(sensorData?.temperature, '°')}
                 </Text>
                 <Text style={styles.sensorCardLabel}>Suhu Udara</Text>
               </View>
               <View style={styles.sensorCard}>
-                <Image
-                  style={styles.iconph}
-                  resizeMode="cover"
-                  source={require('../../assets/icons/icon-ph.png')}
-                />
+                <IconPh width={26} height={26} />
                 <Text style={styles.sensorVal}>
                   {formatSensorValue(sensorData?.ph)}
                 </Text>
                 <Text style={styles.sensorCardLabel}>pH Tanah</Text>
               </View>
             </View>
-
-            <View style={styles.dotRow}>
-              <View style={[styles.dot, styles.dotLight]} />
-              <View style={[styles.dot, styles.dotDark]} />
-            </View>
-
-            <Ionicons name="leaf-outline" size={24} color="#0e4719" style={styles.decoLeafRight} />
           </View>
         </View>
 
-        {/* ── Category cards ── */}
+        {/* ── AI Insight and category cards ── */}
         <View style={styles.cardList}>
+          <View style={styles.insightCard}>
+            <LinearGradient
+              style={StyleSheet.absoluteFill}
+              colors={['#e4f3e7', '#f7fcf8']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <View style={styles.insightHeader}>
+              <View style={styles.insightIconWrap}>
+                <Ionicons name="sparkles" size={16} color="#fbf2d4" />
+              </View>
+              <Text style={styles.insightTitle}>AI Insight</Text>
+            </View>
+            {llmInsight.length > 0 ? (
+              <Text style={styles.insightText}>{llmInsight}</Text>
+            ) : (
+              <Text style={styles.insightEmpty}>Insight AI belum tersedia untuk diagnosis ini.</Text>
+            )}
+          </View>
+
           {categories.map((cat) => {
             const isExpanded = !!expanded[cat.key];
             return (
               <View key={cat.key} style={styles.cardGroup}>
                 {/* Main card */}
                 <View style={styles.card}>
-                  {imageUri ? (
-                    <Image
-                      source={{ uri: imageUri }}
-                      style={styles.cardImage}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
-                  )}
                   <View style={styles.cardText}>
                     <Text style={styles.cardTitle}>{cat.title}</Text>
                     <Text style={styles.cardDesc} numberOfLines={4}>{cat.description}</Text>
@@ -437,27 +437,6 @@ export default function DiagnosisDetailScreen() {
               </View>
             );
           })}
-
-          {/* ── AI Insight card ── */}
-          <View style={styles.insightCard}>
-            <LinearGradient
-              style={StyleSheet.absoluteFill}
-              colors={['#e4f3e7', '#f7fcf8']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            <View style={styles.insightHeader}>
-              <View style={styles.insightIconWrap}>
-                <Ionicons name="sparkles" size={16} color="#fbf2d4" />
-              </View>
-              <Text style={styles.insightTitle}>AI Insight</Text>
-            </View>
-            {llmInsight.length > 0 ? (
-              <Text style={styles.insightText}>{llmInsight}</Text>
-            ) : (
-              <Text style={styles.insightEmpty}>Insight AI belum tersedia untuk diagnosis ini.</Text>
-            )}
-          </View>
         </View>
       </ScrollView>
     </View>
@@ -502,22 +481,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#0e4719',
     backgroundColor: '#fefdf9',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     position: 'relative',
-  },
-  decoLeafLeft: {
-    position: 'absolute',
-    top: -12,
-    left: 20,
-    opacity: 0.6,
-  },
-  decoLeafRight: {
-    position: 'absolute',
-    top: -12,
-    right: 20,
-    opacity: 0.6,
-    transform: [{ scaleX: -1 }],
   },
   sensorRow: {
     flexDirection: 'row',
@@ -525,54 +491,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sensorCardLabel: {
-    fontSize: 10,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontSize: 12,
+    fontFamily: 'Lato_400Regular',
     color: '#2e6b38',
     textAlign: 'center',
   },
   sensorCard: {
     flex: 1,
-    height: 110,
+    height: 92,
     borderRadius: 12,
     backgroundColor: '#d3e6d7',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    paddingTop: 10,
-    paddingBottom: 15,
-    paddingHorizontal: 10,
-  },
-  icontemp: {
-    width: 13,
-    height: 32,
-  },
-  iconph: {
-    width: 32,
-    height: 32,
+    gap: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   sensorVal: {
     fontSize: 20,
     fontFamily: 'FacultyGlyphic_400Regular',
     color: '#0e4719',
     alignSelf: 'center',
-  },
-  dotRow: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  dot: {
-    width: 16,
-    height: 16,
-    borderRadius: 4,
-  },
-  dotLight: {
-    backgroundColor: '#e7ede8',
-  },
-  dotDark: {
-    backgroundColor: '#b4c0b6',
   },
 
   /* ── Card list ── */
@@ -587,26 +526,16 @@ const styles = StyleSheet.create({
 
   /* Individual card */
   card: {
-    height: 112,
+    minHeight: 112,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#0e4719',
     backgroundColor: '#fefbf2',
-    flexDirection: 'row',
     overflow: 'hidden',
   },
-  cardImage: {
-    width: 108,
-    height: 110,
-    borderRadius: 12,
-  },
-  cardImagePlaceholder: {
-    backgroundColor: '#d3e6d7',
-  },
   cardText: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     gap: 8,
   },
   cardTitle: {
@@ -616,9 +545,10 @@ const styles = StyleSheet.create({
   },
   cardDesc: {
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
     lineHeight: 16,
+    textAlign: 'justify',
   },
 
   /* Action group */
@@ -648,12 +578,12 @@ const styles = StyleSheet.create({
   },
   actionLabel: {
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#923333',
   },
   actionLink: {
     fontSize: 10,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#923333',
   },
 
@@ -686,9 +616,10 @@ const styles = StyleSheet.create({
   stepText: {
     flex: 1,
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#5a1e1e',
     lineHeight: 17,
+    textAlign: 'justify',
   },
 
   /* AI Insight card */
@@ -720,15 +651,17 @@ const styles = StyleSheet.create({
   },
   insightText: {
     fontSize: 13,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#1a3d1f',
     lineHeight: 20,
+    textAlign: 'justify',
   },
   insightEmpty: {
     fontSize: 13,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#7a9e7e',
     lineHeight: 20,
     fontStyle: 'italic',
+    textAlign: 'justify',
   },
 });

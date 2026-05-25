@@ -62,6 +62,6 @@ const styles = StyleSheet.create({
     color: Theme.colors.textPrimary,
   },
   rightIcon: { padding: 4 },
-  errorText: { fontSize: Theme.font.sizeXs, color: Theme.colors.danger, marginTop: 4 },
-  hintText:  { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted, marginTop: 4 },
+  errorText: { fontSize: Theme.font.sizeXs, fontFamily: 'Lato_400Regular', color: Theme.colors.danger, marginTop: 4 },
+  hintText:  { fontSize: Theme.font.sizeXs, fontFamily: 'Lato_400Regular', color: Theme.colors.textMuted, marginTop: 4, textAlign: 'justify' },
 });

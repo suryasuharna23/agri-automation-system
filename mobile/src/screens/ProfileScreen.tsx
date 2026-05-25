@@ -190,6 +190,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* ── Info fields card ── */}
+          <Text style={styles.fieldsSectionTitle}>Informasi Akun</Text>
           <View style={styles.fieldsCard}>
             <LinearGradient
               style={StyleSheet.absoluteFillObject}
@@ -197,17 +198,6 @@ export default function ProfileScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             />
-            <View style={styles.fieldsCardHeader}>
-              <LinearGradient
-                style={styles.fieldsCardIcon}
-                colors={['#ffd4a9', '#0e4719']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-              >
-                <Ionicons name="person" size={13} color="#fff" />
-              </LinearGradient>
-              <Text style={styles.fieldsCardTitle}>Informasi Akun</Text>
-            </View>
 
             <Field label="Email" value={user?.email ?? ''} editable={false} />
             <View style={styles.divider} />
@@ -379,7 +369,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#dbe3dd', borderRadius: 8, borderWidth: 1, borderColor: '#0e4719',
     paddingHorizontal: 12, paddingVertical: 6,
   },
-  editBtnText: { fontSize: 13, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  editBtnText: { fontSize: 13, fontFamily: 'Lato_400Regular', color: '#0e4719' },
 
   /* Avatar card */
   avatarCard: {
@@ -391,15 +381,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(251,242,212,0.25)', borderWidth: 2, borderColor: '#fbf2d4',
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarInitials: { fontSize: 22, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4', fontWeight: '700' },
+  avatarInitials: { fontSize: 22, fontFamily: 'Lato_400Regular', color: '#fbf2d4', fontWeight: '700' },
   avatarInfo: { gap: 8 },
-  avatarName: { fontSize: 18, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4', fontWeight: '600' },
+  avatarName: { fontSize: 18, fontFamily: 'Lato_400Regular', color: '#fbf2d4', fontWeight: '600' },
   roleBadge: {
     alignSelf: 'flex-start', backgroundColor: 'rgba(251,242,212,0.2)',
     borderRadius: 20, paddingHorizontal: 12, paddingVertical: 3,
     borderWidth: 1, borderColor: 'rgba(251,242,212,0.4)',
   },
-  roleText: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4' },
+  roleText: { fontSize: 11, fontFamily: 'Lato_400Regular', color: '#fbf2d4' },
 
   /* Fields card */
   fieldsCard: {
@@ -408,17 +398,21 @@ const styles = StyleSheet.create({
     elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.07, shadowRadius: 4,
   },
-  fieldsCardHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-  fieldsCardIcon: { width: 24, height: 24, borderRadius: 6, alignItems: 'center', justifyContent: 'center' },
-  fieldsCardTitle: { fontSize: 15, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  fieldsSectionTitle: {
+    fontSize: 15,
+    fontFamily: 'Lato_400Regular',
+    color: '#0e4719',
+    fontWeight: '700',
+    marginBottom: -6,
+  },
   divider: { height: 1, backgroundColor: '#dde8de', marginVertical: 12 },
 
   /* Field row */
   field: { gap: 6 },
-  fieldLabel: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#7a9a7e' },
-  fieldValue: { fontSize: 15, fontFamily: 'FacultyGlyphic_400Regular', color: '#1a3d1f' },
+  fieldLabel: { fontSize: 11, fontFamily: 'Lato_400Regular', color: '#7a9a7e' },
+  fieldValue: { fontSize: 15, fontFamily: 'Lato_400Regular', color: '#1a3d1f' },
   fieldInput: {
-    fontSize: 15, fontFamily: 'FacultyGlyphic_400Regular', color: '#1a3d1f',
+    fontSize: 15, fontFamily: 'Lato_400Regular', color: '#1a3d1f',
     borderBottomWidth: 1, borderBottomColor: '#0e4719', paddingBottom: 4,
   },
 
@@ -430,7 +424,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0e4719', borderRadius: 8,
     paddingHorizontal: 10, paddingVertical: 6,
   },
-  gpsBtnText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4' },
+  gpsBtnText: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#fbf2d4' },
 
   /* Action buttons */
   actionRow: { flexDirection: 'row', gap: 10 },
@@ -438,26 +432,26 @@ const styles = StyleSheet.create({
     paddingVertical: 13, paddingHorizontal: 20, borderRadius: 10,
     borderWidth: 1, borderColor: '#0e4719', alignItems: 'center', justifyContent: 'center',
   },
-  cancelText: { fontSize: 14, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  cancelText: { fontSize: 14, fontFamily: 'Lato_400Regular', color: '#0e4719' },
   saveBtn: {
     flex: 1, paddingVertical: 13, borderRadius: 10,
     backgroundColor: '#0e4719', alignItems: 'center', justifyContent: 'center',
   },
-  saveBtnText: { fontSize: 14, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4', fontWeight: '600' },
+  saveBtnText: { fontSize: 14, fontFamily: 'Lato_400Regular', color: '#fbf2d4', fontWeight: '600' },
 
   /* Balance card */
   balanceCard: {
     borderRadius: 16, overflow: 'hidden', padding: 18,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
   },
-  balanceLabel: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: 'rgba(251,242,212,0.8)', fontStyle: 'italic' },
-  balanceAmount: { fontSize: 22, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4', fontWeight: '600', marginTop: 4 },
+  balanceLabel: { fontSize: 12, fontFamily: 'Lato_400Regular', color: 'rgba(251,242,212,0.8)', fontStyle: 'italic' },
+  balanceAmount: { fontSize: 22, fontFamily: 'Lato_400Regular', color: '#fbf2d4', fontWeight: '600', marginTop: 4 },
   keuanganBtn: {
     alignItems: 'center', gap: 6,
     backgroundColor: '#fbf2d4', borderRadius: 10,
     paddingHorizontal: 14, paddingVertical: 10,
   },
-  keuanganText: { fontSize: 11, fontFamily: 'FacultyGlyphic_400Regular', color: '#44694b', fontWeight: '600' },
+  keuanganText: { fontSize: 11, fontFamily: 'Lato_400Regular', color: '#44694b', fontWeight: '600' },
   menuGrid: { flexDirection: 'row', gap: 10 },
   menuBtn: {
     flex: 1,
@@ -471,7 +465,7 @@ const styles = StyleSheet.create({
     borderColor: '#0e4719',
     paddingVertical: 12,
   },
-  menuText: { fontSize: 12, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  menuText: { fontSize: 12, fontFamily: 'Lato_400Regular', color: '#0e4719' },
 
   /* Logout modal */
   modalOverlay: {
@@ -491,25 +485,25 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(146,51,51,0.2)',
   },
   modalTitle: {
-    fontSize: 20, fontFamily: 'FacultyGlyphic_400Regular',
+    fontSize: 20, fontFamily: 'Lato_400Regular',
     color: '#1a3d1f', fontWeight: '700',
   },
   modalDesc: {
-    fontSize: 14, fontFamily: 'FacultyGlyphic_400Regular',
-    color: '#55835e', textAlign: 'center', lineHeight: 20,
+    fontSize: 14, fontFamily: 'Lato_400Regular',
+    color: '#55835e', textAlign: 'justify', lineHeight: 20,
   },
   modalActions: { flexDirection: 'row', gap: 10, marginTop: 8, width: '100%' },
   modalCancelBtn: {
     flex: 1, paddingVertical: 13, borderRadius: 10,
     borderWidth: 1, borderColor: '#0e4719', alignItems: 'center', justifyContent: 'center',
   },
-  modalCancelText: { fontSize: 14, fontFamily: 'FacultyGlyphic_400Regular', color: '#0e4719' },
+  modalCancelText: { fontSize: 14, fontFamily: 'Lato_400Regular', color: '#0e4719' },
   modalLogoutBtn: {
     flex: 1, paddingVertical: 13, borderRadius: 10,
     backgroundColor: '#923333', flexDirection: 'row',
     alignItems: 'center', justifyContent: 'center', gap: 6,
   },
-  modalLogoutText: { fontSize: 14, fontFamily: 'FacultyGlyphic_400Regular', color: '#fbf2d4', fontWeight: '600' },
+  modalLogoutText: { fontSize: 14, fontFamily: 'Lato_400Regular', color: '#fbf2d4', fontWeight: '600' },
 
   /* Logout */
   logoutBtn: {
@@ -518,5 +512,5 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#f5c5c5',
     paddingVertical: 14,
   },
-  logoutText: { fontSize: 15, fontFamily: 'FacultyGlyphic_400Regular', color: '#923333', fontWeight: '600' },
+  logoutText: { fontSize: 15, fontFamily: 'Lato_400Regular', color: '#923333', fontWeight: '600' },
 });

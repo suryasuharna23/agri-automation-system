@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   backArrow: { fontSize: 18, color: Theme.colors.grass[700], lineHeight: 22 },
   titleWrap: { flex: 1, alignItems: 'center', paddingHorizontal: 8 },
   title:     { fontSize: Theme.font.sizeLg, fontWeight: Theme.font.weightSemibold, color: Theme.colors.textPrimary },
-  subtitle:  { fontSize: Theme.font.sizeXs, color: Theme.colors.textMuted, marginTop: 1 },
+  subtitle:  { fontSize: Theme.font.sizeXs, fontFamily: 'Lato_400Regular', color: Theme.colors.textMuted, marginTop: 1 },
   rightWrap: { width: 36, alignItems: 'flex-end' },
   placeholder: { width: 36 },
 });

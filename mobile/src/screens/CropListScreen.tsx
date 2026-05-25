@@ -57,10 +57,7 @@ export default function CropListScreen() {
           <Ionicons name="arrow-back" size={20} color="#0e4719" />
         </TouchableOpacity>
         <Text style={styles.title}>Produk Saya</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate("CropForm")}>
-          <Ionicons name="add" size={19} color="#fbf2d4" />
-          <Text style={styles.addText}>Tambah</Text>
-        </TouchableOpacity>
+        <View style={styles.iconSpace} />
       </View>
 
       {loading ? (
@@ -93,24 +90,45 @@ export default function CropListScreen() {
           }}
         />
       )}
+      <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate("CropForm")} activeOpacity={0.85}>
+        <Text style={styles.addText}>Tambah</Text>
+        <Ionicons name="add" size={24} color="#fbf2d4" />
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fffefb" },
-  header: { paddingTop: 48, paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  header: { paddingTop: 58, paddingHorizontal: 14, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   title: { fontSize: 25, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
   iconBtn: { width: 40, height: 40, borderRadius: 12, backgroundColor: "#dbe3dd", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#0e4719" },
-  addBtn: { height: 40, borderRadius: 12, backgroundColor: "#0e4719", paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 5 },
-  addText: { fontSize: 12, fontFamily: "FacultyGlyphic_400Regular", color: "#fbf2d4" },
-  list: { padding: 14, gap: 12 },
+  iconSpace: { width: 40 },
+  addBtn: {
+    position: "absolute",
+    right: 18,
+    bottom: 24,
+    minHeight: 52,
+    borderRadius: 16,
+    backgroundColor: "#0e4719",
+    paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+  },
+  addText: { fontSize: 16, fontFamily: "Lato_400Regular", color: "#fbf2d4", fontWeight: "700" },
+  list: { padding: 14, paddingBottom: 96, gap: 12 },
   card: { flexDirection: "row", alignItems: "center", gap: 12, borderRadius: 16, backgroundColor: "#f3f8f1", borderWidth: 1, borderColor: "#ccd9ce", padding: 12 },
   image: { width: 72, height: 72, borderRadius: 14, backgroundColor: "#e7ede8" },
   imagePlaceholder: { width: 72, height: 72, borderRadius: 14, backgroundColor: "#e7ede8", alignItems: "center", justifyContent: "center" },
   cardBody: { flex: 1, gap: 4 },
   name: { fontSize: 18, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
-  meta: { fontSize: 12, fontFamily: "FacultyGlyphic_400Regular", color: "#55835e" },
+  meta: { fontSize: 12, fontFamily: "Lato_400Regular", color: "#55835e" },
   price: { fontSize: 14, fontFamily: "FacultyGlyphic_400Regular", color: "#0e4719" },
   deleteBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: "#fff0f0", alignItems: "center", justifyContent: "center" },
 });

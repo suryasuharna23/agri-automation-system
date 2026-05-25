@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { sensorApi } from '../services/api';
 import type { SensorReading } from '../types';
+import { Colors } from '../theme';
 
 type Priority = 'urgent' | 'check' | 'good';
 type FilterKey = 'semua' | 'monitor' | 'keuangan';
@@ -27,31 +28,34 @@ const BADGE_LABEL: Record<Priority, string> = {
   good:   'GOOD',
 };
 
+const anomalyNarrative =
+  'Segera periksa kondisi lahan secara langsung dan bandingkan dengan pembacaan sensor terakhir. Pastikan sistem irigasi, drainase, serta kondisi daun dan media tanam masih sesuai kebutuhan tanaman.';
+
 const MOCK_NOTIFS: AppNotification[] = [
   {
     id: '1', title: 'Tanaman Kangkung', type: 'anomaly', priority: 'urgent', isRead: false,
     time: new Date(Date.now() - 3_600_000).toISOString(),
-    body: 'Terdeteksi anomali kelembapan di luar batas normal. Segera periksa sistem irigasi dan pastikan pasokan air mencukupi.',
+    body: 'Terdeteksi anomali kelembapan di luar batas normal pada lahan kangkung setelah beberapa pembacaan terakhir menunjukkan pola yang tidak stabil. Segera periksa sistem irigasi dan pastikan pasokan air mencukupi tanpa membuat media tanam terlalu jenuh. Jika kondisi tanah terlalu basah, kurangi frekuensi penyiraman dan cek drainase bedengan.',
   },
   {
     id: '2', title: 'Tanaman Kangkung', type: 'anomaly', priority: 'check', isRead: false,
     time: new Date(Date.now() - 7_200_000).toISOString(),
-    body: 'Suhu udara mendekati batas atas toleransi (33°C). Pantau kondisi lahan secara berkala untuk mencegah stres tanaman.',
+    body: 'Suhu udara mendekati batas atas toleransi di sekitar 33°C dan berpotensi membuat tanaman mengalami stres panas. Pantau kondisi lahan secara berkala, terutama pada siang hari saat suhu biasanya mencapai puncak. Tambahkan naungan sementara atau lakukan penyiraman pagi hari jika suhu terus meningkat.',
   },
   {
     id: '3', title: 'Tanaman Kangkung', type: 'system', priority: 'good', isRead: true,
     time: new Date(Date.now() - 86_400_000).toISOString(),
-    body: 'Kondisi pH tanah dalam rentang optimal (6.2). Pertumbuhan tanaman berjalan baik dan tidak ada tindakan yang diperlukan.',
+    body: 'Kondisi pH tanah berada dalam rentang optimal, yaitu sekitar 6.2, sehingga penyerapan nutrisi masih berjalan baik. Pertumbuhan tanaman terpantau stabil dan tidak ada tindakan mendesak yang diperlukan untuk saat ini. Pertahankan pola perawatan dan lanjutkan pemantauan harian.',
   },
   {
     id: '4', title: 'Tanaman Bayam', type: 'system', priority: 'good', isRead: true,
     time: new Date(Date.now() - 172_800_000).toISOString(),
-    body: 'Semua parameter sensor dalam batas normal. Kelembapan tanah 65%, suhu 26°C, pH 6.1.',
+    body: 'Semua parameter sensor pada lahan bayam masih dalam batas normal berdasarkan pembacaan terakhir. Kelembapan tanah tercatat 65%, suhu udara 26°C, dan pH tanah 6.1. Kondisi ini mendukung pertumbuhan vegetatif yang stabil dan belum membutuhkan penyesuaian perawatan.',
   },
   {
     id: '5', title: 'Tanaman Kangkung', type: 'system', priority: 'good', isRead: true,
     time: new Date(Date.now() - 259_200_000).toISOString(),
-    body: 'Pembacaan rutin berhasil. Tidak ditemukan anomali pada lahan selama 24 jam terakhir.',
+    body: 'Pembacaan rutin berhasil dikirim dari node sensor dan tersimpan di sistem pemantauan. Tidak ditemukan anomali pada lahan selama 24 jam terakhir. Jadwal pemantauan dapat dilanjutkan seperti biasa sambil tetap memperhatikan perubahan cuaca harian.',
   },
 ];
 
@@ -85,7 +89,7 @@ export default function NotificationScreen() {
           all.push({
             id: r.id,
             title: node.name,
-            body: r.anomaly_description ?? 'Kondisi lahan di luar batas normal.',
+            body: `${r.anomaly_description ?? 'Kondisi lahan di luar batas normal.'} ${anomalyNarrative}`,
             type: 'anomaly',
             priority: i === 0 ? 'urgent' : 'check',
             isRead: false,
@@ -140,13 +144,6 @@ export default function NotificationScreen() {
         {filtered.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Tidak ada notifikasi</Text>
-            <Text style={styles.emptyBody}>
-              {activeFilter === 'monitor'
-                ? 'Tidak ada anomali sensor yang terdeteksi.'
-                : activeFilter === 'keuangan'
-                ? 'Tidak ada notifikasi keuangan.'
-                : 'Semua kondisi lahan normal.'}
-            </Text>
           </View>
         ) : (
           filtered.map((notif) =>
@@ -154,7 +151,7 @@ export default function NotificationScreen() {
               <UrgentCard
                 key={notif.id}
                 notif={notif}
-                onPress={() => { markRead(notif.id); navigation.navigate('Diagnosis'); }}
+                onPress={() => { markRead(notif.id); navigation.navigate('Diagnosis', { screen: 'DiagnosisHistory' }); }}
               />
             ) : (
               <RegularCard
@@ -238,15 +235,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#dbe3dd',
   },
   tabPillActive: {
-    backgroundColor: '#b4c6b8',
+    backgroundColor: '#0e4719',
   },
   tabText: {
     fontSize: 16,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
   },
   tabTextActive: {
-    color: '#0e4719',
+    color: Colors.cream[100],
   },
   tabBar: {
     height: 6,
@@ -275,9 +272,9 @@ const styles = StyleSheet.create({
   },
   emptyBody: {
     fontSize: 14,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#44694b',
-    textAlign: 'center',
+    textAlign: 'justify',
     lineHeight: 20,
   },
 
@@ -324,9 +321,10 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     fontSize: 12,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#0e4719',
     lineHeight: 18,
+    textAlign: 'justify',
   },
 
   /* ── Badges ── */
@@ -380,7 +378,7 @@ const styles = StyleSheet.create({
   },
   detailBtnText: {
     fontSize: 16,
-    fontFamily: 'FacultyGlyphic_400Regular',
+    fontFamily: 'Lato_400Regular',
     color: '#fbf2d4',
   },
 });

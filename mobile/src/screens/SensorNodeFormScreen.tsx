@@ -78,6 +78,6 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, fontFamily: "FacultyGlyphic_400Regular", color: "#55835e" },
   input: { minHeight: 48, borderRadius: 14, borderWidth: 1, borderColor: "#ccd9ce", backgroundColor: "#f3f8f1", paddingHorizontal: 14, color: "#0e4719", fontFamily: "FacultyGlyphic_400Regular" },
   saveBtn: { height: 50, borderRadius: 14, backgroundColor: "#0e4719", alignItems: "center", justifyContent: "center" },
-  saveText: { fontSize: 15, fontFamily: "FacultyGlyphic_400Regular", color: "#fbf2d4" },
+  saveText: { fontSize: 15, fontFamily: "Lato_400Regular", color: "#fbf2d4" },
   disabled: { opacity: 0.6 },
 });
